@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">AwesomePossum</string>
+    <string name="startup">Start Listen</string>
+    <string name="stop_listen">Stop Listen</string>
+    <string name="upload">Upload</string>
+</resources>

@@ -1,0 +1,41 @@
+
+{
+	"buildFiles" : 
+	[
+		"/Users/brynjenordli/Prosjekter/Jobb/Android/awesome-possum/possumlib/CMakeLists.txt"
+	],
+	"cleanCommands" : 
+	[
+		"/usr/local/Cellar/android-sdk/24.3.4/cmake/3.6.3155560/bin/cmake --build /Users/brynjenordli/Prosjekter/Jobb/Android/awesome-possum/possumlib/.externalNativeBuild/cmake/release/x86_64 --target clean"
+	],
+	"cppFileExtensions" : [ "cpp" ],
+	"libraries" : 
+	{
+		"native-lib-Release-x86_64" : 
+		{
+			"abi" : "x86_64",
+			"artifactName" : "native-lib",
+			"buildCommand" : "/usr/local/Cellar/android-sdk/24.3.4/cmake/3.6.3155560/bin/cmake --build /Users/brynjenordli/Prosjekter/Jobb/Android/awesome-possum/possumlib/.externalNativeBuild/cmake/release/x86_64 --target native-lib",
+			"buildType" : "release",
+			"files" : 
+			[
+				
+				{
+					"flags" : "  -target x86_64-none-linux-android -gcc-toolchain /usr/local/Cellar/android-ndk/r13b/toolchains/x86_64-4.9/prebuilt/darwin-x86_64 --sysroot=/usr/local/Cellar/android-ndk/r13b/platforms/android-21/arch-x86_64  -Dnative_lib_EXPORTS -isystem /usr/local/Cellar/android-ndk/r13b/sources/cxx-stl/gnu-libstdc++/4.9/include -isystem /usr/local/Cellar/android-ndk/r13b/sources/cxx-stl/gnu-libstdc++/4.9/libs/x86_64/include -isystem /usr/local/Cellar/android-ndk/r13b/sources/cxx-stl/gnu-libstdc++/4.9/include/backward  -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -fno-exceptions -fno-rtti -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -fno-exceptions -fno-rtti  -O2 -DNDEBUG -O2 -DNDEBUG  -fPIC    -c ",
+					"src" : "/Users/brynjenordli/Prosjekter/Jobb/Android/awesome-possum/possumlib/src/main/cpp/native-lib.cpp",
+					"workingDirectory" : "/Users/brynjenordli/Prosjekter/Jobb/Android/awesome-possum/possumlib/.externalNativeBuild/cmake/release/x86_64"
+				}
+			],
+			"output" : "/Users/brynjenordli/Prosjekter/Jobb/Android/awesome-possum/possumlib/build/intermediates/cmake/release/obj/x86_64/libnative-lib.so",
+			"toolchain" : "604181156038668058"
+		}
+	},
+	"toolchains" : 
+	{
+		"604181156038668058" : 
+		{
+			"cCompilerExecutable" : "/usr/local/Cellar/android-ndk/r13b/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang",
+			"cppCompilerExecutable" : "/usr/local/Cellar/android-ndk/r13b/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++"
+		}
+	}
+}

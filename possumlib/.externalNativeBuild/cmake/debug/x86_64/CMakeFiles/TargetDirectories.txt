@@ -1,0 +1,3 @@
+/Users/brynjenordli/Prosjekter/Jobb/Android/awesome-possum/possumlib/.externalNativeBuild/cmake/debug/x86_64/CMakeFiles/edit_cache.dir
+/Users/brynjenordli/Prosjekter/Jobb/Android/awesome-possum/possumlib/.externalNativeBuild/cmake/debug/x86_64/CMakeFiles/rebuild_cache.dir
+/Users/brynjenordli/Prosjekter/Jobb/Android/awesome-possum/possumlib/.externalNativeBuild/cmake/debug/x86_64/CMakeFiles/native-lib.dir

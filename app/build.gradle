@@ -1,0 +1,54 @@
+apply plugin: 'com.android.application'
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+    defaultConfig {
+        applicationId "com.telenor.possumexample"
+        minSdkVersion 15
+        targetSdkVersion 25
+        versionCode 26
+        versionName "1.25"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        ndk {
+            abiFilters "x86", "x86_64", "armeabi-v7a", "armeabi", "mips"
+        }
+    }
+
+    buildTypes {
+        debug {
+            resValue "string", "bucketKey", properties["bucketKey"] // Setting the bucket key from local.properties
+            debuggable false
+            useProguard false
+            jniDebuggable true
+            testCoverageEnabled false
+        }
+        release {
+            resValue "string", "bucketKey", properties["bucketKey"] // Setting the bucket key from local.properties
+            debuggable false
+            testCoverageEnabled false
+            minifyEnabled false
+            minifyEnabled true
+            useProguard true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar', '*.so'], dir: 'libs')
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile project(':possumlib')
+    compile 'com.android.support:appcompat-v7:25.3.1'
+}
