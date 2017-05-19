@@ -1,7 +1,6 @@
 package com.telenor.possumlib.services;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 
 import com.telenor.possumlib.JodaInit;
 import com.telenor.possumlib.PossumTestRunner;
@@ -15,8 +14,6 @@ import org.robolectric.Robolectric;
 import org.robolectric.Shadows;
 import org.robolectric.shadows.ShadowServiceManager;
 import org.robolectric.util.ServiceController;
-
-import java.lang.reflect.Field;
 
 @RunWith(PossumTestRunner.class)
 public class UploadServiceTest {
@@ -45,13 +42,6 @@ public class UploadServiceTest {
 
         UploadService service = serviceController.create().get();
         Assert.assertNotNull(service);
-        Notification notification = Shadows.shadowOf(service).getLastForegroundNotification();
-        Assert.assertNotNull(notification);
-        Field notificationField = UploadService.class.getDeclaredField("notificationManager");
-        notificationField.setAccessible(true);
-        Assert.assertNotNull(notificationField.get(service));
-        Assert.assertTrue(notificationField.get(service) instanceof NotificationManager);
-        // TODO: Lots of stuff needed
     }
 
     @Test

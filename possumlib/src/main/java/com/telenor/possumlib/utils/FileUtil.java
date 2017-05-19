@@ -204,18 +204,6 @@ public class FileUtil {
     }
 
     /**
-     * Checks all detectors and finds if their length is greater than 0
-     *
-     * @return true if any detector has data stored, false if not
-     */
-    public static boolean hasData() {
-//        for (AbstractDetector detector : AwesomePossum.detectors()) {
-//            if (detector.storedData().length() > 0) return true;
-//        }
-        return false;
-    }
-
-    /**
      * Clear the main data directory (and all subdirectories)
      *
      * @param context a viable context

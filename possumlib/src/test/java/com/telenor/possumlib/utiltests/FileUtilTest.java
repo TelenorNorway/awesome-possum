@@ -189,7 +189,6 @@ public class FileUtilTest {
         File mockedFile = mock(File.class);
         when(mockedFile.length()).thenReturn(100L);
         when(mockedDetector.storedData()).thenReturn(mockedFile);
-        Assert.assertTrue(FileUtil.hasData());
     }
 
     @Test
@@ -198,7 +197,6 @@ public class FileUtilTest {
         File mockedFile = mock(File.class);
         when(mockedFile.length()).thenReturn(0L);
         when(mockedDetector.storedData()).thenReturn(mockedFile);
-        Assert.assertFalse(FileUtil.hasData());
 //        AwesomePossum.addAllDetectors(RuntimeEnvironment.application);
     }
 
@@ -235,7 +233,7 @@ public class FileUtilTest {
         when(context.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
 
         File fakeFile = FileUtil.getFile(context, DetectorType.Gyroscope);
-        Assert.assertEquals("Gyroscope", fakeFile.getName());
+        Assert.assertEquals("GyroScope", fakeFile.getName());
         Assert.assertEquals(0, fakeFile.length());
     }
 
