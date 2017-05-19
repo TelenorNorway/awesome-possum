@@ -1,6 +1,5 @@
 # Awesome Possum
 ================================
-The Awesome Possum repo. 
 
 A library meant to gather data about a user and upload to the cloud. In order to use,
 
@@ -29,11 +28,4 @@ Remember to authorize before starting to listen, or it will throw a NotAuthorize
 This can be done either with the getAuthorizeDialog method that does all for you, or by manually
 using the requestPermissions method as well as authorizeGathering method.
 
-
-Tasks remaining:
-
--[x] Import library to github and combine with bintray
-
--[ ] Update readme
-
--[ ] Import in test project
+This is a work in progress.
