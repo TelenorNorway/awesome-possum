@@ -9,10 +9,10 @@ apply plugin: 'maven-publish'
 ext {
     PUBLISH_GROUP_ID = 'com.telenor'
     PUBLISH_ARTIFACT_ID = 'possumlib'
-    PUBLISH_VERSION = '1.25'
+    PUBLISH_VERSION = '1.0.0'
     PUBLISH_VERSION_CODE = 1
     PUBLISH_DESCRIPTION = 'Data gathering library'
-    GIT_REPO_URL = 'https://github.com/Telenor-Norway/awesome-possum'
+    GIT_REPO_URL = 'https://github.com/telenordigital/awesome-possum'
 }
 
 group = PUBLISH_GROUP_ID
@@ -143,7 +143,7 @@ dependencies {
     compile 'com.google.code.gson:gson:2.7'
     compile 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.3.2'
     compile 'com.amazonaws:aws-android-sdk-s3:2.3.2'
-    compile 'com.google.android.gms:play-services-vision:10.2.4'
+    compile 'com.google.android.gms:play-services-vision:10.2.6'
     testCompile 'junit:junit:4.12'
     testCompile 'org.robolectric:robolectric:3.2.2'
     testCompile 'org.robolectric:shadows-support-v4:3.0'

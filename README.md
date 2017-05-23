@@ -4,7 +4,7 @@ A library meant to gather data about a user and upload to the cloud. In order to
 
 To use, add the following to your app gradle dependencies:
 
-    compile 'com.telenor:possumlib:0.9.0'
+    compile 'com.telenor:possumlib:1.0.0'
     
 Remember to add jCenter() to your repositories.
 
@@ -12,14 +12,15 @@ To use this library, here is a short list of the commands you need:
 
      AwesomePossum.listen(Context);
      AwesomePossum.getAuthorizeDialog(ActivityContext,
+                                      String encryptedKurt,
                                       String Title, 
                                       String Message,
                                       StringOkText,
                                       String CancelText).show();
-     AwesomePossum.requestPermissions(Context);
-     AwesomePossum.authorizeGathering();
+     AwesomePossum.authorizeGathering(String encryptedKurt);
      AwesomePossum.stopListening(Context);
      AwesomePossum.startUpload(Context,
+                               String encryptedKurt,
                                String AmazonBucketKey, 
                                Bool allowMobileUpload);
 
@@ -32,7 +33,7 @@ This is a work in progress.
 License
 ====================
 
-    Copyright 2017 Telenor Norge AS
+    Copyright 2017 Telenor Digital AS
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
