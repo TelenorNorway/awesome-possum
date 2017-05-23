@@ -1,10 +1,14 @@
 plugins {
-    id "com.jfrog.bintray" version "1.7.3"
+//    id "com.jfrog.bintray" version "1.7.3"
+    id "com.jfrog.bintray" version "1.7"
     id "com.github.dcendents.android-maven" version "1.5"
 }
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
 ext {
     PUBLISH_GROUP_ID = 'com.telenor'
@@ -55,11 +59,10 @@ configurations {
     javadocDeps
 }
 
-
 install {
     repositories.mavenInstaller {
         pom.project {
-            name 'AwesomePossum'
+            name 'awesome-possum'
             description 'A data gathering library for authentication by sensors.'
             url GIT_REPO_URL
             inceptionYear '2017'
@@ -79,7 +82,6 @@ install {
             scm {
                 connection GIT_REPO_URL+'.git'
                 url GIT_REPO_URL
-
             }
             developers {
                 developer {
@@ -95,7 +97,7 @@ task sourcesJar(type: Jar) {
     classifier = 'sources'
 }
 
-task javadoc(type: Javadoc) {
+task javadoc(type: Javadoc, dependsOn: 'assembleRelease') {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
     classpath += configurations.javadocDeps2
@@ -113,8 +115,8 @@ artifacts {
 }
 
 bintray {
-    user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('bintrayUser')
-    key = project.hasProperty('bintrayKey') ? project.property('bintrayKey') : System.getenv('bintrayKey')
+    user = properties["bintrayUser"]//project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('bintrayUser')
+    key = properties["bintrayKey"]//project.hasProperty('bintrayKey') ? project.property('bintrayKey') : System.getenv('bintrayKey')
     configurations = ['archives']
     pkg {
         repo = PUBLISH_GROUP_ID //  Bintray repo, corresponding with groupId here
@@ -128,7 +130,7 @@ bintray {
         version {
             publish = true
             released = new Date()
-            attributes = ['gradle-plugin': 'com.android.tools.build:gradle:2.2.0'] //'com.use.less:com.use.less.gradle:gradle-useless-plugin'
+            attributes = ['gradle-plugin': 'com.android.tools.build:gradle:2.2.0']
         }
     }
 }

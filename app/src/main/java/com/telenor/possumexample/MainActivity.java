@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             List<String> unwanted = new ArrayList<>();
             unwanted.add("Position");
-            AwesomePossum.setUnwantedDetectors(unwanted);
+            AwesomePossum.setUnwantedDetectors(this, unwanted);
             AwesomePossum.listen(this);
         } catch (GatheringNotAuthorizedException e) {
             AwesomePossum.getAuthorizeDialog(this, "kurtNilsærn", "Join the Awesome Possum Project", "By clicking ok you accept that you are 18 years of age and that you allow Telenor to gather anonymous data about your phone", "Ok", "Cancel").show();

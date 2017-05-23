@@ -1,3 +1,4 @@
 local.properties
 notes.txt
 *.iml
+possumlib/.externalNativeBuild/*
