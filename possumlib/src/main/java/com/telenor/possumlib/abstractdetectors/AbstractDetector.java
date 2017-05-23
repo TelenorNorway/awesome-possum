@@ -9,10 +9,8 @@ import com.google.common.eventbus.EventBus;
 import com.google.gson.JsonObject;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
 import com.telenor.possumlib.interfaces.ISensorStatusUpdate;
-import com.telenor.possumlib.detectors.MetaDataDetector;
 import com.telenor.possumlib.utils.FileUtil;
 import com.telenor.possumlib.utils.Get;
-import com.telenor.possumlib.utils.SensorUtil;
 
 import org.joda.time.DateTime;
 
@@ -38,16 +36,16 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
     private Context context;
     private final EventBus eventBus;
     public static final int MINIMUM_SAMPLES = 500;
-    private final String identification;
+    private final String encryptedKurt;
     private final String secretKeyHash;
     int storedValues;
 
     protected final Queue<String> sessionValues = new ConcurrentLinkedQueue<>();
     private final List<ISensorStatusUpdate> listeners = new ArrayList<>();
 
-    protected AbstractDetector(Context context, @NonNull String identification, @NonNull String secretKeyHash, @NonNull EventBus eventBus) {
+    protected AbstractDetector(Context context, @NonNull String encryptedKurt, @NonNull String secretKeyHash, @NonNull EventBus eventBus) {
         if (context == null) throw new RuntimeException("Missing context on detector:"+this);
-        this.identification = identification;
+        this.encryptedKurt = encryptedKurt;
         this.secretKeyHash = secretKeyHash;
         this.context = context;
         this.eventBus = eventBus;
@@ -98,9 +96,9 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
             isListening = true;
         } else {
             if (!isEnabled()) {
-                eventBus.post(new MetaDataChangeEvent(MetaDataDetector.GENERAL_EVENT, "DETECTOR OFFLINE ("+SensorUtil.detectorTypeString(detectorType())+") DISABLED"));
+                eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" DETECTOR OFFLINE ("+ detectorName()+") DISABLED"));
             } else if (!isAvailable()) {
-                eventBus.post(new MetaDataChangeEvent(MetaDataDetector.GENERAL_EVENT, "DETECTOR OFFLINE ("+SensorUtil.detectorTypeString(detectorType())+") UNAVAILABLE"));
+                eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" DETECTOR OFFLINE ("+ detectorName()+") UNAVAILABLE"));
             }
         }
         return isListening;
@@ -120,7 +118,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
 
     protected long uploadFilesSize() {
         long filesSize = 0;
-        for (File file : FileUtil.getAllDetectorFiles(context(), detectorType())) {
+        for (File file : FileUtil.getAllDetectorFiles(context(), detectorName())) {
             filesSize += file.length();
         }
         return filesSize;
@@ -175,7 +173,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
     public JsonObject toJson() {
         JsonObject object = new JsonObject();
         object.addProperty("type", detectorType());
-        object.addProperty("identification", identification);
+        object.addProperty("encryptedKurt", encryptedKurt);
         object.addProperty("secretKeyHash", secretKeyHash);
         object.addProperty("isAvailable", isAvailable());
         object.addProperty("isEnabled", isEnabled());
@@ -227,7 +225,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
             FileUtil.deleteFile(storedData());
             sessionValues.clear();
             storedValues = 0;
-            Log.i(tag, "Completed upload of:" + SensorUtil.detectorTypeString(detectorType()) + ", deleted it");
+            Log.d(tag, "Completed upload of:" + detectorName() + ", deleted it");
         }
     }
 
@@ -253,7 +251,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
      * @return the File storing the data
      */
     public File storedData() {
-        return FileUtil.getFile(context(), detectorType());
+        return FileUtil.getFile(context(), detectorName());
     }
 
     /**
@@ -272,7 +270,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
      * @return default compareTo return
      */
     public int compareTo(@NonNull AbstractDetector detector) {
-        return SensorUtil.detectorTypeString(detectorType()).compareTo(SensorUtil.detectorTypeString(detector.detectorType()));
+        return detectorName().compareTo(detector.detectorName());
     }
 
     /**
@@ -282,6 +280,14 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
      * @return integer representing the type (Check DetectorType class)
      */
     public abstract int detectorType();
+
+    /**
+     * Official "name" of detector, a simple string using the english language. Should not be used
+     * for official UI use - if so, use detectorType and map it to a resource name so it can be
+     * localized
+     * @return string with "name" or "designation" of detector
+     */
+    public abstract String detectorName();
 
     /**
      * Zip data and move to upload directory.
@@ -309,12 +315,12 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
 
     @VisibleForTesting
     protected String bucketKey() {
-        return "data/" + Get.version(context()) + "/" + SensorUtil.detectorTypeString(detectorType()) + "/" + identification + "/" + secretKeyHash + "/"  + timestamp()+ ".zip";
+        return "data/" + Get.version(context()) + "/" + detectorName() + "/" + encryptedKurt + "/" + secretKeyHash + "/"  + timestamp()+ ".zip";
     }
 
     protected boolean stageForUpload(File file) {
         if (file == null) {
-            Log.e(tag, "Stage for upload failed - no file ("+SensorUtil.detectorTypeString(detectorType())+")");
+            Log.e(tag, "Stage for upload failed - no file ("+ detectorName()+")");
             return false;
         }
         if (file.length() == 0) {

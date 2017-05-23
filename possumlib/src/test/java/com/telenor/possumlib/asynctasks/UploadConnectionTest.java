@@ -8,7 +8,6 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.telenor.possumlib.FileManipulator;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.interfaces.IWrite;
-import com.telenor.possumlib.managers.S3ModelDownloader;
 import com.telenor.possumlib.utils.FileUtil;
 
 import org.junit.After;
@@ -36,11 +35,6 @@ import static org.mockito.Mockito.when;
 
 @RunWith(PossumTestRunner.class)
 public class UploadConnectionTest {
-
-    private static final String BUCKET = S3ModelDownloader.S3_BUCKET;
-    private static final String KEY1 = "data/1.x/Sensor/ID/foo.zip";
-    private static final String KEY2 = "data/1.x/Sensor/ID/bar.zip";
-
     private Context mockedContext;
 
     private UploadConnection uploadConnection;
@@ -122,10 +116,9 @@ public class UploadConnectionTest {
         verify(mockedListener).uploadComplete(isNull(Exception.class), isNotNull(String.class));
     }
 
-    @Test
-    public void testDefaults() throws Exception {
-        Assert.assertEquals("telenor-nr-awesome-possum", S3ModelDownloader.S3_BUCKET);
-    }
+//    @Test
+//    public void testDefaults() throws Exception {
+//    }
 
     @Test
     public void testOnlyPartiallyUploaded() throws Exception {

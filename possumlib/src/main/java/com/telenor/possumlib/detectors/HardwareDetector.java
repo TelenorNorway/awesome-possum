@@ -34,6 +34,11 @@ public class HardwareDetector extends AbstractDetector {
         return DetectorType.Hardware;
     }
 
+    @Override
+    public String detectorName() {
+        return "Hardware";
+    }
+
     private void findHardwareSpecs() {
         // It should be sent for each time the app is instantiated, in case he updates his android
         sessionValues.add("HARDWARE_INFO START");

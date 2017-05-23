@@ -1,9 +1,11 @@
 package com.telenor.possumlib.detectortests;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.hardware.Camera;
+import android.os.Build;
 
 import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.JodaInit;
@@ -46,6 +48,7 @@ public class ImageDetectorTest {
     private int isContinousRequest;
     private Camera.CameraInfo cameraInfo;
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Before
     public void setUp() throws Exception {
         JodaInit.initializeJodaTime();

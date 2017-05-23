@@ -1,7 +1,10 @@
 package com.telenor.possumlib.detectors;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 
 import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
@@ -22,9 +25,17 @@ public class SatelliteDetector extends AbstractEventDrivenDetector {
     @Override
     public void eventReceived(BasicChangeEvent object) {
         if (object instanceof SatelliteChangeEvent) {
-            sessionValues.add(object.message());
             super.eventReceived(object);
         }
+    }
+
+    /**
+     * Confirms whether detector is permitted to be used
+     * @return true if allowed, else false
+     */
+    @Override
+    public boolean isPermitted() {
+        return ContextCompat.checkSelfPermission(context(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
@@ -39,11 +50,16 @@ public class SatelliteDetector extends AbstractEventDrivenDetector {
 
     @Override
     public boolean isAvailable() {
-        return false;
+        return isPermitted();
     }
 
     @Override
     public int detectorType() {
         return DetectorType.GpsStatus;
+    }
+
+    @Override
+    public String detectorName() {
+        return "Satellites";
     }
 }

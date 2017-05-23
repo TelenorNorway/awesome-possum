@@ -2,6 +2,7 @@ package com.telenor.possumlib.abstractdetectortests;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.TriggerEvent;
 import android.hardware.TriggerEventListener;
@@ -48,7 +49,17 @@ public class AbstractAndroidTriggerSensorTest extends GeneralSensorTest {
         onTriggerFired = false;
         eventBus = new EventBus();
         wakeLockActivated = false;
-        androidTriggerSensor = new AbstractAndroidTriggerDetector(mockedContext, Sensor.TYPE_SIGNIFICANT_MOTION, "fakeUnique", "fakeId", eventBus) {
+        androidTriggerSensor = getDetector(mockedContext, eventBus);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+        androidTriggerSensor = null;
+    }
+
+    private AbstractAndroidTriggerDetector getDetector(Context context, EventBus eventBus) {
+        return new AbstractAndroidTriggerDetector(context, Sensor.TYPE_SIGNIFICANT_MOTION, "fakeUnique", "fakeId", eventBus) {
             @Override
             public long guaranteedListenInterval() {
                 return listenInterval;
@@ -74,16 +85,15 @@ public class AbstractAndroidTriggerSensorTest extends GeneralSensorTest {
             }
 
             @Override
+            public String detectorName() {
+                return "FakeName";
+            }
+
+            @Override
             public void onTrigger(TriggerEvent event) {
                 onTriggerFired = true;
             }
         };
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
-        androidTriggerSensor = null;
     }
 
     @Test

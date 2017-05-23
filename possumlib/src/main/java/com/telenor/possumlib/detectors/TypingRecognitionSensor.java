@@ -34,6 +34,11 @@ public class TypingRecognitionSensor extends AbstractEventDrivenDetector {
     }
 
     @Override
+    public String detectorName() {
+        return "Keyboard";
+    }
+
+    @Override
     public boolean isAvailable() {
         return true;
     }
@@ -46,7 +51,6 @@ public class TypingRecognitionSensor extends AbstractEventDrivenDetector {
     @Override
     public void eventReceived(BasicChangeEvent object) {
         if (object instanceof TypingChangeEvent) {
-            sessionValues.add(object.message());
             super.eventReceived(object);
         }
     }

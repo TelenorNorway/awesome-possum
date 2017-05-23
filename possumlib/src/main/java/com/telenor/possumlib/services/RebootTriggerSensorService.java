@@ -23,7 +23,7 @@ public class RebootTriggerSensorService extends Service {
         if (sensorToReboot > 0) {
 //            AbstractDetector detector = AwesomePossum.getDetectorByType(sensorToReboot);
 //            if (detector instanceof AbstractAndroidTriggerDetector) {
-//                Log.i(tag, "Testus: Rebooting sensor - "+ SensorUtil.detectorTypeString(this, detector.detectorType()));
+//                Log.i(tag, "Testus: Rebooting sensor - "+ DetectorUtil.detectorTypeString(this, detector.detectorType()));
 //                AbstractAndroidTriggerDetector triggerDetector = (AbstractAndroidTriggerDetector)detector;
 //                triggerDetector.startListening();
 //            }

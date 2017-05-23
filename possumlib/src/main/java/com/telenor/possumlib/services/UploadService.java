@@ -16,12 +16,12 @@ import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.asynctasks.RequestNewIdentity;
 import com.telenor.possumlib.asynctasks.UploadConnection;
 import com.telenor.possumlib.interfaces.IWrite;
-import com.telenor.possumlib.detectors.HardwareDetector;
 import com.telenor.possumlib.utils.Get;
 
 import net.danlew.android.joda.JodaTimeAndroid;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -35,16 +35,16 @@ public class UploadService extends Service implements IWrite, IdentityChangedLis
     private CognitoCachingCredentialsProvider cognitoProvider;
     private static final String tag = UploadService.class.getName();
     private String secretKeyHash;
-    private boolean hardwareStored;
-    private String bucketKey;
-    private String uniqueId;
+    private String refusedDetectors;
+    private String encryptedKurt;
+    ////telenor-nr-awesome-possum/consent/ her skal det lagres
     @Override
     public int onStartCommand(Intent intent, int flags, int startCommand) {
         secretKeyHash = intent.getStringExtra("secretKeyHash");
-        hardwareStored = intent.getBooleanExtra("hardwareStored", false);
-        uniqueId = intent.getStringExtra("uniqueId");
-        bucketKey = intent.getStringExtra("bucketKey");
-        Log.i(tag, "Bucket key:"+bucketKey);
+        refusedDetectors = intent.getStringExtra("refusedDetectors");
+        encryptedKurt = intent.getStringExtra("encryptedKurt");
+        String bucketKey = intent.getStringExtra("bucketKey");
+        Log.i(tag, "Bucket key:" + bucketKey);
         clearAllDetectors();
         cognitoProvider = new CognitoCachingCredentialsProvider(
                 this,
@@ -53,7 +53,7 @@ public class UploadService extends Service implements IWrite, IdentityChangedLis
         );
         if (cognitoProvider.getCachedIdentityId() == null) {
             cognitoProvider.registerIdentityChangedListener(this);
-            new RequestNewIdentity(cognitoProvider).execute((Void)null);
+            new RequestNewIdentity(cognitoProvider).execute((Void) null);
         }
 //        if (cognitoProvider.getCachedIdentityId() != null) {
 //            startUpload(new TransferUtility(new AmazonS3Client(cognitoProvider), this));
@@ -61,13 +61,14 @@ public class UploadService extends Service implements IWrite, IdentityChangedLis
         return START_NOT_STICKY;
     }
 
-    private void startUpload(@NonNull TransferUtility transferUtility) {
+    private void startUpload(@NonNull TransferUtility transferUtility, String refusedDetectors) {
         Log.i(tag, "Starting upload now that things is in order");
-        List<Class<? extends AbstractDetector>> ignoreList = new ArrayList<>();
-        if (!hardwareStored) {
-            ignoreList.add(HardwareDetector.class);
+        List<Class<? extends AbstractDetector>> ignoreList = null;
+        if (refusedDetectors != null) {
+            List<String> refused = new ArrayList<>(Arrays.asList(refusedDetectors.split(",")));
+            ignoreList = Get.ignoredDetectors(refused);
         }
-        detectors.addAll(Get.Detectors(this, uniqueId, secretKeyHash, ignoreList, new EventBus()));
+        detectors.addAll(Get.Detectors(this, encryptedKurt, secretKeyHash, ignoreList, new EventBus()));
         try {
             connection = new UploadConnection(this, this, transferUtility, detectors);
             connection.execute((Void) null);
@@ -113,7 +114,7 @@ public class UploadService extends Service implements IWrite, IdentityChangedLis
 
     @Override
     public void uploadComplete(Exception exception, String message) {
-        Log.i(tag, "Upload complete:"+exception+" - "+message);
+        Log.i(tag, "Upload complete:" + exception + " - " + message);
         stopSelf();
     }
 
@@ -121,7 +122,8 @@ public class UploadService extends Service implements IWrite, IdentityChangedLis
     public void identityChanged(String oldIdentityId, String newIdentityId) {
         cognitoProvider.unregisterIdentityChangedListener(this);
         if (cognitoProvider.getCachedIdentityId() != null) {
-            startUpload(new TransferUtility(new AmazonS3Client(cognitoProvider), this));
-        } else throw new RuntimeException("Failed to get identity:"+oldIdentityId+" - "+newIdentityId);
+            startUpload(new TransferUtility(new AmazonS3Client(cognitoProvider), this), refusedDetectors);
+        } else
+            throw new RuntimeException("Failed to get identity:" + oldIdentityId + " - " + newIdentityId);
     }
 }

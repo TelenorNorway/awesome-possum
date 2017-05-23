@@ -1,6 +1,5 @@
 package com.telenor.possumlib.detectortests;
 
-import android.content.Context;
 import android.hardware.Sensor;
 import android.support.annotation.NonNull;
 
@@ -24,20 +23,13 @@ import static com.telenor.possumlib.SensorEvents.createSensorEvent;
 @RunWith(PossumTestRunner.class)
 public class AccelerometerTest extends GeneralSensorTest {
     private Accelerometer accelerometer;
-    private boolean event1;
-    private boolean event2;
     private EventBus eventBus;
+
     @Before
     public void setUp() throws Exception {
         super.setUp(Sensor.TYPE_ACCELEROMETER);
         eventBus = new EventBus();
-        event1 = false;
-        event2 = false;
         accelerometer = new Accelerometer(mockedContext, "fakeUnique", "fakeId", eventBus){
-            @Override
-            public Context context() {
-                return mockedContext;
-            }
             @Override
             public boolean isEnabled() {
                 return sensorIsEnabled;
@@ -72,40 +64,6 @@ public class AccelerometerTest extends GeneralSensorTest {
         Method reqCodeMethod = Accelerometer.class.getDeclaredMethod("detectorRequestCode");
         reqCodeMethod.setAccessible(true);
         Assert.assertEquals(ReqCodes.ACCELEROMETER, reqCodeMethod.invoke(accelerometer));
-    }
-
-    @Test
-    public void testWhatHappensDuringWakeLockActivated() throws Exception {
-//        EventSubscriber subscriberLocation = new EventSubscriber() {
-//            @Override
-//            public void objectChanged(Object source) {
-//                event1 = true;
-//            }
-//
-//            @Override
-//            public void listChanged() {
-//
-//            }
-//        };
-//        EventSubscriber subscriberWifi = new EventSubscriber() {
-//            @Override
-//            public void objectChanged(Object source) {
-//                event2 = true;
-//            }
-//
-//            @Override
-//            public void listChanged() {
-//
-//            }
-//        };
-//        EventBus.getInstance().subscribe(LocationDetector.LOCATION_EVENT, subscriberLocation);
-//        EventBus.getInstance().subscribe(NetworkDetector.WIFI_EVENT, subscriberWifi);
-        accelerometer.detectorWakelockActivated();
-        Assert.assertTrue(event1);
-        Assert.assertTrue(event2);
-
-//        EventBus.getInstance().unSubscribeAll(subscriberLocation);
-//        EventBus.getInstance().unSubscribeAll(subscriberWifi);
     }
 
     @Test

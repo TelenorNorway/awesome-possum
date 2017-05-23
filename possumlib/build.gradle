@@ -1,4 +1,22 @@
+plugins {
+    id "com.jfrog.bintray" version "1.7.3"
+    id "com.github.dcendents.android-maven" version "1.5"
+}
 apply plugin: 'com.android.library'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+ext {
+    PUBLISH_GROUP_ID = 'com.telenor'
+    PUBLISH_ARTIFACT_ID = 'possumlib'
+    PUBLISH_VERSION = '1.25'
+    PUBLISH_VERSION_CODE = 1
+    PUBLISH_DESCRIPTION = 'Data gathering library'
+    GIT_REPO_URL = 'https://github.com/Telenor-Norway/awesome-possum'
+}
+
+group = PUBLISH_GROUP_ID
+version = PUBLISH_VERSION
 
 android {
     compileSdkVersion 25
@@ -7,8 +25,8 @@ android {
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 25
-        versionCode 26
-        versionName "1.25"
+        versionCode PUBLISH_VERSION_CODE
+        versionName PUBLISH_VERSION
         ndk {
             abiFilters "x86", "x86_64", "armeabi-v7a", "armeabi", "mips"
         }
@@ -32,6 +50,89 @@ android {
     }
 }
 
+configurations {
+    javadocDeps2
+    javadocDeps
+}
+
+
+install {
+    repositories.mavenInstaller {
+        pom.project {
+            name 'AwesomePossum'
+            description 'A data gathering library for authentication by sensors.'
+            url GIT_REPO_URL
+            inceptionYear '2017'
+
+            packaging 'aar'
+            groupId PUBLISH_GROUP_ID
+            artifactId PUBLISH_ARTIFACT_ID
+            version PUBLISH_VERSION
+
+            licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+            scm {
+                connection GIT_REPO_URL+'.git'
+                url GIT_REPO_URL
+
+            }
+            developers {
+                developer {
+                    name 'Brynje Nordli'
+                }
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.javadocDeps2
+    classpath += configurations.javadocDeps
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+bintray {
+    user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('bintrayUser')
+    key = project.hasProperty('bintrayKey') ? project.property('bintrayKey') : System.getenv('bintrayKey')
+    configurations = ['archives']
+    pkg {
+        repo = PUBLISH_GROUP_ID //  Bintray repo, corresponding with groupId here
+        name = PUBLISH_ARTIFACT_ID // This is package name
+        desc = PUBLISH_DESCRIPTION
+        publicDownloadNumbers = true
+        licenses = ['Apache-2.0']
+        userOrg = user
+        vcsUrl = 'https://github.com/bintray/gradle-bintray-plugin.git'
+        githubRepo = GIT_REPO_URL
+        version {
+            publish = true
+            released = new Date()
+            attributes = ['gradle-plugin': 'com.android.tools.build:gradle:2.2.0'] //'com.use.less:com.use.less.gradle:gradle-useless-plugin'
+        }
+    }
+}
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
@@ -43,7 +144,6 @@ dependencies {
     compile 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.3.2'
     compile 'com.amazonaws:aws-android-sdk-s3:2.3.2'
     compile 'com.google.android.gms:play-services-vision:10.2.4'
-
     testCompile 'junit:junit:4.12'
     testCompile 'org.robolectric:robolectric:3.2.2'
     testCompile 'org.robolectric:shadows-support-v4:3.0'

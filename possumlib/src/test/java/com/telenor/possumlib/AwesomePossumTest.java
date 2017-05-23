@@ -1,8 +1,7 @@
-package com.telenor.possumlib.managers;
+package com.telenor.possumlib;
 
 import android.app.ActivityManager;
 import android.app.AlarmManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -15,7 +14,7 @@ import android.net.ConnectivityManager;
 
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.PossumTestRunner;
-import com.telenor.possumlib.services.CollectorService;
+import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
 
 import junit.framework.Assert;
 
@@ -74,10 +73,11 @@ public class AwesomePossumTest {
         when(mockedContext.getSystemService(Context.CONNECTIVITY_SERVICE)).thenReturn(mockedConnectivityManager);
         when(mockedContext.getSystemService(Context.SENSOR_SERVICE)).thenReturn(mockedSensorManager);
         when(mockedContext.getPackageManager()).thenReturn(mockedPackageManager);
-        when(mockedContext.getApplicationContext()).thenReturn(mockedContext);
+        when(mockedContext.getApplicationContext()).thenReturn(RuntimeEnvironment.application);
         when(mockedContext.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
         when(mockedPackageManager.getPackageInfo(anyString(), eq(0))).thenReturn(mockedPackageInfo);
         when(mockedContext.getPackageName()).thenReturn(RuntimeEnvironment.application.getPackageName());
+
         fakePreferences = RuntimeEnvironment.application.getSharedPreferences("test", Context.MODE_PRIVATE);
         when(mockedContext.getSharedPreferences(anyString(), anyInt())).thenReturn(fakePreferences);
         AwesomePossum.terminate(mockedContext);
@@ -89,71 +89,67 @@ public class AwesomePossumTest {
     }
 
     @Test
-    public void testInit() throws Exception {
-//        AwesomePossum.init(mockedContext, 1, 2, 3, "test", DummyPossumActivity.class, Fragment.class);
-    }
-
-    @Test
-    public void testLearningBeforeInitialization() throws Exception {
+    public void testListenBeforeAuthorized() throws Exception {
         try {
-            AwesomePossum.isLearning();
-            Assert.fail("Should not reach here, PreferenceUtil must be initialized first");
-        } catch (Exception e) {
-            Assert.assertEquals("Must initialize PreferenceUtil first", e.getMessage());
+            AwesomePossum.listen(mockedContext);
+            verify(mockedContext, never()).startService(any(Intent.class));
+            Assert.fail("Should not have reached this space");
+        } catch (GatheringNotAuthorizedException ignore) {
         }
     }
 
     @Test
-    public void testStartGatherBeforeInitDoesNothing() throws Exception {
-        Context mockedContext = getMockForServiceWithBackgroundRunning(false, CollectorService.class);
-//        AwesomePossum.setGathering(mockedContext, true);
-//        AwesomePossum.startGatherServiceIfDesired(mockedContext);
-        verify(mockedContext, never()).startService(any(Intent.class));
-    }
-
-    @Test
-    public void testStartGatherAfterInitStartsService() throws Exception {
-        Context mockedContext = getMockForServiceWithBackgroundRunning(false, CollectorService.class);
-//        AwesomePossum.init(mockedContext, 1, 1, 1, "test", DummyPossumActivity.class, Fragment.class);
-//        AwesomePossum.startGatherServiceIfDesired(mockedContext);
+    public void testListenAfterAuthorized() throws Exception {
+        AwesomePossum.authorizeGathering(RuntimeEnvironment.application, "fakeKurt");
+        AwesomePossum.listen(mockedContext);
         verify(mockedContext, times(1)).startService(any(Intent.class));
     }
 
     @Test
-    public void testStartGatherAfterInitButBackgroundAlreadyRunningDoesNotStartService() throws Exception {
-        Context mockedContext = getMockForServiceWithBackgroundRunning(true, CollectorService.class);
-//        AwesomePossum.init(mockedContext, 1, 1, 1, "test", DummyPossumActivity.class, Fragment.class);
-//        AwesomePossum.startGatherServiceIfDesired(mockedContext);
-        verify(mockedContext, never()).startService(any(Intent.class));
-    }
-
-    private Context getMockForServiceWithBackgroundRunning(boolean runBackgroundService, Class serviceClass) {
-        List<ActivityManager.RunningServiceInfo> mockedList = new ArrayList<>();
-        if (runBackgroundService) {
-            ActivityManager.RunningServiceInfo mockedRunningService = mock(ActivityManager.RunningServiceInfo.class);
-            ComponentName mockedComponentName = mock(ComponentName.class);
-            when(mockedComponentName.getClassName()).thenReturn(serviceClass.getName());
-            mockedRunningService.service = mockedComponentName;
-            mockedList.add(mockedRunningService);
-        }
-        when(mockedActivityManager.getRunningServices(Integer.MAX_VALUE)).thenReturn(mockedList);
-        return mockedContext;
-    }
-
-    @Test
     public void testDangerousPermissions() throws Exception {
+        // TODO: Should I make method public to test or ignore?
 //        List<String> permissions = Arrays.asList(AwesomePossum.dangerousPermissions());
 //        Assert.assertTrue(permissions.contains(Manifest.permission.ACCESS_FINE_LOCATION));
 //        Assert.assertTrue(permissions.contains(Manifest.permission.CAMERA));
-//        Assert.assertTrue(permissions.contains(Manifest.permission.WRITE_EXTERNAL_STORAGE));
-        // TODO: Add the below permissions a later time
-//        Assert.assertTrue(permissions.contains(Manifest.permission.READ_PHONE_STATE));
 //        Assert.assertTrue(permissions.contains(Manifest.permission.RECORD_AUDIO));
     }
 
     @Test
-    public void testTerminate() throws Exception {
-//        AwesomePossum.init(mockedContext, 1, 1, 1, "test", DummyPossumActivity.class, Fragment.class);
-        AwesomePossum.terminate(mockedContext);
+    public void testSettingUnwantedDetectorsStoresThemInPreferences() throws Exception {
+        List<String> unwantedDetectors = new ArrayList<>();
+        unwantedDetectors.add("Accelerometer");
+        unwantedDetectors.add("Gyroscope");
+
+        Assert.assertNull(fakePreferences.getString("refusedDetectors", null));
+        AwesomePossum.setUnwantedDetectors(mockedContext, unwantedDetectors);
+        Assert.assertNotNull(fakePreferences.getString("refusedDetectors", null));
+        Assert.assertEquals("Accelerometer,Gyroscope", fakePreferences.getString("refusedDetectors", null));
+    }
+
+    @Test
+    public void testUnwantedDetectorsAreNotAdded() throws Exception {
+        List<String> unwantedDetectors = new ArrayList<>();
+        unwantedDetectors.add("Network");
+        unwantedDetectors.add("Position");
+        AwesomePossum.setUnwantedDetectors(mockedContext, unwantedDetectors);
+        Assert.assertEquals("Network,Position", fakePreferences.getString("refusedDetectors", null));
+        AwesomePossum.authorizeGathering(mockedContext, "fakeKurt");
+        AwesomePossum.listen(mockedContext);
+        verify(mockedContext, times(1)).startService(any(Intent.class));
+    }
+
+    @Test
+    public void testTerminateBeforeInitialize() throws Exception {
+        try {
+            Context mockContext = mock(Context.class);
+            AwesomePossum.terminate(mockContext);
+        } catch (Exception e) {
+            Assert.fail("Should not have gotten here, was not initialized");
+        }
+    }
+
+    @Test
+    public void testTerminateAfterInitialize() throws Exception {
+
     }
 }

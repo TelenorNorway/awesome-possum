@@ -7,7 +7,4 @@ public class WifiChangeEvent extends BasicChangeEvent {
     public WifiChangeEvent() {
         super(null, null);
     }
-    public WifiChangeEvent(String message) {
-        super(null, message);
-    }
 }

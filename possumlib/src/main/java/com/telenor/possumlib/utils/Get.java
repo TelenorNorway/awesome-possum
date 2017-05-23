@@ -22,8 +22,10 @@ import com.telenor.possumlib.detectors.GyroScope;
 import com.telenor.possumlib.detectors.HardwareDetector;
 import com.telenor.possumlib.detectors.ImageDetector;
 import com.telenor.possumlib.detectors.LocationDetector;
+import com.telenor.possumlib.detectors.Magnetometer;
 import com.telenor.possumlib.detectors.MetaDataDetector;
 import com.telenor.possumlib.detectors.NetworkDetector;
+import com.telenor.possumlib.detectors.SatelliteDetector;
 import com.telenor.possumlib.detectors.TypingRecognitionSensor;
 
 import java.security.MessageDigest;
@@ -159,30 +161,48 @@ public class Get {
         }
     }
 
-    public static List<AbstractDetector> Detectors(@NonNull Context context, String uniqueid, String secretKeyHash, List<Class<? extends AbstractDetector>> ignoreList, @NonNull EventBus eventBus) {
+    public static List<AbstractDetector> Detectors(@NonNull Context context, String encryptedKurt, String secretKeyHash, List<Class<? extends AbstractDetector>> ignoreList, @NonNull EventBus eventBus) {
         List<AbstractDetector> detectors = new ArrayList<>();
         if (ignoreList == null || !ignoreList.contains(MetaDataDetector.class))
-            detectors.add(new MetaDataDetector(context, uniqueid, secretKeyHash, eventBus)); // Should always be first in line
+            detectors.add(new MetaDataDetector(context, encryptedKurt, secretKeyHash, eventBus)); // Should always be first in line
         if (ignoreList == null || !ignoreList.contains(HardwareDetector.class))
-            detectors.add(new HardwareDetector(context, uniqueid, secretKeyHash, eventBus));
+            detectors.add(new HardwareDetector(context, encryptedKurt, secretKeyHash, eventBus));
         if (ignoreList == null || !ignoreList.contains(Accelerometer.class))
-            detectors.add(new Accelerometer(context, uniqueid, secretKeyHash, eventBus));
+            detectors.add(new Accelerometer(context, encryptedKurt, secretKeyHash, eventBus));
         if (ignoreList == null || !ignoreList.contains(GyroScope.class))
-            detectors.add(new GyroScope(context, uniqueid, secretKeyHash, eventBus));
+            detectors.add(new GyroScope(context, encryptedKurt, secretKeyHash, eventBus));
         if (ignoreList == null || !ignoreList.contains(LocationDetector.class))
-            detectors.add(new LocationDetector(context, uniqueid, secretKeyHash, eventBus));
+            detectors.add(new LocationDetector(context, encryptedKurt, secretKeyHash, eventBus));
         if (ignoreList == null || !ignoreList.contains(BluetoothDetector.class))
-            detectors.add(new BluetoothDetector(context, uniqueid, secretKeyHash, eventBus));
+            detectors.add(new BluetoothDetector(context, encryptedKurt, secretKeyHash, eventBus));
         if (ignoreList == null || !ignoreList.contains(NetworkDetector.class))
-            detectors.add(new NetworkDetector(context, uniqueid, secretKeyHash, eventBus));
+            detectors.add(new NetworkDetector(context, encryptedKurt, secretKeyHash, eventBus));
         if (ignoreList == null || !ignoreList.contains(AmbientSoundDetector.class))
-            detectors.add(new AmbientSoundDetector(context, uniqueid, secretKeyHash, eventBus));
+            detectors.add(new AmbientSoundDetector(context, encryptedKurt, secretKeyHash, eventBus));
         if (ignoreList == null || !ignoreList.contains(ImageDetector.class))
-            detectors.add(new ImageDetector(context, uniqueid, secretKeyHash, eventBus));
+            detectors.add(new ImageDetector(context, encryptedKurt, secretKeyHash, eventBus));
         if (ignoreList == null || !ignoreList.contains(TypingRecognitionSensor.class))
-            detectors.add(new TypingRecognitionSensor(context, uniqueid, secretKeyHash, eventBus));
+            detectors.add(new TypingRecognitionSensor(context, encryptedKurt, secretKeyHash, eventBus));
         if (ignoreList == null || !ignoreList.contains(GestureDetector.class))
-            detectors.add(new GestureDetector(context, uniqueid, secretKeyHash, eventBus));
+            detectors.add(new GestureDetector(context, encryptedKurt, secretKeyHash, eventBus));
         return detectors;
+    }
+
+    public static List<Class<? extends AbstractDetector>> ignoredDetectors(List<String> refused) {
+        List<Class<? extends AbstractDetector>> ignoreList = new ArrayList<>();
+        if (refused.contains("Accelerometer")) ignoreList.add(Accelerometer.class);
+        if (refused.contains("AmbientSounds")) ignoreList.add(AmbientSoundDetector.class);
+        if (refused.contains("Bluetooth")) ignoreList.add(BluetoothDetector.class);
+        if (refused.contains("Gesture")) ignoreList.add(GestureDetector.class);
+        if (refused.contains("Gyroscope")) ignoreList.add(GyroScope.class);
+        if (refused.contains("HardwareDetector")) ignoreList.add(HardwareDetector.class);
+        if (refused.contains("Image")) ignoreList.add(ImageDetector.class);
+        if (refused.contains("Keyboard")) ignoreList.add(TypingRecognitionSensor.class);
+        if (refused.contains("Magnetometer")) ignoreList.add(Magnetometer.class);
+        if (refused.contains("MetaData")) ignoreList.add(MetaDataDetector.class);
+        if (refused.contains("Network")) ignoreList.add(NetworkDetector.class);
+        if (refused.contains("Position")) ignoreList.add(LocationDetector.class);
+        if (refused.contains("Satellites")) ignoreList.add(SatelliteDetector.class);
+        return ignoreList;
     }
 }

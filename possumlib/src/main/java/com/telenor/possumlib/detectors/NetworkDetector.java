@@ -26,7 +26,6 @@ import java.util.List;
  * Uses network mac id's, decibel levels information and other network identification to pinpoint user identity.
  */
 public class NetworkDetector extends AbstractEventDrivenDetector implements IOnReceive {
-    static final String USER_ACTIVE_SCAN = "USER_ACTIVE_SCAN";
     private WifiManager wifiManager;
     private BroadcastReceiver receiver;
     private IntentFilter intentFilter = new IntentFilter();
@@ -115,8 +114,13 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
     }
 
     @Override
+    public String detectorName() {
+        return "Network";
+    }
+
+    @Override
     public void eventReceived(BasicChangeEvent object) {
-        if (object instanceof WifiChangeEvent) {
+        if (object instanceof WifiChangeEvent && isListening()) {
             if (object.message() == null) {
                 performScan();
             }
@@ -127,19 +131,12 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
     public void onReceive(Context context, Intent intent) {
         if (context == null || intent == null || intent.getAction() == null) throw new RuntimeException("Missing vitals");
         switch (intent.getAction()) {
-            case USER_ACTIVE_SCAN:
-                // User is active, prompting a possible scan
-                long timestamp = DateTime.now().getMillis();
-                if ((timestamp - lastUserActiveScan) > minimumUserActionTime()) {
-                    lastUserActiveScan = timestamp;
-                    performScan();
-                }
-                break;
             case WifiManager.SCAN_RESULTS_AVAILABLE_ACTION:
                 if (!isListening()) return;
                 List<ScanResult> scanResults = wifiManager.getScanResults();
-                for (ScanResult scanResult : scanResults)
+                for (ScanResult scanResult : scanResults) {
                     sessionValues.add(DateTime.now().getMillis() + " " + scanResult.BSSID + " " + scanResult.level);
+                }
                 storeData();
                 isScanning = false;
                 break;
@@ -149,11 +146,10 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
                 sensorStatusChanged();
                 break;
             case WifiManager.RSSI_CHANGED_ACTION: // Signal strength changed
-                Log.i(tag, "Rssi changed:" + wifiManager.getScanResults().size());
                 isScanning = false;
                 break;
             default:
-                Log.i(tag, "Unhandled action:" + intent.getAction());
+                Log.d(tag, "Unhandled action:" + intent.getAction());
         }
     }
 }

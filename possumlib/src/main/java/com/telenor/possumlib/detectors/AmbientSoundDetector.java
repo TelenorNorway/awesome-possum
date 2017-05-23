@@ -67,6 +67,11 @@ public class AmbientSoundDetector extends AbstractEventDrivenDetector {
         return DetectorType.Audio;
     }
 
+    @Override
+    public String detectorName() {
+        return "AmbientSound";
+    }
+
     private boolean isRecording() {
         return isRecording;
     }

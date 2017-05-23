@@ -23,8 +23,6 @@ import com.telenor.possumlib.changeevents.BasicChangeEvent;
 import com.telenor.possumlib.changeevents.LocationChangeEvent;
 import com.telenor.possumlib.constants.DetectorType;
 
-import org.joda.time.DateTime;
-
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -34,7 +32,6 @@ import java.util.TimerTask;
  */
 public class LocationDetector extends AbstractEventDrivenDetector implements LocationListener {
     private static final String SINGLE_POSITION_SCAN = "SINGLE_POSITION_SCAN";
-    private static final String USER_ACTIVE_SCAN = "USER_ACTIVE_SCAN";
     private LocationManager locationManager;
     private boolean gpsAvailable;
     private boolean networkAvailable;
@@ -42,7 +39,6 @@ public class LocationDetector extends AbstractEventDrivenDetector implements Loc
     private boolean isRegistered;
     private float maxSpeed;
     private List<String> providers;
-    private long lastUserActiveScan;
     private Timer timer;
 
     public LocationDetector(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) {
@@ -83,11 +79,11 @@ public class LocationDetector extends AbstractEventDrivenDetector implements Loc
                                 networkAvailable = true;
                                 break;
                             default:
-                                Log.i(tag, "Unhandled mode:" + locationMode);
+                                Log.d(tag, "Unhandled mode:" + locationMode);
                         }
                         sensorStatusChanged();
                     } catch (Settings.SettingNotFoundException e) {
-                        Log.i(tag, "Settings not found:", e);
+                        Log.e(tag, "Settings not found:", e);
                     }
                 } else {
                     // TODO: Confirm this is correct way to find provider below api 19
@@ -148,12 +144,8 @@ public class LocationDetector extends AbstractEventDrivenDetector implements Loc
         super.terminate();
     }
 
-    private long minimumUserActionTime() {
-        return 1800000; // 30 minutes
-    }
-
     /**
-     * Confirms whether sensor is permitted to be used
+     * Confirms whether detector is permitted to be used
      * @return true if allowed, else false
      */
     public boolean isPermitted() {
@@ -212,14 +204,7 @@ public class LocationDetector extends AbstractEventDrivenDetector implements Loc
     public void eventReceived(BasicChangeEvent object) {
         if (object instanceof LocationChangeEvent) {
             LocationChangeEvent event = (LocationChangeEvent)object;
-            long timestamp = DateTime.now().getMillis();
             switch (event.eventType()) {
-                case USER_ACTIVE_SCAN:
-                    if ((timestamp - lastUserActiveScan) > minimumUserActionTime()) {
-                        lastUserActiveScan = timestamp;
-                        performScan();
-                    }
-                    break;
                 case SINGLE_POSITION_SCAN:
                     performScan();
                     break;
@@ -310,6 +295,11 @@ public class LocationDetector extends AbstractEventDrivenDetector implements Loc
     @Override
     public int detectorType() {
         return DetectorType.Position;
+    }
+
+    @Override
+    public String detectorName() {
+        return "Position";
     }
 
     @Override

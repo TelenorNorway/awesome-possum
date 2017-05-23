@@ -16,6 +16,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
@@ -37,6 +38,9 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
     private BluetoothAdapter bluetoothAdapter;
     private BroadcastReceiver receiver;
     private ScanCallback callback;
+    @VisibleForTesting
+    private IntentFilter intentFilter;
+
     private boolean isBLE = false;
     private boolean isRegistered;
     private long lastStart;
@@ -44,8 +48,8 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
 
     private static final String tag = BluetoothDetector.class.getName();
 
-    public BluetoothDetector(final Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) {
-        super(context, identification, secretKeyHash, eventBus);
+    public BluetoothDetector(final Context context, String encryptedKurt, String secretKeyHash, @NonNull EventBus eventBus) {
+        super(context, encryptedKurt, secretKeyHash, eventBus);
         // TODO: Confirm coarse/fine location and bluetooth admin for this
         BluetoothManager bluetoothManager;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -106,7 +110,7 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
                 }
             }
         };
-        IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        intentFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
         context().registerReceiver(receiver, intentFilter);
         isRegistered = true;
@@ -243,6 +247,11 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
     @Override
     public int detectorType() {
         return DetectorType.Bluetooth;
+    }
+
+    @Override
+    public String detectorName() {
+        return "Bluetooth";
     }
 
     @Override

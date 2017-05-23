@@ -53,4 +53,9 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
     public int detectorType() {
         return DetectorType.Accelerometer;
     }
+
+    @Override
+    public String detectorName() {
+        return "Accelerometer";
+    }
 }

@@ -109,6 +109,12 @@ public class AbstractZippingAndroidDetectorTest {
             public int detectorType() {
                 return DetectorType.Accelerometer;
             }
+
+            @Override
+            public String detectorName() {
+                return "Accelerometer";
+            }
+
             @Override
             public long uploadFilesSize() {
                 return sizeOfUpload;

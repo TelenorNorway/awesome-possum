@@ -41,10 +41,10 @@ public class FileUtil {
     /**
      * Retrieves all relevant detector files from the upload directory
      * @param context an android context
-     * @param detectorType the detectortype you want files from
+     * @param detectorName the detectortype you want files from
      * @return a list of all files of the specific type present in the upload directory
      */
-    public static List<File> getAllDetectorFiles(final Context context, final int detectorType) {
+    public static List<File> getAllDetectorFiles(final Context context, final String detectorName) {
         File uploadDir = getUploadDirectory(context);
         File[] files = uploadDir.listFiles(new FileFilter() {
             @Override
@@ -52,7 +52,7 @@ public class FileUtil {
                 String[] nameSplit = toBucketKey(file).split("/");
                 if (nameSplit.length < 3) return false;
                 String detector = nameSplit[2];
-                return detector.equals(SensorUtil.detectorTypeString(detectorType));
+                return detector.equals(detectorName);
                 }
         });
         return Arrays.asList(files);
@@ -120,11 +120,11 @@ public class FileUtil {
      * Returns the file it should store data to based on detectorType
      *
      * @param context      a context
-     * @param detectorType the type of detector
+     * @param detectorName the name of the detector
      * @return the file used to save data
      */
-    public static File getFile(Context context, int detectorType) {
-        return createDataFile(new File(dataDirectory(context) + "/" + SensorUtil.detectorTypeString(detectorType)));
+    public static File getFile(Context context, String detectorName) {
+        return createDataFile(new File(dataDirectory(context) + "/" + detectorName));
     }
 
     /**

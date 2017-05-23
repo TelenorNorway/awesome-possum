@@ -17,7 +17,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.robolectric.RuntimeEnvironment;
 
 import java.io.File;
@@ -54,7 +53,19 @@ public class AbstractDetectorTest {
             Assert.assertTrue(fakedStoredData.delete());
             Assert.assertTrue(fakedStoredData.createNewFile());
         }
-        abstractDetector = new AbstractDetector(RuntimeEnvironment.application, "fakeUnique", "fakeId", eventBus) {
+        abstractDetector = getDetector(RuntimeEnvironment.application, eventBus, "Accelerometer");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        abstractDetector = null;
+        if (fakedStoredData.exists()) {
+            Assert.assertTrue(fakedStoredData.delete());
+        }
+    }
+
+    private AbstractDetector getDetector(Context context, EventBus eventBus, final String detectorName) {
+        return new AbstractDetector(context, "fakeUnique", "fakeId", eventBus) {
             @Override
             public boolean isEnabled() {
                 return isActuallyEnabled;
@@ -69,19 +80,17 @@ public class AbstractDetectorTest {
             public int detectorType() {
                 return DetectorType.Accelerometer;
             }
+
+            @Override
+            public String detectorName() {
+                return detectorName;
+            }
+
             @Override
             public long timestamp() {
                 return timestamp;
             }
         };
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        abstractDetector = null;
-        if (fakedStoredData.exists()) {
-            Assert.assertTrue(fakedStoredData.delete());
-        }
     }
 
     @Test
@@ -92,22 +101,7 @@ public class AbstractDetectorTest {
     @Test
     public void testInvalidConstructor() throws Exception {
         try {
-            abstractDetector = new AbstractDetector(null, "fakeUnique", "fakeId", eventBus) {
-                @Override
-                public boolean isEnabled() {
-                    return false;
-                }
-
-                @Override
-                public int detectorType() {
-                    return 0;
-                }
-
-                @Override
-                public boolean isAvailable() {
-                    return false;
-                }
-            };
+            abstractDetector = getDetector(null, eventBus, "Accelerometer");
             Assert.fail("Should not have been able to construct detector");
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Missing context on detector:"));
@@ -116,38 +110,8 @@ public class AbstractDetectorTest {
 
     @Test
     public void testConfirmSessionValuesIsNotStatic() throws Exception {
-        AbstractDetector detector1 = new AbstractDetector(RuntimeEnvironment.application, "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public boolean isEnabled() {
-                return true;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return true;
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Accelerometer;
-            }
-        };
-        AbstractDetector detector2 = new AbstractDetector(RuntimeEnvironment.application, "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public boolean isEnabled() {
-                return true;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return true;
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Accelerometer;
-            }
-        };
+        AbstractDetector detector1 = getDetector(RuntimeEnvironment.application, eventBus, "Accelerometer");
+        AbstractDetector detector2 = getDetector(RuntimeEnvironment.application, eventBus, "Accelerometer");
         Assert.assertEquals(0, detector1.sessionValues().size());
         Assert.assertEquals(0, detector2.sessionValues().size());
         detector1.sessionValues().add("test");
@@ -235,28 +199,7 @@ public class AbstractDetectorTest {
 
     @Test
     public void testUploadedData() throws Exception {
-        Context mockedContext = mock(Context.class);
-        when(mockedContext.getString(Mockito.anyInt())).thenReturn("Accelerometer");
-        abstractDetector = new AbstractDetector(mockedContext, "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public boolean isEnabled() {
-                return true;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return true;
-            }
-
-            @Override
-            public File storedData() {
-                return fakedStoredData;
-            }
-            @Override
-            public int detectorType() {
-                return DetectorType.Accelerometer;
-            }
-        };
+        abstractDetector = getDetector(RuntimeEnvironment.application, eventBus, "Accelerometer");
         FileWriter writer = new FileWriter(fakedStoredData);
         for (int i = 0; i < 100; i++) {
             writer.append("test\r\n");
@@ -276,51 +219,8 @@ public class AbstractDetectorTest {
     @Test
     public void testCompareTo() throws Exception {
         Context mockedContext = mock(Context.class);
-//        when(mockedContext.getString(R.string.sensor_accelerometer)).thenReturn("Accelerometer");
-//        when(mockedContext.getString(R.string.sensor_gyroscope)).thenReturn("Gyroscope");
-        AbstractDetector detectorA = new AbstractDetector(mockedContext, "fakeUnique", "fakeID", eventBus) {
-            @Override
-            public boolean isEnabled() {
-                return false;
-            }
-
-            @Override
-            public boolean isValidSet() {
-                return false;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return false;
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Gyroscope;
-            }
-        };
-
-        AbstractDetector detectorB = new AbstractDetector(mockedContext, "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public boolean isEnabled() {
-                return false;
-            }
-
-            @Override
-            public boolean isValidSet() {
-                return false;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return false;
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Accelerometer;
-            }
-        };
+        AbstractDetector detectorA = getDetector(mockedContext, eventBus, "Gyroscope");
+        AbstractDetector detectorB = getDetector(mockedContext, eventBus, "Accelerometer");
         Assert.assertTrue(detectorA.compareTo(detectorB) > 1);
     }
 
@@ -401,26 +301,12 @@ public class AbstractDetectorTest {
 
     @Test
     public void testTimestamp() throws Exception {
-        abstractDetector = new AbstractDetector(RuntimeEnvironment.application, "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public boolean isEnabled() {
-                return true;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return true;
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Accelerometer;
-            }
-        };
-        long timestamp = DateTime.now().getMillis();
+        abstractDetector = getDetector(RuntimeEnvironment.application, eventBus, "Accelerometer");
+        long now = DateTime.now().getMillis();
         Method timestampMethod = AbstractDetector.class.getDeclaredMethod("timestamp");
         timestampMethod.setAccessible(true);
         long result = (long) timestampMethod.invoke(abstractDetector);
-        Assert.assertTrue(result >= timestamp);
+        Assert.assertEquals(timestamp, result);
+        Assert.assertTrue(now >= result);
     }
 }

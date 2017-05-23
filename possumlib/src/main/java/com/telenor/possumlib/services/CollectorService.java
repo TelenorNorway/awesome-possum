@@ -15,13 +15,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.Messaging;
-import com.telenor.possumlib.detectors.HardwareDetector;
-import com.telenor.possumlib.managers.S3ModelDownloader;
 import com.telenor.possumlib.utils.Get;
 
 import net.danlew.android.joda.JodaTimeAndroid;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -48,17 +47,19 @@ public class CollectorService extends Service {
     public int onStartCommand(Intent intent, int flags, int requestCode) {
         super.onStartCommand(intent, flags, requestCode);
         String secretKeyHash = intent.getStringExtra("secretKeyHash");
-        String uniqueId = intent.getStringExtra("uniqueId");
+        String encryptedKurt = intent.getStringExtra("encryptedKurt");
         // Ensures all detectors are terminated and cleared before adding new ones
         clearAllDetectors();
 
-        Log.i(tag, "Start collection");
+        Log.d(tag, "Start collection");
         // Adding all detectors
-        List<Class<? extends AbstractDetector>> ignoreList = new ArrayList<>();
-        if (!intent.getBooleanExtra("hardwareStored", false)) {
-            ignoreList.add(HardwareDetector.class);
+        List<Class<? extends AbstractDetector>> ignoreList = null;
+        String refusedDetectors = intent.getStringExtra("refusedDetectors");
+        if (refusedDetectors != null) {
+            List<String> refused = new ArrayList<>(Arrays.asList(refusedDetectors.split(",")));
+            ignoreList = Get.ignoredDetectors(refused);
         }
-        detectors.addAll(Get.Detectors(this, uniqueId, secretKeyHash, ignoreList, new EventBus()));
+        detectors.addAll(Get.Detectors(this, encryptedKurt, secretKeyHash, ignoreList, new EventBus()));
 
         for (AbstractDetector detector : detectors) {
             detector.startListening();
@@ -106,19 +107,18 @@ public class CollectorService extends Service {
         };
         registerReceiver(receiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
         JodaTimeAndroid.init(this);
-        S3ModelDownloader.init(this);
     }
 
     private void handleIntent(String action) {
         if (action == null) return;
         switch (action) {
-            case Messaging.REQUEST_SENSORS:
+            case Messaging.REQUEST_DETECTORS:
                 Intent intent = new Intent(Messaging.POSSUM_RETURN_MESSAGE);
                 JsonArray detectorObjects = new JsonArray();
                 for (AbstractDetector detector : detectors) {
                     detectorObjects.add(detector.toJson());
                 }
-                intent.putExtra(Messaging.TYPE, Messaging.SENSORS_STATUS);
+                intent.putExtra(Messaging.TYPE, Messaging.DETECTORS_STATUS);
                 intent.putExtra(Messaging.DETECTORS, detectorObjects.toString());
                 sendBroadcast(intent);
                 break;

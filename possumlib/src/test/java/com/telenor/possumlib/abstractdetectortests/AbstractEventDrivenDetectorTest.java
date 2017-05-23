@@ -5,7 +5,7 @@ import android.content.Context;
 import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
-import com.telenor.possumlib.changeevents.WifiChangeEvent;
+import com.telenor.possumlib.changeevents.BasicChangeEvent;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.utils.FileUtil;
 
@@ -15,13 +15,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.shadows.ShadowLog;
 
 import java.io.File;
 
-import static com.telenor.possumlib.abstractdetectors.AbstractDetector.MINIMUM_SAMPLES;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(PossumTestRunner.class)
 public class AbstractEventDrivenDetectorTest {
@@ -30,16 +34,32 @@ public class AbstractEventDrivenDetectorTest {
     private File fakeFile;
     private boolean isEnabled;
     private EventBus eventBus;
+    @Mock
+    private Context mockedContext;
+    @Mock
+    private EventBus mockedEventBus;
 
     @Before
     public void setUp() throws Exception {
-        storeWithInterval = false;
+        MockitoAnnotations.initMocks(this);
         isEnabled = true;
         eventBus = new EventBus();
-        fakeFile = new File(RuntimeEnvironment.application.getFilesDir() + "/data/fakeFile");
-        Context mockedContext = Mockito.mock(Context.class);
-        Mockito.when(mockedContext.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
-        abstractEventDrivenDetector = new AbstractEventDrivenDetector(mockedContext, "fakeUnique", "fakeId", eventBus) {
+        fakeFile = new File(RuntimeEnvironment.application.getFilesDir() + "/fakeFile");
+        Assert.assertTrue(fakeFile.createNewFile());
+        when(mockedContext.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
+        abstractEventDrivenDetector = getDetectorWithEventBus(RuntimeEnvironment.application, eventBus);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        abstractEventDrivenDetector = null;
+        if (fakeFile.exists()) Assert.assertTrue(fakeFile.delete());
+        FileUtil.clearDirectory(RuntimeEnvironment.application);
+    }
+
+
+    private AbstractEventDrivenDetector getDetectorWithEventBus(Context context, EventBus eventBus) {
+        return new AbstractEventDrivenDetector(context, "fakeUnique", "fakeId", eventBus) {
             @Override
             protected boolean storeWithInterval() {
                 return storeWithInterval;
@@ -69,62 +89,90 @@ public class AbstractEventDrivenDetectorTest {
             public int detectorType() {
                 return DetectorType.MetaData;
             }
+
+            @Override
+            public String detectorName() {
+                return "MetaData";
+            }
         };
     }
 
-    @After
-    public void tearDown() throws Exception {
-        abstractEventDrivenDetector = null;
-        FileUtil.clearDirectory(RuntimeEnvironment.application);
+    @Test
+    public void testStartListeningWhenAvailable() throws Exception {
+        abstractEventDrivenDetector = getDetectorWithEventBus(mockedContext, mockedEventBus);
+        verify(mockedEventBus, never()).register(anyObject());
+        Assert.assertTrue(abstractEventDrivenDetector.startListening());
+        verify(mockedEventBus, atLeastOnce()).register(anyObject());
     }
 
     @Test
-    public void testObjectChangedWithInterval() throws Exception {
+    public void startListeningWhenNotAvailable() throws Exception {
+        isEnabled = false;
+        abstractEventDrivenDetector = getDetectorWithEventBus(mockedContext, mockedEventBus);
+        verify(mockedEventBus, never()).register(anyObject());
+        Assert.assertFalse(abstractEventDrivenDetector.startListening());
+        verify(mockedEventBus, never()).register(anyObject());
+    }
+
+    @Test
+    public void testStopListeningWhenAvailable() throws Exception {
+        abstractEventDrivenDetector = getDetectorWithEventBus(mockedContext, mockedEventBus);
+        Assert.assertTrue(abstractEventDrivenDetector.startListening());
+        verify(mockedEventBus, never()).unregister(anyObject());
+        abstractEventDrivenDetector.stopListening();
+        verify(mockedEventBus, atLeastOnce()).unregister(anyObject());
+    }
+
+    @Test
+    public void testStopListeningWhenNotAvailable() throws Exception {
+        isEnabled = false;
+        abstractEventDrivenDetector = getDetectorWithEventBus(mockedContext, mockedEventBus);
+        Assert.assertFalse(abstractEventDrivenDetector.startListening());
+        verify(mockedEventBus, never()).unregister(anyObject());
+        abstractEventDrivenDetector.stopListening();
+        verify(mockedEventBus, never()).unregister(anyObject());
+    }
+
+    @Test
+    public void testEventReceivedWithInterval() throws Exception {
         storeWithInterval = true;
-        File dataDir = new File(RuntimeEnvironment.application.getFilesDir() + "/data");
-        if (dataDir.exists()) {
-            Assert.assertTrue(dataDir.delete());
-        }
-        Assert.assertTrue(dataDir.mkdir());
-        Assert.assertTrue(fakeFile.createNewFile());
-        for (int i = 0; i < MINIMUM_SAMPLES; i++) {
-//            abstractEventDrivenDetector.sessionValues().add();
-            abstractEventDrivenDetector.eventReceived(new WifiChangeEvent("test"));
-//            abstractEventDrivenDetector.objectChanged(null);
-        }
-        Assert.assertEquals(0, fakeFile.length());
-        Assert.assertEquals(500, abstractEventDrivenDetector.sessionValues().size());
-        abstractEventDrivenDetector.eventReceived(new WifiChangeEvent("test"));
-//        abstractEventDrivenDetector.sessionValues().add("test");
-        Assert.assertEquals(3006, fakeFile.length());
+        abstractEventDrivenDetector.startListening();
         Assert.assertEquals(0, abstractEventDrivenDetector.sessionValues().size());
-        abstractEventDrivenDetector.sessionValues().add("test");
-//        abstractEventDrivenDetector.objectChanged(null);
-        Assert.assertEquals(3006, fakeFile.length());
-        Assert.assertEquals(1, abstractEventDrivenDetector.sessionValues().size());
+        eventBus.post(new TestChangeEvent(null));
+        Assert.assertEquals(0, abstractEventDrivenDetector.sessionValues().size());
+        for (int i = 0; i < AbstractEventDrivenDetector.MINIMUM_SAMPLES; i++) {
+            eventBus.post(new TestChangeEvent("message"));
+        }
+        Assert.assertEquals(AbstractEventDrivenDetector.MINIMUM_SAMPLES, abstractEventDrivenDetector.sessionValues().size());
+        Assert.assertEquals("message", abstractEventDrivenDetector.sessionValues().peek());
+        eventBus.post(new TestChangeEvent("message"));
+        Assert.assertEquals(0, abstractEventDrivenDetector.sessionValues().size());
+
     }
 
     @Test
-    public void testObjectChangedWithoutInterval() throws Exception {
+    public void testEventReceivedWithoutInterval() throws Exception {
         storeWithInterval = false;
-        File dataDir = new File(RuntimeEnvironment.application.getFilesDir() + "/data");
-        if (dataDir.exists()) {
-            Assert.assertTrue(dataDir.delete());
-        }
-        Assert.assertTrue(dataDir.mkdir());
-        Assert.assertTrue(fakeFile.createNewFile());
-        for (int i = 0; i < (MINIMUM_SAMPLES/2); i++) {
-            abstractEventDrivenDetector.sessionValues().add("test");
-//            abstractEventDrivenDetector.objectChanged(null);
-        }
-        Assert.assertTrue(fakeFile.length() > 0);
         Assert.assertEquals(0, abstractEventDrivenDetector.sessionValues().size());
+        Assert.assertEquals(0, abstractEventDrivenDetector.storedData().length());
+        abstractEventDrivenDetector.startListening();
+        eventBus.post(new TestChangeEvent("test"));
+        Assert.assertEquals(0, abstractEventDrivenDetector.sessionValues().size());
+        Assert.assertTrue(abstractEventDrivenDetector.storedData().length() > 0);
     }
 
     @Test
-    public void testFillerListChanged() throws Exception {
-        ShadowLog.setupLogging();
-//        abstractEventDrivenDetector.listChanged();
-        Assert.assertTrue(ShadowLog.getLogs().size() == 1);
+    public void testNothingArrivesWhenNotListening() throws Exception {
+        Assert.assertEquals(0, abstractEventDrivenDetector.sessionValues().size());
+        Assert.assertEquals(0, abstractEventDrivenDetector.storedData().length());
+        eventBus.post(new TestChangeEvent("test"));
+        Assert.assertEquals(0, abstractEventDrivenDetector.sessionValues().size());
+        Assert.assertEquals(0, abstractEventDrivenDetector.storedData().length());
+    }
+
+    class TestChangeEvent extends BasicChangeEvent {
+        TestChangeEvent(String message) {
+            super(null, message);
+        }
     }
 }

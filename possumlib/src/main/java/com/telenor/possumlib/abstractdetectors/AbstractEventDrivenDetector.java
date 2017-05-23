@@ -12,9 +12,10 @@ import com.telenor.possumlib.changeevents.BasicChangeEvent;
  * being done
  */
 public abstract class AbstractEventDrivenDetector extends AbstractDetector {
-    public AbstractEventDrivenDetector(Context context, String identification, String secretKeyHash, EventBus eventBus) throws IllegalArgumentException {
-        super(context, identification, secretKeyHash, eventBus);
+    public AbstractEventDrivenDetector(Context context, String encryptedKurt, String secretKeyHash, EventBus eventBus) throws IllegalArgumentException {
+        super(context, encryptedKurt, secretKeyHash, eventBus);
     }
+
     @Override
     public boolean startListening() {
         boolean listen = super.startListening();
@@ -37,20 +38,23 @@ public abstract class AbstractEventDrivenDetector extends AbstractDetector {
     /**
      * General eventSubscribe method. Will store data based on whether it is immediate or interval
      * based. This method (subclasses super) must be called for it to actually store data.
+     *
      * @param object a changeObject of general type so that the abstractions can implement the
      *               desired types
      */
     @Subscribe
     public void eventReceived(BasicChangeEvent object) {
-        sessionValues.add(object.message());
-        if (storeWithInterval()) {
-            storedValues++;
-            if (storedValues > MINIMUM_SAMPLES) {
+        if (object.message() != null && isListening()) {
+            sessionValues.add(object.message());
+            if (storeWithInterval()) {
+                storedValues++;
+                if (storedValues > MINIMUM_SAMPLES) {
+                    storeData();
+                    storedValues = 0;
+                }
+            } else {
                 storeData();
-                storedValues = 0;
             }
-        } else {
-            storeData();
         }
     }
 }

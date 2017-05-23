@@ -9,9 +9,6 @@ import com.google.common.collect.Iterables;
 import java.util.Map;
 
 public class ExceptionUtil {
-   private ExceptionUtil() {
-    }
-
     public static String combineAllStackTraces() {
         return Joiner.on("\n\n").join(
                 Iterables.transform(

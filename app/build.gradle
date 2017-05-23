@@ -10,7 +10,7 @@ android {
         applicationId "com.telenor.possumexample"
         minSdkVersion 15
         targetSdkVersion 25
-        versionCode 26
+        versionCode 1
         versionName "1.25"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

@@ -9,8 +9,6 @@ import android.os.SystemClock;
 
 import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
-import com.telenor.possumlib.detectors.MetaDataDetector;
-import com.telenor.possumlib.utils.SensorUtil;
 
 import org.joda.time.DateTime;
 
@@ -24,12 +22,10 @@ public abstract class AbstractAndroidRegularDetector extends AbstractAndroidDete
         super(context, sensorType, identification, secretKeyHash, eventBus);
         if (sensor != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                eventBus.post(new MetaDataChangeEvent(MetaDataDetector.GENERAL_EVENT, SensorUtil.detectorTypeString(detectorType()) + " FIFO SIZE " + sensor.getFifoMaxEventCount() + " " + sensor.getFifoReservedEventCount()));
+                eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" "+ detectorName() + " FIFO SIZE " + sensor.getFifoMaxEventCount() + " " + sensor.getFifoReservedEventCount()));
             } else {
-                eventBus.post(new MetaDataChangeEvent(MetaDataDetector.GENERAL_EVENT, SensorUtil.detectorTypeString(detectorType()) + " FIFO SIZE NOT AVAILABLE - BELOW API 19"));
+                eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" "+ detectorName() + " FIFO SIZE NOT AVAILABLE - BELOW API 19"));
             }
-        } else {
-            throw new RuntimeException("Fuck all");
         }
     }
 

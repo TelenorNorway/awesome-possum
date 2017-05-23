@@ -6,7 +6,7 @@ package com.telenor.possumlib.changeevents;
 public abstract class BasicChangeEvent {
     private String eventType;
     private String message;
-    BasicChangeEvent(String eventType, String message) {
+    public BasicChangeEvent(String eventType, String message) {
         this.eventType = eventType;
         this.message = message;
     }

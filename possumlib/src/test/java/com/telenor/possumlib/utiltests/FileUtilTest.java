@@ -7,7 +7,6 @@ import com.google.common.io.CharStreams;
 import com.telenor.possumlib.FileManipulator;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
-import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.utils.FileUtil;
 
 import org.junit.After;
@@ -221,7 +220,7 @@ public class FileUtilTest {
         Context context = mock(Context.class);
         when(context.getString(Mockito.anyInt())).thenReturn("Accelerometer");
         when(context.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
-        File retrievedFile = FileUtil.getFile(context, DetectorType.Accelerometer);
+        File retrievedFile = FileUtil.getFile(context, "Accelerometer");
         Assert.assertEquals(fakeFile.length(), retrievedFile.length());
     }
 
@@ -232,8 +231,8 @@ public class FileUtilTest {
         when(context.getString(Mockito.anyInt())).thenReturn("Gyroscope");
         when(context.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
 
-        File fakeFile = FileUtil.getFile(context, DetectorType.Gyroscope);
-        Assert.assertEquals("GyroScope", fakeFile.getName());
+        File fakeFile = FileUtil.getFile(context, "Gyroscope");
+        Assert.assertEquals("Gyroscope", fakeFile.getName());
         Assert.assertEquals(0, fakeFile.length());
     }
 

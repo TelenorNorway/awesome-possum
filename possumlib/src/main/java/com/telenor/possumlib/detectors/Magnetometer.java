@@ -52,4 +52,9 @@ public class Magnetometer extends AbstractZippingAndroidDetector implements Sens
     public int detectorType() {
         return DetectorType.Magnetometer;
     }
+
+    @Override
+    public String detectorName() {
+        return "Magnetometer";
+    }
 }

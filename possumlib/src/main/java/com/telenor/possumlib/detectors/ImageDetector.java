@@ -28,9 +28,9 @@ import java.util.Arrays;
  */
 public class ImageDetector extends AbstractEventDrivenDetector {
     private static final String tag = ImageDetector.class.getName();
-    public static final String IMAGE_SINGLE = "IMAGE_SINGLE";
-    public static final String IMAGE_CONTINUOUS = "IMAGE_CONTINUOUS";
-    public static final String STOP_IMAGE_CAPTURE = "STOP_IMAGE_CAPTURE";
+    private static final String IMAGE_SINGLE = "IMAGE_SINGLE";
+    private static final String IMAGE_CONTINUOUS = "IMAGE_CONTINUOUS";
+    private static final String STOP_IMAGE_CAPTURE = "STOP_IMAGE_CAPTURE";
     private boolean modelLoaded = false;
     private int totalFaces;
     private AsyncFaceTask asyncFaceTask;
@@ -39,12 +39,12 @@ public class ImageDetector extends AbstractEventDrivenDetector {
     public ImageDetector(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) {
         super(context, identification, secretKeyHash, eventBus);
         totalFaces = 0;
-        // Load tensorflow interface
+        // Load tensorFlow interface
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             this.tensorFlowInterface = getTensorFlowInterface();
             try {
                 if (!modelLoaded) {
-                    Log.d(tag, "Starting initialize of tensorflow");
+                    Log.d(tag, "Starting initialize of TensorFlow");
                     if (tensorFlowInterface.initialize(context)) {
                         final int status = tensorFlowInterface.initializeTensorFlow(context.getAssets(),
                                 "file:///android_asset/tensorflow_facerecognition.pb");
@@ -55,11 +55,11 @@ public class ImageDetector extends AbstractEventDrivenDetector {
                         modelLoaded = true;
                         Log.d(tag, "Model loaded");
                     } else {
-                        Log.w(tag, "Failed to initialize tensorflow");
+                        Log.w(tag, "Failed to initialize TensorFlow");
                     }
                 }
             } catch (Exception e) {
-                Log.e(tag, "Failed to initialize tensorflow:", e);
+                Log.e(tag, "Failed to initialize TensorFlow:", e);
             }
         }
     }
@@ -100,6 +100,11 @@ public class ImageDetector extends AbstractEventDrivenDetector {
     }
 
     @Override
+    public String detectorName() {
+        return "Image";
+    }
+
+    @Override
     public void eventReceived(BasicChangeEvent object) {
         if (!isAvailable() || !isEnabled()) return;
         if (object instanceof ImageChangeEvent) {
@@ -115,13 +120,13 @@ public class ImageDetector extends AbstractEventDrivenDetector {
                     snapImage(getFaceTask(false));
                     break;
                 case IMAGE_CONTINUOUS:
-                    Log.i(tag, "Starting execution of repeating image snapshots");
+                    Log.d(tag, "Starting execution of repeating image snapshots");
                     snapImage(getFaceTask(true));
                     break;
                 case STOP_IMAGE_CAPTURE:
                     break;
                 default:
-                    Log.i(tag, "Unknown event received:" + event.eventType());
+                    Log.w(tag, "Unknown event received:" + event.eventType());
             }
         }
     }
@@ -133,7 +138,7 @@ public class ImageDetector extends AbstractEventDrivenDetector {
                     Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT),
                     continuous);
         } catch (Exception e) {
-            eventBus().post(new MetaDataChangeEvent(MetaDataDetector.GENERAL_EVENT, "Camera was busy when taking picture"));
+            eventBus().post(new MetaDataChangeEvent(DateTime.now().getMillis()+" Camera was busy when taking picture"));
             Log.e(tag, "Could not open camera, aborting");
         }
         return null;

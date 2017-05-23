@@ -33,6 +33,11 @@ public class AbstractEternalEventDetectorTest {
             public int detectorType() {
                 return DetectorType.MetaData;
             }
+
+            @Override
+            public String detectorName() {
+                return "MetaData";
+            }
         };
     }
 

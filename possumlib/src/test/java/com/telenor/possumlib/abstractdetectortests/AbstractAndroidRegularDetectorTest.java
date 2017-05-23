@@ -62,18 +62,18 @@ public class AbstractAndroidRegularDetectorTest {
 
     private ShadowSensorManager shadow;
     private SensorManager sensorManager;
-    private EventBus eventBus;
 
     private long guaranteedListen = 4000;
     private long restartInterval = 4000;
     private int requestCode = 12345;
     private int counter;
     private File fakeFile;
+    private EventBus eventBus;
     private AbstractAndroidRegularDetector androidRegularSensor;
     private Object sourceReceived;
 
     @Config(sdk = 21)
-    @TargetApi(value=19)
+    @TargetApi(value = 19)
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -86,36 +86,7 @@ public class AbstractAndroidRegularDetectorTest {
         when(mockedSensor.getFifoMaxEventCount()).thenReturn(5000);
         when(mockedSensor.getFifoReservedEventCount()).thenReturn(5000);
         fakeFile = FileManipulator.getFileWithName(RuntimeEnvironment.application, "fakeFile");
-        androidRegularSensor = new AbstractAndroidRegularDetector(RuntimeEnvironment.application, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public long guaranteedListenInterval() {
-                return guaranteedListen;
-            }
-
-            @Override
-            public long restartInterval() {
-                return restartInterval;
-            }
-
-            @Override
-            protected int detectorRequestCode() {
-                return requestCode;
-            }
-
-            @Override
-            public void detectorWakelockActivated() {
-
-            }
-            @Override
-            public File storedData() {
-                return fakeFile;
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Accelerometer;
-            }
-        };
+        androidRegularSensor = getDetector(RuntimeEnvironment.application, eventBus);
     }
 
     @After
@@ -132,52 +103,18 @@ public class AbstractAndroidRegularDetectorTest {
         Assert.assertNotNull(androidRegularSensor);
     }
 
-    private class MetaListener {
-        @Subscribe
-        public void listenFtw(MetaDataChangeEvent ev) {
-            counter++;
-            Assert.assertEquals("Accelerometer FIFO SIZE 5000 5000", ev.message());
-        }
-    }
-
     @Test
     public void testInitFiresEventAboutFifoQueue() throws Exception {
         Assert.assertNull(sourceReceived);
-        Assert.assertEquals(0, counter);
-        EventBus myEventBus = new EventBus();
-        myEventBus.register(new MetaListener());
-        androidRegularSensor = new AbstractAndroidRegularDetector(RuntimeEnvironment.application, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", myEventBus) {
-            @Override
-            public long guaranteedListenInterval() {
-                return guaranteedListen;
-            }
-
-            @Override
-            public long restartInterval() {
-                return restartInterval;
-            }
-
-            @Override
-            protected int detectorRequestCode() {
-                return requestCode;
-            }
-
-            @Override
-            public void detectorWakelockActivated() {
-
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Accelerometer;
-            }
-        };
+        eventBus.register(this);
+        androidRegularSensor = getDetector(RuntimeEnvironment.application, eventBus);
         Assert.assertEquals(1, counter);
     }
 
     @Subscribe
     public void detectMetaEvent(MetaDataChangeEvent event) {
-        Assert.fail("Got the event");
+        counter++;
+        Assert.assertTrue(event.message().contains("Accelerometer FIFO SIZE 5000 5000"));
     }
 
     @Test
@@ -194,9 +131,9 @@ public class AbstractAndroidRegularDetectorTest {
         SensorEvent sensorEventAfter = SensorEvents.createSensorEvent(mockedSensor, timestampAfter, 0, x, y, z);
         Method invalidMethod = AbstractAndroidRegularDetector.class.getDeclaredMethod("isInvalid", SensorEvent.class);
         invalidMethod.setAccessible(true);
-        Assert.assertFalse((Boolean)invalidMethod.invoke(androidRegularSensor, sensorEvent));
-        Assert.assertTrue((Boolean)invalidMethod.invoke(androidRegularSensor, sensorEvent));
-        Assert.assertFalse((Boolean)invalidMethod.invoke(androidRegularSensor, sensorEventAfter));
+        Assert.assertFalse((Boolean) invalidMethod.invoke(androidRegularSensor, sensorEvent));
+        Assert.assertTrue((Boolean) invalidMethod.invoke(androidRegularSensor, sensorEvent));
+        Assert.assertFalse((Boolean) invalidMethod.invoke(androidRegularSensor, sensorEventAfter));
     }
 
     @Test
@@ -207,7 +144,19 @@ public class AbstractAndroidRegularDetectorTest {
         when(mockedContext.getSystemService(Context.ALARM_SERVICE)).thenReturn(mockedAlarmManager);
         when(mockedContext.getSystemService(Context.POWER_SERVICE)).thenReturn(mockedPowerManager);
         ShadowApplication.getInstance().grantPermissions(Manifest.permission.WAKE_LOCK);
-        androidRegularSensor = new AbstractAndroidRegularDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", eventBus) {
+        androidRegularSensor = getDetector(mockedContext, eventBus);
+        Assert.assertTrue(androidRegularSensor.startListening());
+        Field nanoField = AbstractAndroidRegularDetector.class.getDeclaredField("MIN_INTERVAL_MICRO");
+        nanoField.setAccessible(true);
+        int nanoTime = (int) nanoField.getLong(androidRegularSensor);
+        verify(mockedSensorManager, times(1)).registerListener(any(SensorEventListener.class), eq(mockedSensor), eq(nanoTime));
+
+        androidRegularSensor.stopListening();
+        verify(mockedSensorManager, times(1)).unregisterListener(any(SensorEventListener.class), eq(mockedSensor));
+    }
+
+    private AbstractAndroidRegularDetector getDetector(Context context, EventBus eventBus) {
+        return new AbstractAndroidRegularDetector(context, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", eventBus) {
             @Override
             public long guaranteedListenInterval() {
                 return guaranteedListen;
@@ -232,15 +181,12 @@ public class AbstractAndroidRegularDetectorTest {
             public int detectorType() {
                 return DetectorType.Accelerometer;
             }
-        };
-        Assert.assertTrue(androidRegularSensor.startListening());
-        Field nanoField = AbstractAndroidRegularDetector.class.getDeclaredField("MIN_INTERVAL_MICRO");
-        nanoField.setAccessible(true);
-        int nanoTime = (int)nanoField.getLong(androidRegularSensor);
-        verify(mockedSensorManager, times(1)).registerListener(any(SensorEventListener.class), eq(mockedSensor), eq(nanoTime));
 
-        androidRegularSensor.stopListening();
-        verify(mockedSensorManager, times(1)).unregisterListener(any(SensorEventListener.class), eq(mockedSensor));
+            @Override
+            public String detectorName() {
+                return "Accelerometer";
+            }
+        };
     }
 
     @Test
@@ -249,7 +195,7 @@ public class AbstractAndroidRegularDetectorTest {
         SensorEvent event = SensorEvents.createSensorEvent(mockedSensor, timestamp, 0, 10, 10, 10);
         Method timestampMethod = AbstractAndroidRegularDetector.class.getDeclaredMethod("timestamp", SensorEvent.class);
         timestampMethod.setAccessible(true);
-        long timestampOut = (long)timestampMethod.invoke(androidRegularSensor, event);
+        long timestampOut = (long) timestampMethod.invoke(androidRegularSensor, event);
         Assert.assertTrue(timestamp < timestampOut);
     }
 
@@ -275,6 +221,7 @@ public class AbstractAndroidRegularDetectorTest {
         androidRegularSensor.onSensorChanged(event);
         Assert.assertEquals(0, storedField.getInt(androidRegularSensor));
     }
+
     @Test
     public void testAccuracyChanged() throws Exception {
         ShadowLog.setupLogging();

@@ -20,8 +20,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.telenor.possumlib.managers.S3ModelDownloader.S3_BUCKET;
-
 public class UploadConnection extends AsyncTask<Void, Integer, Exception> {
     private static final String TAG = UploadConnection.class.getName();
     private final Context context;
@@ -78,7 +76,7 @@ public class UploadConnection extends AsyncTask<Void, Integer, Exception> {
         for (File file : sortedFiles ) {
             totalNumberOfBytes += file.length();
             transferUtility
-                    .upload(S3_BUCKET, FileUtil.toBucketKey(file), file)
+                    .upload("telenor-nr-awesome-possum", FileUtil.toBucketKey(file), file)
                     .setTransferListener(createTransferListener(file, filesLeft));
         }
     }

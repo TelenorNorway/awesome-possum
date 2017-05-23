@@ -22,6 +22,9 @@ import org.mockito.Mockito;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(PossumTestRunner.class)
@@ -31,7 +34,6 @@ public class SatelliteDetectorTest {
     private Context mockedContext;
     private GpsStatus mockedGpsStatus;
     private EventBus eventBus;
-    private boolean didReceiveEvent;
 
     @Before
     public void setUp() throws Exception {
@@ -43,19 +45,8 @@ public class SatelliteDetectorTest {
         allProviders.add(LocationManager.NETWORK_PROVIDER);
         when(mockedLocationManager.getAllProviders()).thenReturn(allProviders);
         mockedGpsStatus = Mockito.mock(GpsStatus.class);
-        didReceiveEvent = false;
         setLocationDetectorWith(true, PackageManager.PERMISSION_GRANTED);
-//        satelliteDetector = new SatelliteDetector(mockedContext, "fakeUnique", "fakeId") {
-//            @Override
-//            public void objectChanged(Object source) {
-//                super.objectChanged(source);
-//                didReceiveEvent = true;
-//            }
-//            @Override
-//            public boolean isAvailable() {
-//                return true; // TODO: This shit won't stand, but it isn't used atm so fix it later
-//            }
-//        };
+        satelliteDetector = new SatelliteDetector(mockedContext, "encryptedFake", "secretKey", eventBus);
     }
 
     private void setLocationDetectorWith(boolean enabled, int permission) {
@@ -70,22 +61,14 @@ public class SatelliteDetectorTest {
         when(mockedLocationManager.getGpsStatus(Mockito.any(GpsStatus.class))).thenReturn(mockedGpsStatus);
     }
 
-    @SuppressWarnings("unchecked")
     @After
     public void tearDown() throws Exception {
         satelliteDetector = null;
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testInit() throws Exception {
-//        Assert.assertNotNull(satelliteDetector);
-//        Method subscribers = EventBus.class.getDeclaredMethod("subscribers", String.class);
-//        subscribers.setAccessible(true);
-//        satelliteDetector.startListening();
-//        Set<EventSubscriber> subscriberSet = (Set<EventSubscriber>) subscribers.invoke(EventBus.getInstance(), SatelliteDetector.SATELLITE_EVENT);
-//        Assert.assertEquals(1, subscriberSet.size());
-//        Assert.assertEquals(satelliteDetector, subscriberSet.iterator().next());
+        Assert.assertNotNull(satelliteDetector);
 
     }
 
@@ -93,48 +76,31 @@ public class SatelliteDetectorTest {
     public void testDefaults() throws Exception {
         Assert.assertTrue(satelliteDetector.isValidSet());
         Assert.assertEquals(DetectorType.GpsStatus, satelliteDetector.detectorType());
-    }
-
-    @Test
-    public void testEnabledWithValidLocationDetector() throws Exception {
-        Assert.assertTrue(satelliteDetector.isEnabled());
-    }
-
-    @Test
-    public void testIsDisabledWhenNoGpsInLocationManager() throws Exception {
-        setLocationDetectorWith(false, PackageManager.PERMISSION_GRANTED);
-        satelliteDetector = new SatelliteDetector(mockedContext, "fakeUnique", "fakeId", eventBus);
         Assert.assertFalse(satelliteDetector.isEnabled());
-        Assert.assertFalse(satelliteDetector.isAvailable()); // By default, available = enabled on startup
+        Assert.assertEquals("Satellites", satelliteDetector.detectorName());
+        Method storeWithIntervalMethod = SatelliteDetector.class.getDeclaredMethod("storeWithInterval");
+        storeWithIntervalMethod.setAccessible(true);
+        Assert.assertTrue((boolean)storeWithIntervalMethod.invoke(satelliteDetector));
     }
 
     @Test
-    public void testIsAvailableWhenValidLocationDetector() throws Exception {
-        setLocationDetectorWith(true, PackageManager.PERMISSION_DENIED);
-        satelliteDetector = new SatelliteDetector(mockedContext, "fakeUnique", "fakeId", eventBus);
-        Assert.assertTrue(satelliteDetector.isEnabled());
+    public void testIsPermittedWhenNotGranted() throws Exception {
+        when(mockedContext.checkPermission(eq(Manifest.permission.ACCESS_FINE_LOCATION), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_DENIED);
+        Assert.assertFalse(satelliteDetector.isPermitted());
         Assert.assertFalse(satelliteDetector.isAvailable());
     }
 
     @Test
-    public void testConfirmStoreWithInterval() throws Exception {
-        Method storeInterval = SatelliteDetector.class.getDeclaredMethod("storeWithInterval");
-        storeInterval.setAccessible(true);
-        Assert.assertTrue((boolean) storeInterval.invoke(satelliteDetector));
+    public void testIsPermittedWhenGranted() throws Exception {
+        when(mockedContext.checkPermission(eq(Manifest.permission.ACCESS_FINE_LOCATION), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
+        Assert.assertTrue(satelliteDetector.isPermitted());
+        Assert.assertTrue(satelliteDetector.isAvailable());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testTerminateRemovesEvent() throws Exception {
-//        Method subscribers = EventBus.class.getDeclaredMethod("subscribers", String.class);
-//        subscribers.setAccessible(true);
-//        satelliteDetector.startListening();
-//        Set<EventSubscriber> subscriberSet = (Set<EventSubscriber>) subscribers.invoke(EventBus.getInstance(), SATELLITE_EVENT);
-//        Assert.assertEquals(1, subscriberSet.size());
-//        Assert.assertEquals(satelliteDetector, subscriberSet.iterator().next());
-//
-//        satelliteDetector.terminate();
-//        Set<EventSubscriber> terminateSet = (Set<EventSubscriber>) subscribers.invoke(EventBus.getInstance(), SATELLITE_EVENT);
-//        Assert.assertEquals(0, terminateSet.size());
+    public void testNotAbleToStart() throws Exception {
+        Assert.assertFalse(satelliteDetector.isListening());
+        Assert.assertFalse(satelliteDetector.startListening());
+        Assert.assertFalse(satelliteDetector.isListening());
     }
 }

@@ -18,10 +18,11 @@ import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.Landmark;
 import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
-import com.telenor.possumlib.exceptions.NotSupportedException;
 import com.telenor.possumlib.detectors.ImageDetector;
-import com.telenor.possumlib.detectors.MetaDataDetector;
+import com.telenor.possumlib.exceptions.NotSupportedException;
 import com.telenor.possumlib.utils.Do;
+
+import org.joda.time.DateTime;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ public class AsyncFaceTask extends AsyncTask<Void, Void, Void> implements Camera
         @Override
         public void run() {
             if (!isCancelled() && (getStatus() == AsyncTask.Status.RUNNING || getStatus() == AsyncTask.Status.PENDING)) {
-                eventBus.post(new MetaDataChangeEvent(MetaDataDetector.GENERAL_EVENT, "Cancelled AsyncFaceTask"));
+                eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" Cancelled AsyncFaceTask"));
                 cancel(true);
             }
         }
@@ -104,7 +105,7 @@ public class AsyncFaceTask extends AsyncTask<Void, Void, Void> implements Camera
             for (pictureNumber = 0; pictureNumber < totalNumberOfPictures; pictureNumber++) {
                 if (isCancelled()) {
                     Log.d(tag, "stopped taking pictures");
-                    eventBus.post(new MetaDataChangeEvent(MetaDataDetector.GENERAL_EVENT, "Picture series of " + totalNumberOfPictures + " interrupted at " + pictureNumber));
+                    eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" Picture series of " + totalNumberOfPictures + " interrupted at " + pictureNumber));
                     return null;
                 }
                 Log.d(tag, "Taking picture " + (pictureNumber + 1) + " of " + totalNumberOfPictures + " " + Thread.currentThread());

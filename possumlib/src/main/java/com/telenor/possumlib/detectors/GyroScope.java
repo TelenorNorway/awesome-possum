@@ -52,4 +52,9 @@ public class GyroScope extends AbstractZippingAndroidDetector {
     public int detectorType() {
         return DetectorType.Gyroscope;
     }
+
+    @Override
+    public String detectorName() {
+        return "GyroScope";
+    }
 }

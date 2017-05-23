@@ -56,14 +56,29 @@ public class AbstractDetectorReceiverTest {
         onReceiveFired = false;
         sensorDidChange = false;
         fakeFile = FileManipulator.getFileWithName(RuntimeEnvironment.application, "Network");
-        abstractDetectorReceiver = new AbstractDetectorReceiver(mockedContext, Arrays.asList("test1","test2"), "fakeUnique", "fakeId", eventBus) {
+        abstractDetectorReceiver = getDetector(mockedContext, eventBus, DetectorType.Wifi, "Network");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        abstractDetectorReceiver = null;
+    }
+
+    private AbstractDetectorReceiver getDetector(Context context, EventBus eventBus, final int detectType, final String detectorName) {
+        return new AbstractDetectorReceiver(context, Arrays.asList("test1","test2"), "fakeUnique", "fakeId", eventBus) {
             @Override
             public void onReceive(Context context, Intent intent) {
+                onReceiveFired = true;
             }
 
             @Override
             public int detectorType() {
-                return DetectorType.Wifi;
+                return detectType;
+            }
+
+            @Override
+            public String detectorName() {
+                return detectorName;
             }
 
             @Override
@@ -88,39 +103,10 @@ public class AbstractDetectorReceiverTest {
         };
     }
 
-    @After
-    public void tearDown() throws Exception {
-        abstractDetectorReceiver = null;
-    }
-
     @Test
     public void testInvalidInit() throws Exception {
         try {
-            abstractDetectorReceiver = new AbstractDetectorReceiver(null, Arrays.asList("test1","test2"), "fakeUnique", "fakeId", eventBus) {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                }
-
-                @Override
-                public int detectorType() {
-                    return DetectorType.Wifi;
-                }
-
-                @Override
-                public boolean isAvailable() {
-                    return true;
-                }
-
-                @Override
-                protected long uploadFilesSize() {
-                    return storageSizeInUpload;
-                }
-
-                @Override
-                public boolean isEnabled() {
-                    return isEnabled;
-                }
-            };
+            abstractDetectorReceiver = getDetector(null, eventBus, DetectorType.Wifi, "Network");
             Assert.fail("Should not have accepted detector without context");
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Missing context on detector:"));
@@ -134,37 +120,7 @@ public class AbstractDetectorReceiverTest {
 
     @Test
     public void testOnReceivePassesOnEventIfListening() throws Exception {
-        abstractDetectorReceiver = new AbstractDetectorReceiver(RuntimeEnvironment.application, Arrays.asList("test1","test2"), "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                onReceiveFired = true;
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Wifi;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return true;
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return isEnabled;
-            }
-
-            @Override
-            protected long uploadFilesSize() {
-                return storageSizeInUpload;
-            }
-
-            @Override
-            public File storedData() {
-                return fakeFile;
-            }
-        };
+        abstractDetectorReceiver = getDetector(RuntimeEnvironment.application, eventBus, DetectorType.Wifi, "Network");
         Field intentFilterField = AbstractDetectorReceiver.class.getDeclaredField("intentFilter");
         intentFilterField.setAccessible(true);
         IntentFilter intentFilter = new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
@@ -176,37 +132,7 @@ public class AbstractDetectorReceiverTest {
 
     @Test
     public void testOnReceivePassesOnEventIfNotListening() throws Exception {
-        abstractDetectorReceiver = new AbstractDetectorReceiver(RuntimeEnvironment.application, Arrays.asList("test1","test2"), "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                onReceiveFired = true;
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Wifi;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return true;
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return isEnabled;
-            }
-
-            @Override
-            protected long uploadFilesSize() {
-                return storageSizeInUpload;
-            }
-
-            @Override
-            public File storedData() {
-                return fakeFile;
-            }
-        };
+        abstractDetectorReceiver = getDetector(RuntimeEnvironment.application, eventBus, DetectorType.Wifi, "Network");
         Field intentFilterField = AbstractDetectorReceiver.class.getDeclaredField("intentFilter");
         intentFilterField.setAccessible(true);
         IntentFilter intentFilter = new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
@@ -253,32 +179,7 @@ public class AbstractDetectorReceiverTest {
 
     @Test
     public void testStoredData() throws Exception {
-        abstractDetectorReceiver = new AbstractDetectorReceiver(RuntimeEnvironment.application, Arrays.asList("test1","test2"), "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Wifi;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return true;
-            }
-
-            @Override
-            protected long uploadFilesSize() {
-                return storageSizeInUpload;
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return true;
-            }
-        };
+        abstractDetectorReceiver = getDetector(RuntimeEnvironment.application, eventBus, DetectorType.Wifi, "Network");
         File fakeFile = abstractDetectorReceiver.storedData();
         Assert.assertTrue(fakeFile.exists());
         Assert.assertEquals(0, fakeFile.length());
@@ -316,38 +217,7 @@ public class AbstractDetectorReceiverTest {
     public void testUploadedData() throws Exception {
         Context mockedContext = mock(Context.class);
         when(mockedContext.getString(anyInt())).thenReturn("wifi");
-        abstractDetectorReceiver = new AbstractDetectorReceiver(mockedContext, Arrays.asList("test1","test2"), "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Wifi;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return false;
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return false;
-            }
-
-            @Override
-            protected long uploadFilesSize() {
-                return storageSizeInUpload;
-            }
-
-            @Override
-            public File storedData() {
-                return fakeFile;
-            }
-        };
-
+        abstractDetectorReceiver = getDetector(mockedContext, eventBus, DetectorType.Wifi, "Network");
         FileWriter writer = null;
         try {
             writer = new FileWriter(fakeFile);
@@ -395,58 +265,8 @@ public class AbstractDetectorReceiverTest {
     @Test
     public void testCompareTo() throws Exception {
         Context mockedContext = mock(Context.class);
-        AbstractDetectorReceiver detectorReceiverA = new AbstractDetectorReceiver(mockedContext, Arrays.asList("test1","test2"), "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Wifi;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return false;
-            }
-
-            @Override
-            protected long uploadFilesSize() {
-                return storageSizeInUpload;
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return false;
-            }
-        };
-        AbstractDetectorReceiver detectorReceiverB = new AbstractDetectorReceiver(mockedContext, Arrays.asList("test1","test2"), "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.MetaData;
-            }
-
-            @Override
-            public boolean isAvailable() {
-                return false;
-            }
-
-            @Override
-            protected long uploadFilesSize() {
-                return storageSizeInUpload;
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return false;
-            }
-        };
+        AbstractDetectorReceiver detectorReceiverA = getDetector(mockedContext, eventBus, DetectorType.Wifi, "Network");
+        AbstractDetectorReceiver detectorReceiverB = getDetector(mockedContext, eventBus, DetectorType.MetaData, "MetaData");
         Assert.assertTrue(detectorReceiverA.compareTo(detectorReceiverB) > 0);
     }
 

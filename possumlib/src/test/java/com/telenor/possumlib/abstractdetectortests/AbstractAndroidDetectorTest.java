@@ -1,6 +1,5 @@
 package com.telenor.possumlib.abstractdetectortests;
 
-import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -25,7 +24,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
-import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowSensorManager;
 
 import java.io.File;
@@ -69,7 +67,19 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
         sensorManager = (SensorManager) RuntimeEnvironment.application.getSystemService(Context.SENSOR_SERVICE);
         shadow = Shadows.shadowOf(sensorManager);
         shadow.addSensor(Sensor.TYPE_ACCELEROMETER, mockedSensor);
-        abstractAndroidDetector = new AbstractAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", eventBus) {
+        abstractAndroidDetector = getDetector(mockedContext, eventBus);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        shadow = null;
+        sensorManager = null;
+        abstractAndroidDetector = null;
+        FileUtil.clearDirectory(RuntimeEnvironment.application);
+    }
+
+    private AbstractAndroidDetector getDetector(Context context, EventBus eventBus) {
+        return new AbstractAndroidDetector(context, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", eventBus) {
             @Override
             public long guaranteedListenInterval() {
                 return 0;
@@ -93,6 +103,11 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
             @Override
             public int detectorType() {
                 return DetectorType.Accelerometer;
+            }
+
+            @Override
+            public String detectorName() {
+                return "Accelerometer";
             }
 
             @Override
@@ -107,14 +122,6 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
         };
     }
 
-    @After
-    public void tearDown() throws Exception {
-        shadow = null;
-        sensorManager = null;
-        abstractAndroidDetector = null;
-        FileUtil.clearDirectory(RuntimeEnvironment.application);
-    }
-
     @Test
     public void testInitWithSensorFound() throws Exception {
         Assert.assertTrue(abstractAndroidDetector.isEnabled());
@@ -124,37 +131,7 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
     @Test
     public void testInitWithMissingSensor() throws Exception {
         shadow.addSensor(Sensor.TYPE_ACCELEROMETER, null);
-        abstractAndroidDetector = new AbstractAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", eventBus) {
-            @Override
-            public long guaranteedListenInterval() {
-                return 0;
-            }
-
-            @Override
-            public long restartInterval() {
-                return 0;
-            }
-
-            @Override
-            protected int detectorRequestCode() {
-                return 0;
-            }
-
-            @Override
-            public void detectorWakelockActivated() {
-
-            }
-
-            @Override
-            public int detectorType() {
-                return DetectorType.Accelerometer;
-            }
-
-            @Override
-            public File storedData() {
-                return mockedFile;
-            }
-        };
+        abstractAndroidDetector = getDetector(mockedContext, eventBus);
         Assert.assertFalse(abstractAndroidDetector.isEnabled());
         Assert.assertFalse(abstractAndroidDetector.startListening());
     }
@@ -200,6 +177,11 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
             }
 
             @Override
+            public String detectorName() {
+                return "Accelerometer";
+            }
+
+            @Override
             public File storedData() {
                 return mockedFile;
             }
@@ -218,35 +200,6 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
         Assert.assertEquals(160f, abstractAndroidDetector.powerUsage(), 0);
     }
 
-    @SuppressLint("NewApi")
-    @Config(sdk = 19)
-    @Test
-    public void testIsWakeupSensorBelowLollipop() throws Exception {
-        Assert.assertFalse(abstractAndroidDetector.isWakeUpDetector());
-    }
-
-    @Config(sdk = 19)
-    @Test
-    public void testWakeupForKitKat() throws Exception {
-
-    }
-
-    @Config(sdk = 19)
-    @Test
-    public void testGotoSleepForKitKat() throws Exception {
-
-    }
-
-    @SuppressLint("NewApi")
-    @Config(sdk = 21)
-    @Test
-    public void testIsWakeupSensorFromLollipop() throws Exception {
-        when(mockedSensor.isWakeUpSensor()).thenReturn(true);
-        Assert.assertTrue(abstractAndroidDetector.isWakeUpDetector());
-        when(mockedSensor.isWakeUpSensor()).thenReturn(false);
-        Assert.assertFalse(abstractAndroidDetector.isWakeUpDetector());
-    }
-
     @Test
     public void testStartStopListening() throws Exception {
         File dataDir = FileManipulator.getDataDir(RuntimeEnvironment.application);
@@ -262,85 +215,4 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
         abstractAndroidDetector.stopListening();
         Assert.assertFalse(abstractAndroidDetector.isListening());
     }
-
-    @Test
-    public void testWakeUpNonSdkDependent() throws Exception {
-//        EventSubscriber subscriber = eventSubscriber();
-//        Assert.assertEquals(0, WakeUtil.holders());
-//        Assert.assertFalse(eventFired);
-//        EventBus.getInstance().subscribe(MetaDataDetector.META_EVENT, subscriber);
-//        abstractAndroidDetector = getMockedSensor();
-//
-//        Method wakeUpMethod = AbstractAndroidDetector.class.getDeclaredMethod("wakeUp");
-//        wakeUpMethod.setAccessible(true);
-//        wakeUpMethod.invoke(abstractAndroidDetector);
-//
-//        Assert.assertTrue(eventFired);
-//
-//        Field isGuaranteedListening = AbstractAndroidDetector.class.getDeclaredField("isInGuaranteedListenMode");
-//        isGuaranteedListening.setAccessible(true);
-//        Assert.assertTrue(isGuaranteedListening.getBoolean(abstractAndroidDetector));
-//
-//        EventBus.getInstance().unSubscribeAll(subscriber);
-    }
-
-    @Test
-    public void testGotoSleepNonSdkDependent() throws Exception {
-//        EventSubscriber subscriber = eventSubscriber();
-//        Assert.assertEquals(0, WakeUtil.holders());
-//        Assert.assertFalse(eventFired);
-//        EventBus.getInstance().subscribe(MetaDataDetector.META_EVENT, subscriber);
-//
-//        abstractAndroidDetector = getMockedSensor();
-//
-//        Method gotoSleepMethod = AbstractAndroidDetector.class.getDeclaredMethod("gotoSleep");
-//        gotoSleepMethod.setAccessible(true);
-//        gotoSleepMethod.invoke(abstractAndroidDetector);
-//        Assert.assertTrue(eventFired);
-//        Assert.assertTrue(WakeUtil.holders() <= 0);
-//
-//        Field isGuaranteedListening = AbstractAndroidDetector.class.getDeclaredField("isInGuaranteedListenMode");
-//        isGuaranteedListening.setAccessible(true);
-//        Assert.assertFalse(isGuaranteedListening.getBoolean(abstractAndroidDetector));
-//
-//        EventBus.getInstance().unSubscribeAll(subscriber);
-    }
-
-    @Config(sdk = 18)
-    @Test
-    public void testWakeupForBeforeKitkat() throws Exception {
-
-    }
-
-    @Config(sdk = 18)
-    @Test
-    public void testGotoSleepForBeforeKitkat() throws Exception {
-
-    }
-
-    @Config(sdk = 23)
-    @Test
-    public void testWakeupForNougat() throws Exception {
-
-    }
-
-    @Config(sdk = 23)
-    @Test
-    public void testGotoSleepForNougat() throws Exception {
-
-    }
-
-//    private EventSubscriber eventSubscriber() {
-//        return new EventSubscriber() {
-//            @Override
-//            public void objectChanged(Object source) {
-//                eventFired = true;
-//            }
-//
-//            @Override
-//            public void listChanged() {
-//
-//            }
-//        };
-//    }
 }

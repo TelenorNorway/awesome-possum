@@ -10,12 +10,15 @@ import android.location.LocationProvider;
 import android.os.Process;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.io.LineReader;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.constants.DetectorType;
-import com.telenor.possumlib.interfaces.ISensorStatusUpdate;
 import com.telenor.possumlib.detectors.LocationDetector;
+import com.telenor.possumlib.interfaces.ISensorStatusUpdate;
 
 import junit.framework.Assert;
+
+import net.danlew.android.joda.JodaTimeAndroid;
 
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -23,8 +26,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowLog;
 
+import java.io.File;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,12 +45,14 @@ public class LocationDetectorTest {
     private Context mockedContext;
     private int changedStatus;
     private EventBus eventBus;
+    private File fakeFile;
+
     @Before
     public void setUp() throws Exception {
         mockedContext = Mockito.mock(Context.class);
         changedStatus = 0;
         eventBus = new EventBus();
-        // TODO: Use ShadowLocationManager instead of mock?
+        JodaTimeAndroid.init(RuntimeEnvironment.application);
         mockedLocationManager = Mockito.mock(LocationManager.class);
         when(mockedContext.getSystemService(Context.LOCATION_SERVICE)).thenReturn(mockedLocationManager);
         when(mockedLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)).thenReturn(true);
@@ -53,12 +61,26 @@ public class LocationDetectorTest {
         allProviders.add(LocationManager.GPS_PROVIDER);
         allProviders.add(LocationManager.NETWORK_PROVIDER);
         when(mockedLocationManager.getAllProviders()).thenReturn(allProviders);
-        locationDetector = new LocationDetector(mockedContext, "fakeUnique", "fakeId", eventBus);
+        when(mockedContext.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
+        fakeFile = new File(RuntimeEnvironment.application.getFilesDir()+"/TestFile");
+        if (fakeFile.exists()) {
+            Assert.assertTrue(fakeFile.delete());
+        }
+        Assert.assertTrue(fakeFile.createNewFile());
+        locationDetector = new LocationDetector(mockedContext, "fakeUnique", "fakeId", eventBus) {
+            @Override
+            public File storedData() {
+                return fakeFile;
+            }
+        };
     }
 
     @After
     public void tearDown() throws Exception {
         locationDetector = null;
+        if (fakeFile.exists()) {
+            Assert.assertTrue(fakeFile.delete());
+        }
     }
 
     @Test
@@ -120,9 +142,13 @@ public class LocationDetectorTest {
         location.setAltitude(10f);
         location.setAccuracy(0f);
         Assert.assertEquals(0, locationDetector.sessionValues().size());
+        Assert.assertEquals(0, fakeFile.length());
         locationDetector.onLocationChanged(location);
-        Assert.assertEquals(1, locationDetector.sessionValues().size());
-        Assert.assertEquals(""+timestamp+" "+location.getLatitude()+" "+location.getLongitude()+" "+location.getAltitude()+" "+location.getAccuracy()+" "+location.getProvider(), locationDetector.sessionValues().peek());
+        Assert.assertEquals(0, locationDetector.sessionValues().size());
+        Assert.assertTrue(fakeFile.length() > 0);
+        LineReader lineReader = new LineReader(new FileReader(fakeFile));
+        String fileContent = lineReader.readLine();
+        Assert.assertEquals(""+timestamp+" "+location.getLatitude()+" "+location.getLongitude()+" "+location.getAltitude()+" "+location.getAccuracy()+" "+location.getProvider(), fileContent);
     }
 
     @Test

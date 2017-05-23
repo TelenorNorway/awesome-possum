@@ -10,7 +10,6 @@ public class DetectorType {
     public static final int Gyroscope = Sensor.TYPE_GYROSCOPE;
     public static final int Magnetometer = Sensor.TYPE_MAGNETIC_FIELD;
     public static final int Significant = Sensor.TYPE_SIGNIFICANT_MOTION;
-    public static final int Undefined = 999;
     public static final int Wifi = 100;
     public static final int Bluetooth = 101;
     public static final int Nfc = 103;
