@@ -5,8 +5,13 @@ android {
     buildToolsVersion '25.0.2'
 
     defaultConfig {
-        minSdkVersion 9
+        minSdkVersion 15
         targetSdkVersion 25
+    }
+
+    lintOptions {
+        tasks.lint.enabled = false
+        checkReleaseBuilds false
     }
 
     buildTypes {

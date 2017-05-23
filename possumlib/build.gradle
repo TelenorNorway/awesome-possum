@@ -1,36 +1,17 @@
-plugins {
-//    id "com.jfrog.bintray" version "1.7.3"
-    id "com.jfrog.bintray" version "1.7"
-    id "com.github.dcendents.android-maven" version "1.5"
-}
 apply plugin: 'com.android.library'
-apply plugin: 'maven'
-apply plugin: 'maven-publish'
+apply plugin: 'com.novoda.bintray-release'
 
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
-ext {
-    PUBLISH_GROUP_ID = 'com.telenor'
-    PUBLISH_ARTIFACT_ID = 'possumlib'
-    PUBLISH_VERSION = '1.0.0'
-    PUBLISH_VERSION_CODE = 1
-    PUBLISH_DESCRIPTION = 'Data gathering library'
-    GIT_REPO_URL = 'https://github.com/telenordigital/awesome-possum'
-}
-
-group = PUBLISH_GROUP_ID
-version = PUBLISH_VERSION
+project.group = 'com.telenor'
 
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
 
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 17
         targetSdkVersion 25
-        versionCode PUBLISH_VERSION_CODE
-        versionName PUBLISH_VERSION
+        versionCode 1
+        versionName "1.0.0"
         ndk {
             abiFilters "x86", "x86_64", "armeabi-v7a", "armeabi", "mips"
         }
@@ -42,11 +23,23 @@ android {
         }
     }
 
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path "CMakeLists.txt"
         }
     }
+    lintOptions {
+        tasks.lint.enabled = false
+        checkReleaseBuilds false
+    }
+
     sourceSets {
         main {
             jni.srcDirs = ["libs"]
@@ -59,80 +52,11 @@ configurations {
     javadocDeps
 }
 
-install {
-    repositories.mavenInstaller {
-        pom.project {
-            name 'awesome-possum'
-            description 'A data gathering library for authentication by sensors.'
-            url GIT_REPO_URL
-            inceptionYear '2017'
-
-            packaging 'aar'
-            groupId PUBLISH_GROUP_ID
-            artifactId PUBLISH_ARTIFACT_ID
-            version PUBLISH_VERSION
-
-            licenses {
-                license {
-                    name 'The Apache Software License, Version 2.0'
-                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    distribution 'repo'
-                }
-            }
-            scm {
-                connection GIT_REPO_URL+'.git'
-                url GIT_REPO_URL
-            }
-            developers {
-                developer {
-                    name 'Brynje Nordli'
-                }
-            }
-        }
-    }
-}
-
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
-task javadoc(type: Javadoc, dependsOn: 'assembleRelease') {
-    source = android.sourceSets.main.java.srcDirs
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.javadocDeps2
-    classpath += configurations.javadocDeps
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives javadocJar
-    archives sourcesJar
-}
-
-bintray {
-    user = properties["bintrayUser"]//project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('bintrayUser')
-    key = properties["bintrayKey"]//project.hasProperty('bintrayKey') ? project.property('bintrayKey') : System.getenv('bintrayKey')
-    configurations = ['archives']
-    pkg {
-        repo = PUBLISH_GROUP_ID //  Bintray repo, corresponding with groupId here
-        name = PUBLISH_ARTIFACT_ID // This is package name
-        desc = PUBLISH_DESCRIPTION
-        publicDownloadNumbers = true
-        licenses = ['Apache-2.0']
-        userOrg = user
-        vcsUrl = 'https://github.com/bintray/gradle-bintray-plugin.git'
-        githubRepo = GIT_REPO_URL
-        version {
-            publish = true
-            released = new Date()
-            attributes = ['gradle-plugin': 'com.android.tools.build:gradle:2.2.0']
-        }
-    }
+publish {
+    userOrg = 'telenordigital'
+    groupId = project.group
+    artifactId = 'awesome-possum'
+    publishVersion = '1.0.0'
 }
 
 dependencies {

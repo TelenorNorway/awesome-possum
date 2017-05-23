@@ -12,7 +12,6 @@ public class DetectorType {
     public static final int Significant = Sensor.TYPE_SIGNIFICANT_MOTION;
     public static final int Wifi = 100;
     public static final int Bluetooth = 101;
-    public static final int Nfc = 103;
     public static final int Position = 104;
     public static final int GpsStatus = 105;
     public static final int Image = 106;
