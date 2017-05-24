@@ -3,6 +3,7 @@ package com.telenor.possumlib.detectortests;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.hardware.Camera;
 import android.os.Build;
@@ -23,14 +24,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.shadows.ShadowCamera;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,24 +46,31 @@ public class ImageDetectorTest {
     @Mock
     private TensorFlowInferenceInterface mockedTensorFlow;
     @Mock
+    private Context mockedContext;
+    @Mock
+    private AssetManager mockedAssetManager;
+    @Mock
     private AsyncFaceTask mockedAsyncFaceTask;
-    private int isContinousRequest;
     private Camera.CameraInfo cameraInfo;
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Before
     public void setUp() throws Exception {
-        JodaInit.initializeJodaTime();
         MockitoAnnotations.initMocks(this);
-        isContinousRequest = -1;
+        JodaInit.initializeJodaTime();
         eventBus = new EventBus();
         when(mockedTensorFlow.initialize(any(Context.class))).thenReturn(true);
         when(mockedTensorFlow.initializeTensorFlow(any(AssetManager.class), anyString())).thenReturn(0);
+        when(mockedContext.getAssets()).thenReturn(mockedAssetManager);
+        String[] paths = new String[]{"tensorflow_facerecognition.pb"};
+        when(mockedAssetManager.list(anyString())).thenReturn(paths);
+        when(mockedContext.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
+        when(mockedContext.checkPermission(eq(Manifest.permission.CAMERA), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         cameraInfo = new Camera.CameraInfo();
         cameraInfo.canDisableShutterSound = true;
-        ShadowApplication.getInstance().grantPermissions(Manifest.permission.CAMERA);
+//        ShadowApplication.getInstance().grantPermissions(Manifest.permission.CAMERA);
         ShadowCamera.addCameraInfo(Camera.CameraInfo.CAMERA_FACING_FRONT, cameraInfo);
-        imageDetector = new ImageDetector(RuntimeEnvironment.application, "fakeUnique", "fakeId", eventBus) {
+        imageDetector = new ImageDetector(mockedContext, "fakeUnique", "fakeId", eventBus) {
             @Override
             protected TensorFlowInferenceInterface getTensorFlowInterface() {
                 return mockedTensorFlow;
@@ -69,8 +78,6 @@ public class ImageDetectorTest {
 
             @Override
             protected AsyncFaceTask getFaceTask(boolean continuous) {
-                if (continuous) isContinousRequest = 1;
-                else isContinousRequest = 0;
                 return mockedAsyncFaceTask;
             }
         };
@@ -78,7 +85,6 @@ public class ImageDetectorTest {
 
     @After
     public void tearDown() throws Exception {
-//        EventBus.getInstance().unSubscribeAll(imageDetector);
         imageDetector.terminate();
         ShadowCamera.clearCameraInfo();
     }
@@ -200,7 +206,8 @@ public class ImageDetectorTest {
 
     @Test
     public void testAvailabilityWhenPermissionDenied() throws Exception {
-        ShadowApplication.getInstance().denyPermissions(Manifest.permission.CAMERA);
+        when(mockedContext.checkPermission(eq(Manifest.permission.CAMERA), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_DENIED);
+//        ShadowApplication.getInstance().denyPermissions(Manifest.permission.CAMERA);
         Assert.assertFalse(imageDetector.isAvailable());
     }
 
