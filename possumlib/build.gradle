@@ -10,8 +10,8 @@ android {
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 25
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 3
+        versionName "1.0.2"
         ndk {
             abiFilters "x86", "x86_64", "armeabi-v7a", "armeabi", "mips"
         }
@@ -56,7 +56,7 @@ publish {
     userOrg = 'telenordigital'
     groupId = project.group
     artifactId = 'awesome-possum'
-    publishVersion = '1.0.1'
+    publishVersion = '1.0.2'
 }
 
 dependencies {

@@ -22,7 +22,7 @@ android {
     buildTypes {
         debug {
             resValue "string", "bucketKey", properties["bucketKey"] // Setting the bucket key from local.properties
-            debuggable false
+            debuggable true
             useProguard false
             jniDebuggable true
             testCoverageEnabled false

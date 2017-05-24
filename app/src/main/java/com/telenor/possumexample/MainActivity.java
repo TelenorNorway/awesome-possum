@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
     public void startListen(View view) {
         try {
             List<String> unwanted = new ArrayList<>();
-            unwanted.add("Position");
+//            unwanted.add("Position");
             AwesomePossum.setUnwantedDetectors(this, unwanted);
             AwesomePossum.listen(this);
         } catch (GatheringNotAuthorizedException e) {

@@ -34,6 +34,8 @@ public class ImageDetector extends AbstractEventDrivenDetector {
     private boolean modelLoaded = false;
     private int totalFaces;
     private AsyncFaceTask asyncFaceTask;
+    private static final String fileName = "tensorflow_facerecognition.pb";
+    private static final String fullPath = "file:///android_asset/"+fileName;
     public TensorFlowInferenceInterface tensorFlowInterface;
 
     public ImageDetector(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) {
@@ -44,10 +46,26 @@ public class ImageDetector extends AbstractEventDrivenDetector {
             this.tensorFlowInterface = getTensorFlowInterface();
             try {
                 if (!modelLoaded) {
+                    // Confirm file is found in assets before attempting to use it
+
+                    String[] paths = context.getAssets().list("");
+                    if (paths.length == 0) {
+                        Log.w(tag, "No tensorFlow file found - no assets, ignoring image detector");
+                        return;
+                    } else {
+                        boolean tensorFlowIsFound = false;
+                        for (String file : paths) {
+                            if (file.equals(fileName)) tensorFlowIsFound = true;
+                        }
+                        if (!tensorFlowIsFound) {
+                            Log.w(tag, "No tensorFlow file is found in assets, ignoring image detector");
+                            return;
+                        }
+                    }
                     Log.d(tag, "Starting initialize of TensorFlow");
                     if (tensorFlowInterface.initialize(context)) {
                         final int status = tensorFlowInterface.initializeTensorFlow(context.getAssets(),
-                                "file:///android_asset/tensorflow_facerecognition.pb");
+                                fullPath);
                         if (status != 0) {
                             Log.e(tag, "TF init status: " + status);
                             return;

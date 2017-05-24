@@ -4,7 +4,7 @@ A library meant to gather data about a user and upload to the cloud. In order to
 
 To use, add the following to your app gradle dependencies:
 
-    compile 'com.telenor:possumlib:1.0.1'
+    compile 'com.telenor:possumlib:1.0.2'
     
 Remember to add jCenter() to your repositories.
 
