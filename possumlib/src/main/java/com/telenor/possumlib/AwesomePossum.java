@@ -22,6 +22,7 @@ import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
 import com.telenor.possumlib.interfaces.IPossumTrust;
 import com.telenor.possumlib.services.CollectorService;
+import com.telenor.possumlib.services.SendKurtService;
 import com.telenor.possumlib.services.UploadService;
 import com.telenor.possumlib.utils.Get;
 import com.telenor.possumlib.utils.Has;
@@ -31,7 +32,6 @@ import net.danlew.android.joda.JodaTimeAndroid;
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -55,7 +55,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 public final class AwesomePossum {
     private static boolean initComplete = false;
     private static BroadcastReceiver trustReceiver;
-    private static List<String> refusedDetectors;
+    private static BroadcastReceiver serviceMessageReceiver;
     private static final String tag = AwesomePossum.class.getName();
     private static Set<IPossumTrust> trustListeners = new ConcurrentSkipListSet<>();
     private static SharedPreferences preferences;
@@ -68,9 +68,9 @@ public final class AwesomePossum {
      */
     private static void init(@NonNull Context context) {
         if (initComplete) return;
+        context = context.getApplicationContext();// Important since context needs to be equal for receivers
         initComplete = true;
         preferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES, Context.MODE_PRIVATE);
-        context = context.getApplicationContext();
         JodaTimeAndroid.init(context);
         trustReceiver = new BroadcastReceiver() {
             @Override
@@ -78,7 +78,14 @@ public final class AwesomePossum {
                 handleTrustIntent(intent);
             }
         };
+        serviceMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                handleServiceIntent(intent);
+            }
+        };
         context.registerReceiver(trustReceiver, new IntentFilter(Messaging.POSSUM_TRUST));
+        context.registerReceiver(serviceMessageReceiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
 
         // In case of first time start, set installation time
         long startTime = preferences.getLong(Constants.START_TIME, 0);
@@ -98,110 +105,25 @@ public final class AwesomePossum {
         }
     }
 
+    private static void handleServiceIntent(@NonNull Intent intent) {
+        Log.d(tag, "Message from service:" + intent.getExtras());
+    }
+
     /**
-     * Starts to listen while app is running
+     * Starts to startListening while app is running
      *
      * @throws GatheringNotAuthorizedException If the user hasn't accepted the app, this exception is thrown
      */
-    public static void listen(@NonNull Context context) throws GatheringNotAuthorizedException {
+    public static void startListening(@NonNull Context context) throws GatheringNotAuthorizedException {
         init(context);
         if (allowGathering()) {
             Intent intent = new Intent(context, CollectorService.class);
             intent.putExtra("isLearning", false);
-            intent.putExtra("refusedDetectors", preferences.getString("refusedDetectors", null));
             intent.putExtra("secretKeyHash", Get.secretKeyHash(preferences));
             context.startService(intent);
-        } else {
-            throw new GatheringNotAuthorizedException();
-        }
+        } else throw new GatheringNotAuthorizedException();
     }
 
-    /**
-     * Starts an upload of collected data, should it be needed. Otherwise it will start uploads at
-     * regular intervals or when it detects that it is about to be shut down.
-     *
-     * @param context a valid android context
-     * @param encryptedKurt the encrypted key identifying the user
-     * @param bucketKey the S3 amazon bucket key to upload to
-     * @param allowMobile whether you allow the user to use mobile data (or just wifi) when uploading
-     * @return true if successfully started, false if unable to start
-     */
-    public static boolean startUpload(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucketKey, boolean allowMobile) {
-        init(context);
-        Intent intent = new Intent(context, UploadService.class);
-        intent.putExtra("secretKeyHash", Get.secretKeyHash(preferences));
-        intent.putExtra("encryptedKurt", encryptedKurt);
-        intent.putExtra("refusedDetectors", preferences.getString("refusedDetectors", null));
-        intent.putExtra("bucketKey", bucketKey);
-        if (allowMobile) {
-            if (Has.network(context)) {
-                context.startService(intent);
-                return true;
-            }
-        } else {
-            if (Has.wifi(context)) {
-                context.startService(intent);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Lets you set what detectors the user himself actually refuses to allow.<br>
-     * The list is as follows:<br><br>
-     * * "Accelerometer" - measures acceleration in phone, used in gait analysis <br>
-     * * "AmbientSound" - uses the sound detected on use to sense surroundings <br>
-     * * "Bluetooth" - surrounding bluetooth devices <br>
-     * * "Gesture" - measures movement of touches on given components. Not used at the moment<br>
-     * * "Gyroscope" - measures rotation of phone, used in gait analysis <br>
-     * * "HardwareDetector" - cannot be refused. Stores information about the phone <br>
-     * * "Image" - Pictures of the users face for face recognition <br>
-     * * "Keyboard" - records time between keystrokes in given components. Not used at the moment. <br>
-     * * "Magnetometer" - measures magnetic field in surroundings. Not used at the moment. <br>
-     * * "MetaData" - cannot be refused. Stores information about internal events <br>
-     * * "Network" - Wifi and network for movement analysis <br>
-     * * "Position" - Position of the user for movement analysis <br>
-     * * "Satellites" - records the position of satellites during positions. Not used at the moment. <br>
-     *
-     * @param usersRefusedDetectors list of detectors the user wants to allow. Null in means all.
-     *                              If method is not called, all detectors are used.
-     */
-    public static void setUnwantedDetectors(@NonNull Context context, List<String> usersRefusedDetectors) {
-        init(context);
-        if (usersRefusedDetectors != null && usersRefusedDetectors.size() > 0) {
-            refusedDetectors = usersRefusedDetectors;
-            storeUnwanted(usersRefusedDetectors);
-        } else {
-            storeUnwanted(null);
-        }
-    }
-
-    private static void storeUnwanted(List<String> unwanted) {
-        SharedPreferences.Editor editor = preferences.edit();
-        if (unwanted != null) {
-            String refusedDetectors = "";
-            boolean pastStart = false;
-            for (String refused : unwanted) {
-                if (pastStart) refusedDetectors+=",";
-                refusedDetectors+=refused;
-                pastStart = true;
-            }
-            editor.putString("refusedDetectors", refusedDetectors);
-        } else {
-            editor.remove("refusedDetectors");
-        }
-        editor.apply();
-    }
-
-    private static List<String> getUnwanted() {
-        List<String> unwanted = new ArrayList<>();
-        String refused = preferences.getString("refusedDetectors", null);
-        if (refused != null) {
-            unwanted.addAll(Arrays.asList(refused.split(",")));
-        }
-        return unwanted;
-    }
     /**
      * Enables you to request the needed permissions
      *
@@ -243,17 +165,42 @@ public final class AwesomePossum {
     }
 
     /**
-     * This method is essential for terminating all sensors dependencies as well as internal
-     * managers. Run this in your application onDestroy
+     * This method is stops listening and clears up all resources used. Run this in your
+     * application onDestroy - but remember to call startUpload after it.
      *
-     * @param context the application context
+     * @param context a valid android context
      */
-    public static void terminate(@NonNull Context context) {
-        if (!initComplete) return;
+    public static void stopListening(@NonNull Context context) {
+        context.stopService(new Intent(context, CollectorService.class));
+        if (initComplete) {
+            context = context.getApplicationContext(); // Important since context needs to be equal
+            context.unregisterReceiver(serviceMessageReceiver);
+            context.unregisterReceiver(trustReceiver);
+        }
         initComplete = false;
-        stopListening(context);
-        context.unregisterReceiver(trustReceiver);
         trustListeners.clear();
+    }
+
+    /**
+     * @param context       a valid android context
+     * @param encryptedKurt the encrypted key identifying the user
+     * @param bucketKey     the S3 amazon bucket key to upload to
+     * @return true if upload was started, false if no network to upload on or not initialized
+     */
+    public static boolean startUpload(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucketKey) {
+        if (preferences == null) return false;
+        Intent intent = new Intent(context, UploadService.class);
+        intent.putExtra("secretKeyHash", Get.secretKeyHash(preferences));
+        intent.putExtra("encryptedKurt", encryptedKurt);
+        intent.putExtra("uploadArea", "telenor-nr-awesome-possum");
+        intent.putExtra("bucketKey", bucketKey);
+        boolean startedUpload;
+        if (Has.network(context)) {
+            context.startService(intent);
+            startedUpload = true;
+        } else startedUpload = false;
+        return startedUpload;
+
     }
 
     /**
@@ -264,6 +211,15 @@ public final class AwesomePossum {
      */
     public static boolean isLearning() {
         return initComplete && preferences.getBoolean(Constants.IS_LEARNING, false);
+    }
+
+    /**
+     * Handy little method for confirming the version of the library in-app.
+     *
+     * @return the versionName of the library
+     */
+    public static String versionName() {
+        return BuildConfig.VERSION_NAME;
     }
 
     /**
@@ -282,7 +238,7 @@ public final class AwesomePossum {
 
     /**
      * Sends a request to the service (if it is listening) that you want an update on the sensors
-     * status. To receive it you will need to listen for a Broadcast event with the action
+     * status. To receive it you will need to startListening for a Broadcast event with the action
      * Messaging.POSSUM_MESSAGE ("PossumMessage")
      * <p>
      * The resulting intent will contain a jsonArray with jsonObjects for all detecotrs used
@@ -299,22 +255,9 @@ public final class AwesomePossum {
     private static List<String> dangerousPermissions() {
         // Populate dangerous permissions
         List<String> dangerousPermissions = new ArrayList<>();
-        try {
-            if (refusedDetectors == null) {
-                refusedDetectors = getUnwanted();
-            }
-            if (!(refusedDetectors.contains("Position") || refusedDetectors.contains("Satellites"))) {
-                dangerousPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
-            }
-            if (!(refusedDetectors.contains("Image"))) {
-                dangerousPermissions.add(Manifest.permission.CAMERA);
-            }
-            if (!(refusedDetectors.contains("AmbientSound"))) {
-                dangerousPermissions.add(Manifest.permission.RECORD_AUDIO);
-            }
-        } catch (Exception e) {
-            Log.e(tag, "Failed to get dangerous Permissions:",e);
-        }
+        dangerousPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        dangerousPermissions.add(Manifest.permission.CAMERA);
+        dangerousPermissions.add(Manifest.permission.RECORD_AUDIO);
         return dangerousPermissions;
     }
 
@@ -323,11 +266,26 @@ public final class AwesomePossum {
      * library. Until it is done, no data will be collected
      *
      * @param encryptedKurt the unique id reflecting the user who is authorized
+     * @param bucketKey     the S3 amazon bucket key of where you are uploading
      * @return true if authorized, false if not initialized yet
      */
-    public static boolean authorizeGathering(@NonNull Context context, @NonNull String encryptedKurt) {
+    public static boolean authorizeGathering(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucketKey) {
         init(context);
-        preferences.edit().putString(Constants.ENCRYPTED_KURT, encryptedKurt).apply();
+        String previouslyStoredKurt = preferences.getString(Constants.ENCRYPTED_KURT, null);
+        if (previouslyStoredKurt == null || !encryptedKurt.equals(previouslyStoredKurt)) {
+            // TODO: Store to temp until confirmed by service. Since it is in a separate process,I need to send an intent and await it
+            preferences.edit().putString(Constants.ENCRYPTED_TEMP_KURT, encryptedKurt).apply();
+            if (Has.network(context)) {
+                // TODO: This is NOT validation that it is actually received. Need to store temp and get some response
+                Intent intent = new Intent(context, SendKurtService.class);
+                intent.putExtra("encryptedKurt", encryptedKurt);
+                intent.putExtra("secretKeyHash", Get.secretKeyHash(preferences));
+                intent.putExtra("bucketKey", bucketKey);
+                // TODO: The upload area should be changed to reflect the actual catalogue it uploads this data to
+                intent.putExtra("uploadArea", "telenor-nr-awesome-possum");
+                context.startService(intent);
+            }
+        }
         return true;
     }
 
@@ -337,23 +295,24 @@ public final class AwesomePossum {
      * @return true if allowed, false if not allowed yet (or if library isn't initialized yet)
      */
     private static boolean allowGathering() {
-        return initComplete && preferences.getString(Constants.ENCRYPTED_KURT, null) != null;
+        return initComplete && (preferences.getString(Constants.ENCRYPTED_KURT, null) != null || preferences.getString(Constants.ENCRYPTED_TEMP_KURT, null) != null);
     }
 
     /**
      * A default dialog for requesting authorization. Alternatively, manually create a dialog and
-     * make sure it calls AwesomePossum.authorizeGathering() then before it starts to listen, calls
+     * make sure it calls AwesomePossum.authorizeGathering() then before it starts to startListening, calls
      * AwesomePossum.requestNeededPermissions(Activity) to
      *
-     * @param activity an android activity
+     * @param activity      an android activity
      * @param encryptedKurt the user id the dialog will authorize
-     * @param title    the title of the dialog
-     * @param message  the message of the dialog
-     * @param ok       the ok button text of the dialog
-     * @param cancel   the cancel button text of the dialog
+     * @param bucketKey     the bucketKey the encrypted kurt will be uploaded to
+     * @param title         the title of the dialog
+     * @param message       the message of the dialog
+     * @param ok            the ok button text of the dialog
+     * @param cancel        the cancel button text of the dialog
      * @return a dialog that can be show()'ed
      */
-    public static Dialog getAuthorizeDialog(@NonNull final Activity activity, @NonNull final String encryptedKurt, String title, String message, String ok, String cancel) {
+    public static Dialog getAuthorizeDialog(@NonNull final Activity activity, @NonNull final String encryptedKurt, @NonNull final String bucketKey, String title, String message, String ok, String cancel) {
         init(activity);
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle(title);
@@ -361,8 +320,8 @@ public final class AwesomePossum {
         builder.setPositiveButton(ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                AwesomePossum.authorizeGathering(activity, encryptedKurt);
-                AwesomePossum.requestNeededPermissions(activity);
+                authorizeGathering(activity, encryptedKurt, bucketKey);
+                requestNeededPermissions(activity);
                 dialog.dismiss();
             }
         });
@@ -373,15 +332,5 @@ public final class AwesomePossum {
             }
         });
         return builder.create();
-    }
-
-    /**
-     * Stops listening for data. This is explicitly called during terminate(@Context), which also
-     * cleans up
-     *
-     * @param context a valid android context
-     */
-    public static void stopListening(@NonNull Context context) {
-        context.stopService(new Intent(context, CollectorService.class));
     }
 }

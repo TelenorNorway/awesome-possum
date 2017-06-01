@@ -7,10 +7,10 @@ import android.util.Log;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.gson.JsonObject;
+import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
 import com.telenor.possumlib.interfaces.ISensorStatusUpdate;
 import com.telenor.possumlib.utils.FileUtil;
-import com.telenor.possumlib.utils.Get;
 
 import org.joda.time.DateTime;
 
@@ -83,16 +83,16 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
         return eventBus;
     }
     /**
-     * Starts to listen to the detectors dataSource. If the detector is not enabled, it will not
-     * start to listen. The moment it starts to listen, a sessionTimestamp is saved recording which
-     * interval the detector started to listen for data.
+     * Starts to startListening to the detectors dataSource. If the detector is not enabled, it will not
+     * start to startListening. The moment it starts to startListening, a sessionTimestamp is saved recording which
+     * interval the detector started to startListening for data.
      *
-     * @return true if started to listen, else false
+     * @return true if started to startListening, else false
      */
     public boolean startListening() {
         if (isEnabled()) { // && isAvailable()
-            // Removed isAvailable from listening, it should start to listen if it detects that it
-            // can listen regardless of whether it is actually available there and then
+            // Removed isAvailable from listening, it should start to startListening if it detects that it
+            // can startListening regardless of whether it is actually available there and then
             isListening = true;
         } else {
             if (!isEnabled()) {
@@ -183,7 +183,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
     }
 
     /**
-     * Handles stopping to listen and clearing all resources from a detector - or at least it should.
+     * Handles stopping to startListening and clearing all resources from a detector - or at least it should.
      * Each successive extension of the default method needs to handle its own resources
      */
     public void terminate() {
@@ -315,7 +315,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
 
     @VisibleForTesting
     protected String bucketKey() {
-        return "data/" + Get.version(context()) + "/" + detectorName() + "/" + encryptedKurt + "/" + secretKeyHash + "/"  + timestamp()+ ".zip";
+        return "data/" + AwesomePossum.versionName() + "/" + detectorName() + "/" + encryptedKurt + "/" + secretKeyHash + "/"  + timestamp()+ ".zip";
     }
 
     protected boolean stageForUpload(File file) {

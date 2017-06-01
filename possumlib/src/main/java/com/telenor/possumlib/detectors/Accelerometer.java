@@ -7,8 +7,6 @@ import android.support.annotation.NonNull;
 
 import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractZippingAndroidDetector;
-import com.telenor.possumlib.changeevents.LocationChangeEvent;
-import com.telenor.possumlib.changeevents.WifiChangeEvent;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.constants.ReqCodes;
 
@@ -26,20 +24,8 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
     }
 
     @Override
-    public long restartInterval() {
-        return 2940000; //49*60*1000;
-    }
-
-    @Override
     protected int detectorRequestCode() {
         return ReqCodes.ACCELEROMETER;
-    }
-
-    @Override
-    public void detectorWakelockActivated() {
-        // Accelerometer, which has the most probability of existing has responsibility of firing an location/wifi/bluetooth event each wakelock active
-        eventBus().post(new LocationChangeEvent());
-        eventBus().post(new WifiChangeEvent());
     }
 
     @Override

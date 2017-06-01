@@ -30,7 +30,6 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
     private BroadcastReceiver receiver;
     private IntentFilter intentFilter = new IntentFilter();
     private int wifiState = WifiManager.WIFI_STATE_DISABLED;
-    private long lastUserActiveScan;
     private boolean isRegistered;
     private boolean isScanning;
 

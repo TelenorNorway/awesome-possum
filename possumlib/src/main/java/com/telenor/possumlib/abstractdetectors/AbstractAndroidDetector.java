@@ -3,7 +3,6 @@ package com.telenor.possumlib.abstractdetectors;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
-import android.os.Build;
 import android.support.annotation.NonNull;
 
 import com.google.common.eventbus.EventBus;
@@ -20,7 +19,7 @@ public abstract class AbstractAndroidDetector extends AbstractDetector {
 
     /**
      * Constructor for all abstract sensors. Note that it is abstract, requiring you to extend it
-     * for each sensor you wish to listen to.
+     * for each sensor you wish to startListening to.
      *
      * @param context    Any android context
      * @param sensorType The Sensor.Type you wish to use for this sensor
@@ -38,20 +37,12 @@ public abstract class AbstractAndroidDetector extends AbstractDetector {
 
     public abstract long guaranteedListenInterval();
 
-    public abstract long restartInterval();
-
     /**
      * The request code for the pending intent. Need to be unique for each detector
      *
      * @return an integer for the request code used in the PendingIntent
      */
     protected abstract int detectorRequestCode();
-
-    /**
-     * Fired each time the sensor starts a wakeperiod and on start listen. Useful for oneshot
-     * methods like singleLocationUpdate or a scan.
-     */
-    public abstract void detectorWakelockActivated();
 
     /**
      * Yield the power in mA used by the sensor while in use
@@ -63,7 +54,7 @@ public abstract class AbstractAndroidDetector extends AbstractDetector {
     }
 
     /**
-     * This implementation of isEnabled relies on there being a sensor to listen to. Should the
+     * This implementation of isEnabled relies on there being a sensor to startListening to. Should the
      * constructor fail to find the given sensor it throw a missing sensor exception and will not
      * enable this as a sensor. Consequently it will not allow any startListening
      *
@@ -72,16 +63,6 @@ public abstract class AbstractAndroidDetector extends AbstractDetector {
     @Override
     public boolean isEnabled() {
         return isEnabled;
-    }
-
-    /**
-     * Returns whether the sensor is of type wakeup or not. Wakeup sensors will awaken the processor
-     * to deliver the data, while non-wakeup will store internally until full then replace
-     *
-     * @return true if it wakes up processor, false if not
-     */
-    public boolean isWakeUpDetector() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && sensor != null && sensor.isWakeUpSensor();
     }
 
     /**

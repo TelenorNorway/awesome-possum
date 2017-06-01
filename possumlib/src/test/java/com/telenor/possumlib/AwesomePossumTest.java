@@ -12,8 +12,6 @@ import android.hardware.SensorManager;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 
-import com.telenor.possumlib.AwesomePossum;
-import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
 
 import junit.framework.Assert;
@@ -26,9 +24,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowCamera;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -80,7 +75,7 @@ public class AwesomePossumTest {
 
         fakePreferences = RuntimeEnvironment.application.getSharedPreferences("test", Context.MODE_PRIVATE);
         when(mockedContext.getSharedPreferences(anyString(), anyInt())).thenReturn(fakePreferences);
-        AwesomePossum.terminate(mockedContext);
+        AwesomePossum.stopListening(mockedContext);
     }
     @After
     public void tearDown() throws Exception {
@@ -91,7 +86,7 @@ public class AwesomePossumTest {
     @Test
     public void testListenBeforeAuthorized() throws Exception {
         try {
-            AwesomePossum.listen(mockedContext);
+            AwesomePossum.startListening(mockedContext);
             verify(mockedContext, never()).startService(any(Intent.class));
             Assert.fail("Should not have reached this space");
         } catch (GatheringNotAuthorizedException ignore) {
@@ -100,8 +95,8 @@ public class AwesomePossumTest {
 
     @Test
     public void testListenAfterAuthorized() throws Exception {
-        AwesomePossum.authorizeGathering(RuntimeEnvironment.application, "fakeKurt");
-        AwesomePossum.listen(mockedContext);
+        AwesomePossum.authorizeGathering(RuntimeEnvironment.application, "fakeKurt", "fakeBucketKey");
+        AwesomePossum.startListening(mockedContext);
         verify(mockedContext, times(1)).startService(any(Intent.class));
     }
 
@@ -115,34 +110,10 @@ public class AwesomePossumTest {
     }
 
     @Test
-    public void testSettingUnwantedDetectorsStoresThemInPreferences() throws Exception {
-        List<String> unwantedDetectors = new ArrayList<>();
-        unwantedDetectors.add("Accelerometer");
-        unwantedDetectors.add("Gyroscope");
-
-        Assert.assertNull(fakePreferences.getString("refusedDetectors", null));
-        AwesomePossum.setUnwantedDetectors(mockedContext, unwantedDetectors);
-        Assert.assertNotNull(fakePreferences.getString("refusedDetectors", null));
-        Assert.assertEquals("Accelerometer,Gyroscope", fakePreferences.getString("refusedDetectors", null));
-    }
-
-    @Test
-    public void testUnwantedDetectorsAreNotAdded() throws Exception {
-        List<String> unwantedDetectors = new ArrayList<>();
-        unwantedDetectors.add("Network");
-        unwantedDetectors.add("Position");
-        AwesomePossum.setUnwantedDetectors(mockedContext, unwantedDetectors);
-        Assert.assertEquals("Network,Position", fakePreferences.getString("refusedDetectors", null));
-        AwesomePossum.authorizeGathering(mockedContext, "fakeKurt");
-        AwesomePossum.listen(mockedContext);
-        verify(mockedContext, times(1)).startService(any(Intent.class));
-    }
-
-    @Test
     public void testTerminateBeforeInitialize() throws Exception {
         try {
             Context mockContext = mock(Context.class);
-            AwesomePossum.terminate(mockContext);
+            AwesomePossum.stopListening(mockContext);
         } catch (Exception e) {
             Assert.fail("Should not have gotten here, was not initialized");
         }

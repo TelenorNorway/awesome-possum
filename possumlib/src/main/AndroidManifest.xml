@@ -57,10 +57,10 @@
         <service
             android:name=".services.UploadService"
             android:process=":possumUploader" />
-        <service android:name=".services.RebootTriggerSensorService" />
         <service
             android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService"
             android:process=":possumUploader"
             android:enabled="true" />
+        <service android:name=".services.SendKurtService" />
     </application>
 </manifest>

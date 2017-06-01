@@ -29,10 +29,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(PossumTestRunner.class)
-public class UploadConnectionTest {
+public class AsyncUploadTest {
     private Context mockedContext;
 
-    private UploadConnection uploadConnection;
+    private AsyncUpload asyncUpload;
     private IWrite mockedListener;
     private TransferUtility mockedTransferUtility;
     private File dataDir;
@@ -78,13 +78,13 @@ public class UploadConnectionTest {
 //            }
 //        }).when(mockedDetector2).prepareUpload();
 //
-//        uploadConnection = new InstrumentedConnection();
+//        asyncUpload = new InstrumentedConnection();
         Robolectric.flushBackgroundThreadScheduler();
     }
 
     @After
     public void tearDown() throws Exception {
-        uploadConnection = null;
+        asyncUpload = null;
         FileUtil.clearDirectory(RuntimeEnvironment.application, dataDir);
         Thread.sleep(100); // Fix for shadowApplication being dead on test, causing shadowAsync do give nullPointer
     }
@@ -97,10 +97,10 @@ public class UploadConnectionTest {
 //    @Test
 //    public void testInvalidInit() throws Exception {
 //        try {
-//            uploadConnection = new UploadConnection(null, mockedListener, mockedTransferUtility, null);
+//            asyncUpload = new UploadConnection(null, mockedListener, mockedTransferUtility, null);
 //            Assert.fail("Should not accept missing context");
 //        } catch (Exception e) {
-//            Assert.assertEquals("Missing context on uploadConnection", e.getMessage());
+//            Assert.assertEquals("Missing context on asyncUpload", e.getMessage());
 //        }
 //    }
 
@@ -128,7 +128,7 @@ public class UploadConnectionTest {
 //    }
 
 //    private void execute() {
-//        uploadConnection.execute((Void) null);
+//        asyncUpload.execute((Void) null);
 //        ArgumentCaptor<Runnable> continuationCaptor = ArgumentCaptor.forClass(Runnable.class);
 //        continuationCaptor.getValue().run();
 //    }

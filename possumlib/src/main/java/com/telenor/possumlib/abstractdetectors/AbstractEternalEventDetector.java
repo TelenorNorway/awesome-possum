@@ -47,7 +47,7 @@ public abstract class AbstractEternalEventDetector extends AbstractEventDrivenDe
 
     @Override
     public void terminate() {
-        super.stopListening(); // Before terminate since stopListening is overridden
+        super.stopListening(); // Before stopListening since stopListening is overridden
         super.terminate();
     }
 }

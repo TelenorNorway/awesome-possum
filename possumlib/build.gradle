@@ -2,7 +2,10 @@ apply plugin: 'com.android.library'
 apply plugin: 'com.novoda.bintray-release'
 
 project.group = 'com.telenor'
-
+ext {
+    VERSION_CODE = 4
+    VERSION_NAME = "1.1.0"
+}
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
@@ -10,8 +13,8 @@ android {
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 25
-        versionCode 3
-        versionName "1.0.2"
+        versionCode VERSION_CODE
+        versionName VERSION_NAME
         ndk {
             abiFilters "x86", "x86_64", "armeabi-v7a", "armeabi", "mips"
         }
@@ -56,7 +59,7 @@ publish {
     userOrg = 'telenordigital'
     groupId = project.group
     artifactId = 'awesome-possum'
-    publishVersion = '1.0.2'
+    publishVersion = VERSION_NAME
 }
 
 dependencies {

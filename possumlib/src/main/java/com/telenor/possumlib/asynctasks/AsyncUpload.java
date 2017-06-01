@@ -10,60 +10,51 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.google.common.base.Joiner;
-import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.interfaces.IWrite;
 import com.telenor.possumlib.utils.FileUtil;
 
 import java.io.File;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class UploadConnection extends AsyncTask<Void, Integer, Exception> {
-    private static final String TAG = UploadConnection.class.getName();
-    private final Context context;
-    private final TransferUtility transferUtility;
-
-    private final IWrite listener;
+public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
+    protected Context context;
+    private IWrite listener;
+    private String uploadArea;
+    private TransferUtility transferUtility;
+    List<File> filesToUpload;
 
     private final AtomicInteger filesLeft = new AtomicInteger();
     private final AtomicInteger filesCanceled = new AtomicInteger();
     private final AtomicInteger filesFailed = new AtomicInteger();
     private final AtomicLong bytesTransferred = new AtomicLong();
-    private ConcurrentLinkedQueue<AbstractDetector> detectors = new ConcurrentLinkedQueue<>();
 
     private int totalNumberOfFiles;
     private long totalNumberOfBytes;
-    private static final String tag = UploadConnection.class.getName();
 
-    public UploadConnection(@NonNull Context context, @NonNull IWrite listener, @NonNull TransferUtility transferUtility, ConcurrentLinkedQueue<AbstractDetector> detectors) {
+    private static final String tag = AsyncUpload.class.getName();
+
+    public AsyncUpload(@NonNull Context context, @NonNull IWrite listener, @NonNull TransferUtility transferUtility, @NonNull String uploadArea, List<File> filesToUpload) {
         this.context = context;
-        this.detectors = detectors;
-        this.transferUtility = transferUtility;
         this.listener = listener;
+        this.transferUtility = transferUtility;
+        this.filesToUpload = filesToUpload;
+        this.uploadArea = uploadArea;
     }
 
     @Override
     protected Exception doInBackground(Void... params) {
-        // TODO: Send message to service?
-        for (AbstractDetector sensor : detectors) {
-            sensor.prepareUpload();
-        }
-        startUpload();
-//        new Runnable() {
-//            @Override
-//            public void run() {
-//                startUpload();
-//            }
-//        }.run();
-        return null;
+        return upload();
     }
 
-    private void startUpload() {
-        List<File> sortedFiles = FileUtil.getFilesReadyForUpload(context);
-        Log.i(tag, "Files ready for upload:"+sortedFiles.size());
-        totalNumberOfFiles = sortedFiles.size();
+    /**
+     * The upload called in the background thread
+     * @return null if successful, or an exception if it failed
+     */
+    private Exception upload() {
+        Log.i(tag, "Files ready for upload:"+filesToUpload.size());
+        totalNumberOfFiles = filesToUpload.size();
         if (totalNumberOfFiles == 0) {
             // This should not happen during normal use.
             done();
@@ -73,14 +64,15 @@ public class UploadConnection extends AsyncTask<Void, Integer, Exception> {
         filesFailed.set(0);
         bytesTransferred.set(0);
         totalNumberOfBytes = 0;
-        for (File file : sortedFiles ) {
+        for (File file : filesToUpload ) {
             totalNumberOfBytes += file.length();
-            transferUtility
-                    .upload("telenor-nr-awesome-possum", FileUtil.toBucketKey(file), file)
+            transferUtility // Switch out upload below with a path?
+                    .upload(uploadArea, FileUtil.toBucketKey(file), file)
                     .setTransferListener(createTransferListener(file, filesLeft));
         }
-    }
 
+        return null;
+    }
     @VisibleForTesting
     private TransferListener createTransferListener(final File file, final AtomicInteger filesLeft) {
         return new TransferListener() {
@@ -93,17 +85,17 @@ public class UploadConnection extends AsyncTask<Void, Integer, Exception> {
                         break;
                     case COMPLETED:
                         if (!file.delete()) {
-                            Log.e(TAG, "Could not delete: " + file);
+                            Log.e(tag, "Could not delete: " + file);
                         }
                         oneDone();
                         break;
                     case CANCELED:
-                        Log.w(TAG, "Cancelled: " + ticketTransfer);
+                        Log.w(tag, "Cancelled: " + ticketTransfer);
                         filesCanceled.getAndIncrement();
                         oneDone();
                         break;
                     case FAILED:
-                        Log.w(TAG, "Failed: " + ticketTransfer);
+                        Log.w(tag, "Failed: " + ticketTransfer);
                         filesFailed.getAndIncrement();
                         oneDone();
                         break;
@@ -123,7 +115,7 @@ public class UploadConnection extends AsyncTask<Void, Integer, Exception> {
 
             @Override
             public void onError(int id, Exception ex) {
-                Log.w(TAG, ex);
+                Log.w(tag, ex);
             }
 
             private void oneDone() {
@@ -133,7 +125,6 @@ public class UploadConnection extends AsyncTask<Void, Integer, Exception> {
             }
         };
     }
-
     private long computePercentage() {
         return 100 * bytesTransferred.get() / totalNumberOfBytes;
     }

@@ -133,6 +133,6 @@ public class AmbientSoundDetector extends AbstractEventDrivenDetector {
     }
 
     private long listenInterval() {
-        return 5000; // 5 seconds listen interval
+        return 5000; // 5 seconds startListening interval
     }
 }

@@ -19,9 +19,6 @@ import com.telenor.possumlib.utils.Get;
 
 import net.danlew.android.joda.JodaTimeAndroid;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /***
@@ -34,9 +31,8 @@ public class CollectorService extends Service {
     private static final String tag = CollectorService.class.getName();
 
     /**
-     * onStartCommand - ensuring that the service is NOT sticky, disabling it from being deleted
-     * by system. Also requires foreground to prevent from dying or being killed.
-     * Most important, it will start/stop the listening depending on requestCode and setPreferences
+     * onStartCommand - ensuring that the service is NOT sticky, initializing the detectors and
+     * starts the listening for data
      *
      * @param intent      Contains eventual extra information from startService call
      * @param flags       Sent on PendingIntent or via startService
@@ -53,13 +49,7 @@ public class CollectorService extends Service {
 
         Log.d(tag, "Start collection");
         // Adding all detectors
-        List<Class<? extends AbstractDetector>> ignoreList = null;
-        String refusedDetectors = intent.getStringExtra("refusedDetectors");
-        if (refusedDetectors != null) {
-            List<String> refused = new ArrayList<>(Arrays.asList(refusedDetectors.split(",")));
-            ignoreList = Get.ignoredDetectors(refused);
-        }
-        detectors.addAll(Get.Detectors(this, encryptedKurt, secretKeyHash, ignoreList, new EventBus()));
+        detectors.addAll(Get.Detectors(this, encryptedKurt, secretKeyHash, new EventBus()));
 
         for (AbstractDetector detector : detectors) {
             detector.startListening();
@@ -84,7 +74,7 @@ public class CollectorService extends Service {
         public void handleMessage(Message message) {
             switch (message.what) {
                 default:
-                    Log.i(tag, "Message received:" + message);
+                    Log.d(tag, "Message received:" + message);
             }
         }
     }
@@ -137,7 +127,6 @@ public class CollectorService extends Service {
         Log.d(tag, "Destroying background service");
         unregisterReceiver(receiver);
         clearAllDetectors();
-        detectors.clear();
     }
 
     @Override

@@ -8,9 +8,6 @@ import android.view.View;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Placeholder activity that uses the library
  */
@@ -23,24 +20,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
     }
 
-    public void upload(View view) {
-        AwesomePossum.startUpload(this, "kurtNilsærn", getString(R.string.bucketKey), true);
-    }
-
     public void startListen(View view) {
         try {
-            List<String> unwanted = new ArrayList<>();
-//            unwanted.add("Position");
-            AwesomePossum.setUnwantedDetectors(this, unwanted);
-            AwesomePossum.listen(this);
+            AwesomePossum.startListening(this);
         } catch (GatheringNotAuthorizedException e) {
-            AwesomePossum.getAuthorizeDialog(this, "kurtNilsærn", "Join the Awesome Possum Project", "By clicking ok you accept that you are 18 years of age and that you allow Telenor to gather anonymous data about your phone", "Ok", "Cancel").show();
+            AwesomePossum.getAuthorizeDialog(this, "superSecretEncryptedKurt", getString(R.string.bucketKey), "Join the Awesome Possum Project", "By clicking ok you accept that you are 18 years of age and that you allow Telenor to gather anonymous data about your phone", "Ok", "Cancel").show();
             Log.i(tag, "Need authorization from user");
         }
     }
 
     public void stopListen(View view) {
         AwesomePossum.stopListening(this);
+        AwesomePossum.startUpload(this, "superSecretEncryptedKurt", getString(R.string.bucketKey));
     }
 
     @Override

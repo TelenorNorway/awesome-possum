@@ -40,6 +40,7 @@ public class Get {
     /**
      * Lookup table for computing the secret key checksum character.
      * It's web safe base 64 with some adjustments to avoid easily confused characters.
+     *
      * @see #encodeReadably
      */
     private static final char READABLE_ENCODER[] = {
@@ -85,6 +86,7 @@ public class Get {
     /**
      * Returns a secret key. NOTE: This CANNOT be called in separate processes, meaning it can only
      * be called from the AwesomePossum in main thread part.
+     *
      * @param preferences a shared preferences to search for key in
      * @return a secret key hash
      */
@@ -150,6 +152,7 @@ public class Get {
 
     /**
      * Gets the version currently being used
+     *
      * @param context a valid android context
      * @return a string with the current version
      */
@@ -161,30 +164,19 @@ public class Get {
         }
     }
 
-    public static List<AbstractDetector> Detectors(@NonNull Context context, String encryptedKurt, String secretKeyHash, List<Class<? extends AbstractDetector>> ignoreList, @NonNull EventBus eventBus) {
+    public static List<AbstractDetector> Detectors(@NonNull Context context, String encryptedKurt, String secretKeyHash, @NonNull EventBus eventBus) {
         List<AbstractDetector> detectors = new ArrayList<>();
-        if (ignoreList == null || !ignoreList.contains(MetaDataDetector.class))
-            detectors.add(new MetaDataDetector(context, encryptedKurt, secretKeyHash, eventBus)); // Should always be first in line
-        if (ignoreList == null || !ignoreList.contains(HardwareDetector.class))
-            detectors.add(new HardwareDetector(context, encryptedKurt, secretKeyHash, eventBus));
-        if (ignoreList == null || !ignoreList.contains(Accelerometer.class))
-            detectors.add(new Accelerometer(context, encryptedKurt, secretKeyHash, eventBus));
-        if (ignoreList == null || !ignoreList.contains(GyroScope.class))
-            detectors.add(new GyroScope(context, encryptedKurt, secretKeyHash, eventBus));
-        if (ignoreList == null || !ignoreList.contains(LocationDetector.class))
-            detectors.add(new LocationDetector(context, encryptedKurt, secretKeyHash, eventBus));
-        if (ignoreList == null || !ignoreList.contains(BluetoothDetector.class))
-            detectors.add(new BluetoothDetector(context, encryptedKurt, secretKeyHash, eventBus));
-        if (ignoreList == null || !ignoreList.contains(NetworkDetector.class))
-            detectors.add(new NetworkDetector(context, encryptedKurt, secretKeyHash, eventBus));
-        if (ignoreList == null || !ignoreList.contains(AmbientSoundDetector.class))
-            detectors.add(new AmbientSoundDetector(context, encryptedKurt, secretKeyHash, eventBus));
-        if (ignoreList == null || !ignoreList.contains(ImageDetector.class))
-            detectors.add(new ImageDetector(context, encryptedKurt, secretKeyHash, eventBus));
-        if (ignoreList == null || !ignoreList.contains(TypingRecognitionSensor.class))
-            detectors.add(new TypingRecognitionSensor(context, encryptedKurt, secretKeyHash, eventBus));
-        if (ignoreList == null || !ignoreList.contains(GestureDetector.class))
-            detectors.add(new GestureDetector(context, encryptedKurt, secretKeyHash, eventBus));
+        detectors.add(new MetaDataDetector(context, encryptedKurt, secretKeyHash, eventBus)); // Should always be first in line
+        detectors.add(new HardwareDetector(context, encryptedKurt, secretKeyHash, eventBus));
+        detectors.add(new Accelerometer(context, encryptedKurt, secretKeyHash, eventBus));
+        detectors.add(new GyroScope(context, encryptedKurt, secretKeyHash, eventBus));
+        detectors.add(new LocationDetector(context, encryptedKurt, secretKeyHash, eventBus));
+        detectors.add(new BluetoothDetector(context, encryptedKurt, secretKeyHash, eventBus));
+        detectors.add(new NetworkDetector(context, encryptedKurt, secretKeyHash, eventBus));
+        detectors.add(new AmbientSoundDetector(context, encryptedKurt, secretKeyHash, eventBus));
+        detectors.add(new ImageDetector(context, encryptedKurt, secretKeyHash, eventBus));
+        detectors.add(new TypingRecognitionSensor(context, encryptedKurt, secretKeyHash, eventBus));
+        detectors.add(new GestureDetector(context, encryptedKurt, secretKeyHash, eventBus));
         return detectors;
     }
 

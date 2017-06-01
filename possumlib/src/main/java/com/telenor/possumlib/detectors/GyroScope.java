@@ -25,17 +25,8 @@ public class GyroScope extends AbstractZippingAndroidDetector {
     }
 
     @Override
-    public long restartInterval() {
-        return 2940000; //49*60*1000;
-    }
-
-    @Override
     protected int detectorRequestCode() {
         return ReqCodes.GYROSCOPE;
-    }
-
-    @Override
-    public void detectorWakelockActivated() { // Ignore this since it is continuous
     }
 
     /**

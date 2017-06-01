@@ -42,9 +42,9 @@ public abstract class AbstractAndroidRegularDetector extends AbstractAndroidDete
 
     /**
      * startListening uses its ancestors method as base, it also registers the clas as a listener
-     * to the given type should it actually listen
+     * to the given type should it actually startListening
      *
-     * @return whether or not it starts to listen
+     * @return whether or not it starts to startListening
      */
     @Override
     public boolean startListening() {
