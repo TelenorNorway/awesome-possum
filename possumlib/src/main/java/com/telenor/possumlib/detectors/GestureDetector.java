@@ -52,6 +52,9 @@ public class GestureDetector extends AbstractEventDrivenDetector implements View
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         sessionValues.add(DateTime.now().getMillis() + " " + event.getAction() + " " + event.getX() + " " + event.getY() + " " + event.getPressure() + " " + event.getSize());
+        if (!storeWithInterval()) {
+            storeData();
+        }
         return false;
     }
 }
