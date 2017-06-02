@@ -18,9 +18,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.google.common.eventbus.EventBus;
-import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
-import com.telenor.possumlib.changeevents.BasicChangeEvent;
-import com.telenor.possumlib.changeevents.LocationChangeEvent;
+import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
 
 import java.util.List;
@@ -30,7 +28,7 @@ import java.util.TimerTask;
 /***
  * Uses gps with network to retrieve a position regularly
  */
-public class LocationDetector extends AbstractEventDrivenDetector implements LocationListener {
+public class LocationDetector extends AbstractDetector implements LocationListener {
     private static final String SINGLE_POSITION_SCAN = "SINGLE_POSITION_SCAN";
     private LocationManager locationManager;
     private boolean gpsAvailable;
@@ -157,9 +155,12 @@ public class LocationDetector extends AbstractEventDrivenDetector implements Loc
             locationManager.removeUpdates(this);
         }
     }
+
     @SuppressWarnings("MissingPermission")
     private void performScan() {
-        if (isEnabled()) {
+        Location lastLocation = lastLocation();
+        // Only scan if enabled, a last location is missing or the lastlocation is at least 15 minutes since
+        if (isEnabled() && (lastLocation == null || lastLocation.getTime() < (now() - 15 * 60 * 1000))) {
             boolean scanStarted = false;
             if (isProviderAvailable(LocationManager.GPS_PROVIDER) && isPermitted()) {
                 locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, this, Looper.getMainLooper());
@@ -187,6 +188,26 @@ public class LocationDetector extends AbstractEventDrivenDetector implements Loc
         }
     }
 
+    /**
+     * Finds the last recorded scanresult
+     * @return
+     */
+    @SuppressWarnings("MissingPermission")
+    private Location lastLocation() {
+        if (locationManager != null) {
+            if (isPermitted()) {
+                Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (lastLocation == null) {
+                    lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                }
+                if (lastLocation != null) {
+                    return lastLocation;
+                }
+            }
+        }
+        return null;
+    }
+
     private long scanTimeout() {
         return 60000; // 1,0 minute scan timeout
     }
@@ -201,20 +222,6 @@ public class LocationDetector extends AbstractEventDrivenDetector implements Loc
     }
 
     @Override
-    public void eventReceived(BasicChangeEvent object) {
-        if (object instanceof LocationChangeEvent) {
-            LocationChangeEvent event = (LocationChangeEvent)object;
-            switch (event.eventType()) {
-                case SINGLE_POSITION_SCAN:
-                    performScan();
-                    break;
-                default:
-                    Log.d(tag, "Unknown event in location detector:" + event.eventType());
-            }
-        }
-    }
-
-    @Override
     public void onLocationChanged(Location location) {
         String output = location.getTime() + " " + location.getLatitude() + " " + location.getLongitude() + " " + location.getAltitude() + " " + location.getAccuracy() + " " + location.getProvider();
         sessionValues.add(output);
@@ -223,11 +230,6 @@ public class LocationDetector extends AbstractEventDrivenDetector implements Loc
             maxSpeed = speed;
         }
         storeData();
-    }
-
-    @Override
-    protected boolean storeWithInterval() {
-        return false;
     }
 
     @Override

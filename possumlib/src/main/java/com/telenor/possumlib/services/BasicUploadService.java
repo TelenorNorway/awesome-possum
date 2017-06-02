@@ -57,7 +57,11 @@ public abstract class BasicUploadService extends Service implements IWrite, Iden
         return START_NOT_STICKY;
     }
 
-    private boolean startUpload() {
+    /**
+     * Starts the actual upload, unless it has already started
+     * @return true if it started the upload, false if it failed or was already running
+     */
+    public boolean startUpload() {
         if (isRunning.get()) {
             Log.w(tag, "Already running upload, ignoring upload");
             return false;

@@ -127,15 +127,17 @@ public final class AwesomePossum {
     }
 
     /**
-     * Starts to startListening while app is running
+     * Starts to listen/gather data while app is running
      *
+     * @param encryptedKurt the encrypted kurt id
      * @throws GatheringNotAuthorizedException If the user hasn't accepted the app, this exception is thrown
      */
-    public static void startListening(@NonNull Context context) throws GatheringNotAuthorizedException {
+    public static void startListening(@NonNull Context context, @NonNull String encryptedKurt) throws GatheringNotAuthorizedException {
         init(context);
         if (allowGathering()) {
             Intent intent = new Intent(context, CollectorService.class);
             intent.putExtra("isLearning", false);
+            intent.putExtra("encryptedKurt", encryptedKurt);
             intent.putExtra("secretKeyHash", Get.secretKeyHash(preferences));
             context.startService(intent);
         } else throw new GatheringNotAuthorizedException();

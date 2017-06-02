@@ -94,6 +94,13 @@ public class AbstractDetectorTest {
     }
 
     @Test
+    public void testNow() throws Exception {
+        long present = DateTime.now().getMillis();
+        Thread.sleep(2);
+        Assert.assertTrue(abstractDetector.now() > present);
+    }
+
+    @Test
     public void testInitialize() throws Exception {
         Assert.assertNotNull(abstractDetector);
     }

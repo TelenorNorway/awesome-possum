@@ -17,8 +17,6 @@ import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.utils.Get;
 
-import net.danlew.android.joda.JodaTimeAndroid;
-
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /***
@@ -27,6 +25,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class CollectorService extends Service {
     private static final ConcurrentLinkedQueue<AbstractDetector> detectors = new ConcurrentLinkedQueue<>();
     private BroadcastReceiver receiver;
+    private EventBus eventBus = new EventBus();
     private final static Messenger messenger = new Messenger(new PossumHandler());
     private static final String tag = CollectorService.class.getName();
 
@@ -42,15 +41,14 @@ public class CollectorService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int requestCode) {
         super.onStartCommand(intent, flags, requestCode);
-        String secretKeyHash = intent.getStringExtra("secretKeyHash");
-        String encryptedKurt = intent.getStringExtra("encryptedKurt");
         // Ensures all detectors are terminated and cleared before adding new ones
         clearAllDetectors();
 
         Log.d(tag, "Start collection");
         // Adding all detectors
-        detectors.addAll(Get.Detectors(this, encryptedKurt, secretKeyHash, new EventBus()));
-
+        detectors.addAll(Get.Detectors(this,
+                intent.getStringExtra("encryptedKurt"),
+                intent.getStringExtra("secretKeyHash"), eventBus));
         for (AbstractDetector detector : detectors) {
             detector.startListening();
         }
@@ -63,8 +61,8 @@ public class CollectorService extends Service {
      */
     private void clearAllDetectors() {
         for (AbstractDetector detector : detectors) {
-            detector.prepareUpload();
             detector.terminate();
+            detector.prepareUpload();
         }
         detectors.clear();
     }
@@ -87,7 +85,6 @@ public class CollectorService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        JodaTimeAndroid.init(this);
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -99,15 +96,19 @@ public class CollectorService extends Service {
     }
 
     private void handleIntent(String action) {
-        if (action != null && action.equals(Messaging.REQUEST_DETECTORS)) {
-            Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
-            JsonArray detectorObjects = new JsonArray();
-            for (AbstractDetector detector : detectors) {
-                detectorObjects.add(detector.toJson());
-            }
-            intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, Messaging.DETECTORS_STATUS);
-            intent.putExtra(Messaging.DETECTORS, detectorObjects.toString());
-            sendBroadcast(intent);
+        if (action == null) return;
+        switch (action) {
+            case Messaging.REQUEST_DETECTORS:
+                Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
+                JsonArray detectorObjects = new JsonArray();
+                for (AbstractDetector detector : detectors) {
+                    detectorObjects.add(detector.toJson());
+                }
+                intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, Messaging.DETECTORS_STATUS);
+                intent.putExtra(Messaging.DETECTORS, detectorObjects.toString());
+                sendBroadcast(intent);
+                break;
+            default:
         }
     }
 
@@ -121,7 +122,6 @@ public class CollectorService extends Service {
         Log.d(tag, "Destroying Collector service");
         unregisterReceiver(receiver);
         clearAllDetectors();
-
     }
 
     @Override

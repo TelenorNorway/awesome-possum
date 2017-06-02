@@ -52,6 +52,13 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
     }
 
     /**
+     * Handy method for getting a present timestamp
+     * @return long timestamp in millis
+     */
+    public long now() {
+        return DateTime.now().getMillis();
+    }
+    /**
      * Whether the detector is enabled on the phone. This is usually a yes or no, depending on model
      * etc. The detector cannot be used if it is not enabled. All subclasses must check for its
      * respective confirmation of whether or not it exist on the phone
@@ -96,9 +103,9 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
             isListening = true;
         } else {
             if (!isEnabled()) {
-                eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" DETECTOR OFFLINE ("+ detectorName()+") DISABLED"));
+                eventBus.post(new MetaDataChangeEvent(now()+" DETECTOR OFFLINE ("+ detectorName()+") DISABLED"));
             } else if (!isAvailable()) {
-                eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" DETECTOR OFFLINE ("+ detectorName()+") UNAVAILABLE"));
+                eventBus.post(new MetaDataChangeEvent(now()+" DETECTOR OFFLINE ("+ detectorName()+") UNAVAILABLE"));
             }
         }
         return isListening;
@@ -329,7 +336,6 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
         File dest = FileUtil.toUploadFile(
                 context(),
                 bucketKey());
-        Log.i(tag, "Upload file result:"+file.getAbsolutePath());
         if (!file.renameTo(dest)) {
             Log.e(tag, "Unable to stage: " + file.getName());
         }

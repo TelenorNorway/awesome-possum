@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void startListen(View view) {
         try {
-            AwesomePossum.startListening(this);
+            AwesomePossum.startListening(this, "superSecretEncryptedKurt");
         } catch (GatheringNotAuthorizedException e) {
             AwesomePossum.getAuthorizeDialog(this, "superSecretEncryptedKurt", getString(R.string.bucket), "Join the Awesome Possum Project", "By clicking ok you accept that you are 18 years of age and that you allow Telenor to gather anonymous data about your phone", "Ok", "Cancel").show();
             Log.i(tag, "Need authorization from user");

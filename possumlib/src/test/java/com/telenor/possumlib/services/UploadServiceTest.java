@@ -45,6 +45,11 @@ public class UploadServiceTest {
     }
 
     @Test
+    public void testDefaults() throws Exception {
+        Assert.assertTrue(serviceController.get().autoStartUpload());
+    }
+
+    @Test
     public void testOnCreateStartsAsyncTask() throws Exception {
         Assert.assertTrue(true);
     }

@@ -14,4 +14,5 @@ public class Messaging {
     public static final String UPLOAD_FAILED = "uploadFailed";
     public static final String VERIFICATION_FAILED = "VerificationFailed";
     public static final String VERIFICATION_SUCCESS = "VerificationSuccess";
+    public static final String START_UPLOAD = "startUpload";
 }

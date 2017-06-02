@@ -19,7 +19,8 @@ import com.telenor.possumlib.changeevents.BasicChangeEvent;
 import com.telenor.possumlib.constants.DetectorType;
 
 /***
- * Uses microphone for ambient sound analysis.
+ * Uses microphone for ambient sound analysis. Will be switched with AudioRecord instead of
+ * MediaRecord soon, stay tuned..
  */
 public class AmbientSoundDetector extends AbstractEventDrivenDetector {
     private AudioManager audioManager;
@@ -97,36 +98,36 @@ public class AmbientSoundDetector extends AbstractEventDrivenDetector {
         if (audioManager.isMicrophoneMute()) {
             audioManager.setMicrophoneMute(false);
         }
-        if (isPermitted()) {
-            mediaRecorder = new MediaRecorder();
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-            mediaRecorder.setOutputFile(storedData().getAbsolutePath());
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-
-            try {
-                mediaRecorder.prepare();
-                mediaRecorder.start();
-                isRecording = true;
-                audioHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        stopListening();
-                    }
-                }, listenInterval());
-            } catch (Exception e) {
-                Log.e(tag, "Failed to start recording:",e);
-            }
-        }
+//        if (isPermitted()) {
+//            mediaRecorder = new MediaRecorder();
+//            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+//            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+//            mediaRecorder.setOutputFile(storedData().getAbsolutePath());
+//            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+//
+//            try {
+//                mediaRecorder.prepare();
+//                mediaRecorder.start();
+//                isRecording = true;
+//                audioHandler.postDelayed(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        stopListening();
+//                    }
+//                }, listenInterval());
+//            } catch (Exception e) {
+//                Log.e(tag, "Failed to start recording:",e);
+//            }
+//        }
     }
 
     @Override
     public void stopListening() {
-        if (isRecording()) {
+        if (isRecording() && mediaRecorder != null) {
             Log.d(tag, "Stopping recording of voice");
-            mediaRecorder.stop();
-            mediaRecorder.reset();
-            mediaRecorder.release();
+//            mediaRecorder.stop();
+//            mediaRecorder.reset();
+//            mediaRecorder.release();
             mediaRecorder = null;
             isRecording = false;
         }

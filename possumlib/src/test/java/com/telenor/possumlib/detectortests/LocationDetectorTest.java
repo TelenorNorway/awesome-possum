@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
@@ -49,11 +50,11 @@ public class LocationDetectorTest {
 
     @Before
     public void setUp() throws Exception {
-        mockedContext = Mockito.mock(Context.class);
+        mockedContext = mock(Context.class);
         changedStatus = 0;
         eventBus = new EventBus();
         JodaTimeAndroid.init(RuntimeEnvironment.application);
-        mockedLocationManager = Mockito.mock(LocationManager.class);
+        mockedLocationManager = mock(LocationManager.class);
         when(mockedContext.getSystemService(Context.LOCATION_SERVICE)).thenReturn(mockedLocationManager);
         when(mockedLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)).thenReturn(true);
         when(mockedLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)).thenReturn(true);
@@ -90,8 +91,8 @@ public class LocationDetectorTest {
 
     @Test
     public void testNotEnabled() throws Exception {
-        mockedContext = Mockito.mock(Context.class);
-        mockedLocationManager = Mockito.mock(LocationManager.class);
+        mockedContext = mock(Context.class);
+        mockedLocationManager = mock(LocationManager.class);
         when(mockedContext.getSystemService(Context.LOCATION_SERVICE)).thenReturn(mockedLocationManager);
         when(mockedLocationManager.getAllProviders()).thenReturn(Collections.<String>emptyList());
         locationDetector = new LocationDetector(mockedContext, "fakeUnique", "fakeId", eventBus);
@@ -121,6 +122,11 @@ public class LocationDetectorTest {
     }
 
     @Test
+    public void testScanTimesOut() throws Exception {
+
+    }
+
+    @Test
     public void testEnabled() throws Exception {
         Assert.assertTrue(locationDetector.isProviderEnabled(LocationManager.GPS_PROVIDER));
         Assert.assertTrue(locationDetector.isProviderEnabled(LocationManager.NETWORK_PROVIDER));
@@ -129,6 +135,7 @@ public class LocationDetectorTest {
     @Test
     public void testDefaultValues() throws Exception {
         Assert.assertTrue(locationDetector.isValidSet());
+        Assert.assertEquals("Position", locationDetector.detectorName());
         Assert.assertEquals(DetectorType.Position, locationDetector.detectorType());
     }
 

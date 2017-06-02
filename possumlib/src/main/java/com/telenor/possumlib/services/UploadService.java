@@ -1,7 +1,6 @@
 package com.telenor.possumlib.services;
 
 import android.content.Intent;
-import android.util.Log;
 
 import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
@@ -26,7 +25,6 @@ final public class UploadService extends BasicUploadService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         secretKeyHash = intent.getStringExtra("secretKeyHash");
         encryptedKurt = intent.getStringExtra("encryptedKurt");
-        Log.i(tag, "EncryptedKurt on startCommand:"+encryptedKurt);
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -37,7 +35,6 @@ final public class UploadService extends BasicUploadService {
 
     @Override
     public List<File> filesDesiredForUpload() {
-        Log.i(tag, "EncryptedKurt on filesDesired:"+encryptedKurt);
         for (AbstractDetector detector : Get.Detectors(this, encryptedKurt, secretKeyHash, new EventBus())) {
             detector.prepareUpload();
             detector.terminate();
