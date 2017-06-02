@@ -349,7 +349,13 @@ public final class AwesomePossum {
      * @param cancel        the cancel button text of the dialog
      * @return a dialog that can be show()'ed
      */
-    public static Dialog getAuthorizeDialog(@NonNull final Activity activity, @NonNull final String encryptedKurt, @NonNull final String bucket, String title, String message, String ok, String cancel) {
+    public static Dialog getAuthorizeDialog(@NonNull final Activity activity,
+                                            @NonNull final String encryptedKurt,
+                                            @NonNull final String bucket,
+                                            String title,
+                                            String message,
+                                            String ok,
+                                            String cancel) {
         init(activity);
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle(title);

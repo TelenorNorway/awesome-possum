@@ -4,25 +4,45 @@ A library meant to gather data about a user and upload to the cloud. In order to
 
 To use, add the following to your app gradle dependencies:
 
-    compile 'com.telenor:possumlib:1.0.2'
+    compile 'com.telenor:possumlib:1.1.0'
     
 Remember to add jCenter() to your repositories.
 
 To use this library, here is a short list of the commands you need:
 
-     AwesomePossum.listen(Context);
+Gather data:
+
+     AwesomePossum.startListening(Context, kurtId);
+     
+Request authorization:
+     
      AwesomePossum.getAuthorizeDialog(ActivityContext,
                                       String encryptedKurt,
+                                      String amazonBucket,
                                       String Title, 
                                       String Message,
-                                      StringOkText,
+                                      String OkText,
                                       String CancelText).show();
-     AwesomePossum.authorizeGathering(String encryptedKurt);
+                                      
+Manually authorize user:
+
+     AwesomePossum.authorizeGathering(Context,
+                                      String encryptedKurt,
+                                      String amazonBucket);
+
+Manually request needed permissions from user:
+
+     AwesomePossum.requestNeededPermissions(ActivityContext);
+     
+Stop listening for data:
+
      AwesomePossum.stopListening(Context);
+     
+Start upload of data:
+
      AwesomePossum.startUpload(Context,
                                String encryptedKurt,
-                               String AmazonBucketKey, 
-                               Bool allowMobileUpload);
+                               String AmazonBucketKey);
 
 Remember to authorize before starting to listen, or it will throw a NotAuthorizedException.
 This can be done either with the getAuthorizeDialog method that does all for you, or by manually
