@@ -90,7 +90,7 @@ public class AwesomePossumTest {
     @Test
     public void testListenBeforeAuthorized() throws Exception {
         try {
-            AwesomePossum.startListening(mockedContext);
+            AwesomePossum.startListening(mockedContext, "encryptedKurt");
             verify(mockedContext, never()).startService(any(Intent.class));
             Assert.fail("Should not have reached this space");
         } catch (GatheringNotAuthorizedException ignore) {
@@ -105,7 +105,7 @@ public class AwesomePossumTest {
         verify(mockedContext, never()).startService(any(Intent.class));
         Assert.assertTrue(AwesomePossum.authorizeGathering(mockedContext, "fakeKurt", "fakeBucketKey"));
         verify(mockedContext, times(1)).startService(any(Intent.class));
-        AwesomePossum.startListening(mockedContext);
+        AwesomePossum.startListening(mockedContext, "encryptedKurt");
         verify(mockedContext, times(2)).startService(any(Intent.class));
     }
 

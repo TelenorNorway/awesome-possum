@@ -32,10 +32,4 @@ public class SendKurtServiceTest {
     public void testInit() throws Exception {
         Assert.assertNotNull(serviceController.get());
     }
-
-    @Test
-    public void testDefaults() throws Exception {
-        SendKurtService sendKurtService = serviceController.create().get();
-        Assert.assertTrue(sendKurtService.autoStartUpload());
-    }
 }

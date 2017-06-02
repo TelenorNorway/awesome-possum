@@ -55,12 +55,6 @@ public class CollectorServiceTest {
         Assert.assertNotNull(receiverField.get(service));
     }
 
-    @Test
-    public void testDefaults() throws Exception {
-        CollectorService service = serviceController.create().get();
-        Assert.assertFalse(service.autoStartUpload());
-    }
-
 //    @Test
 //    public void testStartWithAllButImageDetectors() throws Exception {
 //        Intent intent = new Intent();
