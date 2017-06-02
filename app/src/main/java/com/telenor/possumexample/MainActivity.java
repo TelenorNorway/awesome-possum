@@ -24,14 +24,14 @@ public class MainActivity extends AppCompatActivity {
         try {
             AwesomePossum.startListening(this);
         } catch (GatheringNotAuthorizedException e) {
-            AwesomePossum.getAuthorizeDialog(this, "superSecretEncryptedKurt", getString(R.string.bucketKey), "Join the Awesome Possum Project", "By clicking ok you accept that you are 18 years of age and that you allow Telenor to gather anonymous data about your phone", "Ok", "Cancel").show();
+            AwesomePossum.getAuthorizeDialog(this, "superSecretEncryptedKurt", getString(R.string.bucket), "Join the Awesome Possum Project", "By clicking ok you accept that you are 18 years of age and that you allow Telenor to gather anonymous data about your phone", "Ok", "Cancel").show();
             Log.i(tag, "Need authorization from user");
         }
     }
 
     public void stopListen(View view) {
         AwesomePossum.stopListening(this);
-        AwesomePossum.startUpload(this, "superSecretEncryptedKurt", getString(R.string.bucketKey));
+        AwesomePossum.startUpload(this, "superSecretEncryptedKurt", getString(R.string.bucket));
     }
 
     @Override

@@ -68,7 +68,6 @@ public class GyroScopeTest extends GeneralSensorTest {
     @Test
     public void testDefaults() throws Exception {
         Assert.assertEquals(1680000, gyroScope.guaranteedListenInterval());
-        Assert.assertEquals(2940000, gyroScope.restartInterval());
         Method reqCodeMethod = GyroScope.class.getDeclaredMethod("detectorRequestCode");
         reqCodeMethod.setAccessible(true);
         Assert.assertEquals(ReqCodes.GYROSCOPE, reqCodeMethod.invoke(gyroScope));
@@ -100,7 +99,6 @@ public class GyroScopeTest extends GeneralSensorTest {
 //        };
 //        EventBus.getInstance().subscribe(LocationDetector.LOCATION_EVENT, subscriberLocation);
 //        EventBus.getInstance().subscribe(NetworkDetector.WIFI_EVENT, subscriberWifi);
-        gyroScope.detectorWakelockActivated();
         Assert.assertFalse(event1);
         Assert.assertFalse(event2);
 

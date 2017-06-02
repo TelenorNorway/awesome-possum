@@ -20,6 +20,7 @@ import android.util.Log;
 import com.telenor.possumlib.constants.Constants;
 import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
+import com.telenor.possumlib.interfaces.IPossumMessage;
 import com.telenor.possumlib.interfaces.IPossumTrust;
 import com.telenor.possumlib.services.CollectorService;
 import com.telenor.possumlib.services.SendKurtService;
@@ -58,6 +59,7 @@ public final class AwesomePossum {
     private static BroadcastReceiver serviceMessageReceiver;
     private static final String tag = AwesomePossum.class.getName();
     private static Set<IPossumTrust> trustListeners = new ConcurrentSkipListSet<>();
+    private static Set<IPossumMessage> messageListeners = new ConcurrentSkipListSet<>();
     private static SharedPreferences preferences;
 
     /**
@@ -106,7 +108,22 @@ public final class AwesomePossum {
     }
 
     private static void handleServiceIntent(@NonNull Intent intent) {
-        Log.d(tag, "Message from service:" + intent.getExtras());
+        String messageType = intent.getStringExtra(Messaging.POSSUM_MESSAGE_TYPE);
+        if (Messaging.VERIFICATION_SUCCESS.equals(messageType)) {
+            // Successfully uploaded authentication
+            if (initComplete) {
+                String tempKurt = preferences.getString(Constants.ENCRYPTED_TEMP_KURT, null);
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putString(Constants.ENCRYPTED_KURT, tempKurt);
+                editor.putString(Constants.ENCRYPTED_TEMP_KURT, null);
+                editor.apply();
+            } else {
+                Log.e(tag, "Upload of verification is successful but unable to store results");
+            }
+        }
+        for (IPossumMessage listener : messageListeners) {
+            listener.possumMessageReceived(messageType, intent.getStringExtra(Messaging.POSSUM_MESSAGE));
+        }
     }
 
     /**
@@ -182,18 +199,40 @@ public final class AwesomePossum {
     }
 
     /**
-     * @param context       a valid android context
+     * Add a interface listener for messages
+     * @param messageListener a listener you want to add
+     */
+    public static void addMessageListener(IPossumMessage messageListener) {
+        messageListeners.add(messageListener);
+    }
+
+    /**
+     * Remove a specific listener for messages
+     * @param messageListener a listener you want to remove
+     */
+    public static void removeMessageListener(IPossumMessage messageListener) {
+        messageListeners.remove(messageListener);
+    }
+
+    /**
+     * Removes all listeners for Possum messages. Quick and easy way to clean up before terminating.
+     */
+    public static void removeAllMessageListeners() {
+        messageListeners.clear();
+    }
+
+    /**
+     * @param context a valid android context
      * @param encryptedKurt the encrypted key identifying the user
-     * @param bucketKey     the S3 amazon bucket key to upload to
+     * @param bucket the S3 amazon bucket to upload to
      * @return true if upload was started, false if no network to upload on or not initialized
      */
-    public static boolean startUpload(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucketKey) {
+    public static boolean startUpload(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucket) {
         if (preferences == null) return false;
         Intent intent = new Intent(context, UploadService.class);
         intent.putExtra("secretKeyHash", Get.secretKeyHash(preferences));
         intent.putExtra("encryptedKurt", encryptedKurt);
-        intent.putExtra("uploadArea", "telenor-nr-awesome-possum");
-        intent.putExtra("bucketKey", bucketKey);
+        intent.putExtra("bucket", bucket);
         boolean startedUpload;
         if (Has.network(context)) {
             context.startService(intent);
@@ -232,7 +271,7 @@ public final class AwesomePossum {
         init(context);
         preferences.edit().putBoolean(Constants.IS_LEARNING, isLearning).apply();
         Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
-        intent.putExtra(Messaging.TYPE, Messaging.LEARNING);
+        intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, Messaging.LEARNING);
         context.sendBroadcast(intent);
     }
 
@@ -241,14 +280,13 @@ public final class AwesomePossum {
      * status. To receive it you will need to startListening for a Broadcast event with the action
      * Messaging.POSSUM_MESSAGE ("PossumMessage")
      * <p>
-     * The resulting intent will contain a jsonArray with jsonObjects for all detecotrs used
+     * The resulting intent will contain a jsonArray with jsonObjects for all detectors used
      *
      * @param context a valid android context
      */
     public static void requestDetectorStatus(@NonNull Context context) {
-        init(context);
         Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
-        intent.putExtra(Messaging.TYPE, Messaging.REQUEST_DETECTORS);
+        intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, Messaging.REQUEST_DETECTORS);
         context.sendBroadcast(intent);
     }
 
@@ -266,23 +304,20 @@ public final class AwesomePossum {
      * library. Until it is done, no data will be collected
      *
      * @param encryptedKurt the unique id reflecting the user who is authorized
-     * @param bucketKey     the S3 amazon bucket key of where you are uploading
+     * @param bucket     the S3 amazon bucket key of where you are uploading
      * @return true if authorized, false if not initialized yet
      */
-    public static boolean authorizeGathering(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucketKey) {
+    public static boolean authorizeGathering(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucket) {
         init(context);
         String previouslyStoredKurt = preferences.getString(Constants.ENCRYPTED_KURT, null);
         if (previouslyStoredKurt == null || !encryptedKurt.equals(previouslyStoredKurt)) {
-            // TODO: Store to temp until confirmed by service. Since it is in a separate process,I need to send an intent and await it
             preferences.edit().putString(Constants.ENCRYPTED_TEMP_KURT, encryptedKurt).apply();
             if (Has.network(context)) {
-                // TODO: This is NOT validation that it is actually received. Need to store temp and get some response
                 Intent intent = new Intent(context, SendKurtService.class);
                 intent.putExtra("encryptedKurt", encryptedKurt);
-                intent.putExtra("secretKeyHash", Get.secretKeyHash(preferences));
-                intent.putExtra("bucketKey", bucketKey);
-                // TODO: The upload area should be changed to reflect the actual catalogue it uploads this data to
-                intent.putExtra("uploadArea", "telenor-nr-awesome-possum");
+                String secretKeyHash = Get.secretKeyHash(preferences);
+                intent.putExtra("secretKeyHash", secretKeyHash);
+                intent.putExtra("bucket", bucket);
                 context.startService(intent);
             }
         }
@@ -305,14 +340,14 @@ public final class AwesomePossum {
      *
      * @param activity      an android activity
      * @param encryptedKurt the user id the dialog will authorize
-     * @param bucketKey     the bucketKey the encrypted kurt will be uploaded to
+     * @param bucket        the bucket the encrypted kurt will be uploaded to
      * @param title         the title of the dialog
      * @param message       the message of the dialog
      * @param ok            the ok button text of the dialog
      * @param cancel        the cancel button text of the dialog
      * @return a dialog that can be show()'ed
      */
-    public static Dialog getAuthorizeDialog(@NonNull final Activity activity, @NonNull final String encryptedKurt, @NonNull final String bucketKey, String title, String message, String ok, String cancel) {
+    public static Dialog getAuthorizeDialog(@NonNull final Activity activity, @NonNull final String encryptedKurt, @NonNull final String bucket, String title, String message, String ok, String cancel) {
         init(activity);
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle(title);
@@ -320,7 +355,7 @@ public final class AwesomePossum {
         builder.setPositiveButton(ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                authorizeGathering(activity, encryptedKurt, bucketKey);
+                authorizeGathering(activity, encryptedKurt, bucket);
                 requestNeededPermissions(activity);
                 dialog.dismiss();
             }

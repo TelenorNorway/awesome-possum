@@ -326,10 +326,11 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
         if (file.length() == 0) {
             return false;
         }
-        boolean res = file.renameTo(FileUtil.toUploadFile(
+        File dest = FileUtil.toUploadFile(
                 context(),
-                bucketKey()));
-        if (!res) {
+                bucketKey());
+        Log.i(tag, "Upload file result:"+file.getAbsolutePath());
+        if (!file.renameTo(dest)) {
             Log.e(tag, "Unable to stage: " + file.getName());
         }
         return true;

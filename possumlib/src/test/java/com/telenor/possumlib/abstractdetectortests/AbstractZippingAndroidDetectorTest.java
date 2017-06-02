@@ -82,18 +82,8 @@ public class AbstractZippingAndroidDetectorTest {
             }
 
             @Override
-            public long restartInterval() {
-                return restartInterval;
-            }
-
-            @Override
             protected int detectorRequestCode() {
                 return 13371337;
-            }
-
-            @Override
-            public void detectorWakelockActivated() {
-                wakeLockActivated = true;
             }
 
             @Override
@@ -135,7 +125,6 @@ public class AbstractZippingAndroidDetectorTest {
     @Test
     public void testDefaults() throws Exception {
         Assert.assertEquals(DetectorType.Accelerometer, androidSensor.detectorType());
-        Assert.assertEquals(1000, androidSensor.restartInterval());
         Assert.assertEquals(1000, androidSensor.guaranteedListenInterval());
         Assert.assertFalse(wakeLockActivated);
     }

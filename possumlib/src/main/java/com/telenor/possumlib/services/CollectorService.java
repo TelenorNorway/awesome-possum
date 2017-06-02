@@ -87,33 +87,27 @@ public class CollectorService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(tag, "OnCreate of collector service");
+        JodaTimeAndroid.init(this);
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent == null || intent.getAction() == null) return;
-                handleIntent(intent.getStringExtra(Messaging.TYPE));
+                handleIntent(intent.getStringExtra(Messaging.POSSUM_MESSAGE_TYPE));
             }
         };
         registerReceiver(receiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
-        JodaTimeAndroid.init(this);
     }
 
     private void handleIntent(String action) {
-        if (action == null) return;
-        switch (action) {
-            case Messaging.REQUEST_DETECTORS:
-                Intent intent = new Intent(Messaging.POSSUM_RETURN_MESSAGE);
-                JsonArray detectorObjects = new JsonArray();
-                for (AbstractDetector detector : detectors) {
-                    detectorObjects.add(detector.toJson());
-                }
-                intent.putExtra(Messaging.TYPE, Messaging.DETECTORS_STATUS);
-                intent.putExtra(Messaging.DETECTORS, detectorObjects.toString());
-                sendBroadcast(intent);
-                break;
-            default:
-                Log.d(tag, "Unhandled action:" + action);
+        if (action != null && action.equals(Messaging.REQUEST_DETECTORS)) {
+            Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
+            JsonArray detectorObjects = new JsonArray();
+            for (AbstractDetector detector : detectors) {
+                detectorObjects.add(detector.toJson());
+            }
+            intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, Messaging.DETECTORS_STATUS);
+            intent.putExtra(Messaging.DETECTORS, detectorObjects.toString());
+            sendBroadcast(intent);
         }
     }
 
@@ -124,9 +118,10 @@ public class CollectorService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(tag, "Destroying background service");
+        Log.d(tag, "Destroying Collector service");
         unregisterReceiver(receiver);
         clearAllDetectors();
+
     }
 
     @Override

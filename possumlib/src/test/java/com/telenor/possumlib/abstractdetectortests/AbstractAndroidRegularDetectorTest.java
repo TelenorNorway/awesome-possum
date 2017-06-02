@@ -163,18 +163,8 @@ public class AbstractAndroidRegularDetectorTest {
             }
 
             @Override
-            public long restartInterval() {
-                return restartInterval;
-            }
-
-            @Override
             protected int detectorRequestCode() {
                 return requestCode;
-            }
-
-            @Override
-            public void detectorWakelockActivated() {
-
             }
 
             @Override

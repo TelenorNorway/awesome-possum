@@ -5,11 +5,10 @@
     <uses-feature
         android:name="android.hardware.location.gps"
         android:required="false" /> <!-- Needed for lollipop and over -->
-    <!--<uses-feature android:name="android.hardware.sensor.accelerometer" /> &lt;!&ndash; library is useless without accelerometer - or is it? &ndash;&gt;-->
 
     <!-- Necessary for network information & device id -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" /> <!-- -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <!--<uses-permission android:name="android.permission.READ_PHONE_STATE" />--> <!-- dangerous, needs confirmation on marshmallow -->
@@ -26,10 +25,6 @@
     <!-- Necessary for bluetooth paired devices or other devices with location -->
     <uses-permission android:name="android.permission.BLUETOOTH" /> <!-- required for connecting...which we don't need -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" /> <!-- Required for scan because of BLE -->
-    <!--<uses-permission android:name="android.permission.NFC" />-->
-
-    <!-- Necessary for heart rate and other body sensors -->
-    <!--<uses-permission android:name="android.permission.BODY_SENSORS" />--> <!-- api 20 & dangerous, needs confirmation on marshmallow -->
 
     <!-- Necessary for voice recognition -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" /> <!-- dangerous, needs confirmation on marshmallow -->
@@ -37,19 +32,11 @@
     <!-- Necessary for all neural network transmissions and data sending -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Necessary to keep processor alive -->
-    <!--<uses-permission android:name="android.permission.WAKE_LOCK" />-->
-
-    <!-- Necessary for fingerprint sensor -->
-    <!--<uses-permission android:name="android.permission.USE_FINGERPRINT" />-->  <!--api 23 -->
-
-    <!-- Necessary to make app (possibly) start on restart. -->
-    <!--<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />-->
-
     <application>
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
+
         <service
             android:name=".services.CollectorService"
             android:exported="false"
@@ -58,9 +45,11 @@
             android:name=".services.UploadService"
             android:process=":possumUploader" />
         <service
+            android:name=".services.SendKurtService"
+            android:process=":possumUploader" />
+        <service
             android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService"
-            android:process=":possumUploader"
-            android:enabled="true" />
-        <service android:name=".services.SendKurtService" />
+            android:enabled="true"
+            android:process=":possumUploader" />
     </application>
 </manifest>

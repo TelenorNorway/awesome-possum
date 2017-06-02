@@ -21,9 +21,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
     protected Context context;
     private IWrite listener;
-    private String uploadArea;
     private TransferUtility transferUtility;
-    List<File> filesToUpload;
+    private List<File> filesToUpload;
 
     private final AtomicInteger filesLeft = new AtomicInteger();
     private final AtomicInteger filesCanceled = new AtomicInteger();
@@ -35,12 +34,11 @@ public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
 
     private static final String tag = AsyncUpload.class.getName();
 
-    public AsyncUpload(@NonNull Context context, @NonNull IWrite listener, @NonNull TransferUtility transferUtility, @NonNull String uploadArea, List<File> filesToUpload) {
+    public AsyncUpload(@NonNull Context context, @NonNull IWrite listener, @NonNull TransferUtility transferUtility, List<File> filesToUpload) {
         this.context = context;
         this.listener = listener;
         this.transferUtility = transferUtility;
         this.filesToUpload = filesToUpload;
-        this.uploadArea = uploadArea;
     }
 
     @Override
@@ -53,7 +51,7 @@ public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
      * @return null if successful, or an exception if it failed
      */
     private Exception upload() {
-        Log.i(tag, "Files ready for upload:"+filesToUpload.size());
+        Log.d(tag, "Files ready for upload:"+filesToUpload.size());
         totalNumberOfFiles = filesToUpload.size();
         if (totalNumberOfFiles == 0) {
             // This should not happen during normal use.
@@ -67,35 +65,34 @@ public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
         for (File file : filesToUpload ) {
             totalNumberOfBytes += file.length();
             transferUtility // Switch out upload below with a path?
-                    .upload(uploadArea, FileUtil.toBucketKey(file), file)
+                    .upload("telenor-nr-awesome-possum", FileUtil.toBucketKey(file), file)
                     .setTransferListener(createTransferListener(file, filesLeft));
         }
-
         return null;
     }
+
     @VisibleForTesting
     private TransferListener createTransferListener(final File file, final AtomicInteger filesLeft) {
         return new TransferListener() {
             @Override
             public void onStateChanged(int id, TransferState state) {
-                String ticketTransfer = "ticket " + file.getName();
                 switch (state) {
                     case WAITING_FOR_NETWORK:
                         transferUtility.cancel(id);
                         break;
                     case COMPLETED:
                         if (!file.delete()) {
-                            Log.e(tag, "Could not delete: " + file);
+                            Log.e(tag, "Could not delete after upload: " + file);
                         }
                         oneDone();
                         break;
                     case CANCELED:
-                        Log.w(tag, "Cancelled: " + ticketTransfer);
+                        Log.w(tag, "Cancelled: " + file.getName());
                         filesCanceled.getAndIncrement();
                         oneDone();
                         break;
                     case FAILED:
-                        Log.w(tag, "Failed: " + ticketTransfer);
+                        Log.w(tag, "Failed: " + file.getName());
                         filesFailed.getAndIncrement();
                         oneDone();
                         break;
@@ -130,7 +127,7 @@ public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
     }
 
     private void done() {
-        Log.i(tag, "All done uploading");
+        Log.d(tag, "All done uploading");
         Exception exception = null;
         String message = null;
         if (totalNumberOfFiles == 0) {

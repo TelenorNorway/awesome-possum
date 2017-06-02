@@ -25,10 +25,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Basic upload service handling upload to S3
  */
 public abstract class BasicUploadService extends Service implements IWrite, IdentityChangedListener {
-    private TransferUtility transferUtility;
     private AtomicBoolean isRunning = new AtomicBoolean(false);
     private AsyncUpload asyncUpload;
-    private String uploadArea;
     private CognitoCachingCredentialsProvider cognitoProvider;
     private static final String tag = BasicUploadService.class.getName();
 
@@ -45,10 +43,9 @@ public abstract class BasicUploadService extends Service implements IWrite, Iden
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        uploadArea = intent.getStringExtra("uploadArea");
         cognitoProvider = new CognitoCachingCredentialsProvider(
                 this,
-                intent.getStringExtra("bucketKey"), // Identity Pool ID
+                intent.getStringExtra("bucket"), // Identity Pool ID
                 Regions.US_EAST_1 // Region
         );
         if (cognitoProvider.getCachedIdentityId() == null) {
@@ -60,14 +57,15 @@ public abstract class BasicUploadService extends Service implements IWrite, Iden
         return START_NOT_STICKY;
     }
 
-    public boolean startUpload() {
+    private boolean startUpload() {
         if (isRunning.get()) {
             Log.w(tag, "Already running upload, ignoring upload");
             return false;
         }
         isRunning.set(true);
-        transferUtility = new TransferUtility(new AmazonS3Client(cognitoProvider), this);
-        asyncUpload = new AsyncUpload(this, this, transferUtility, uploadArea, filesDesiredForUpload());
+        asyncUpload = new AsyncUpload(this, this,
+                new TransferUtility(new AmazonS3Client(cognitoProvider), this),
+                filesDesiredForUpload());
         asyncUpload.execute((Void) null);
         return true;
     }
@@ -78,9 +76,19 @@ public abstract class BasicUploadService extends Service implements IWrite, Iden
 
     public void uploadComplete(Exception exception, String message) {
         Log.d(tag, "Upload complete:" + exception + " - " + message);
-        sendIntent("success", message);
+        if (exception == null) {
+            sendIntent(successMessageType(), message);
+        } else {
+            sendIntent(Messaging.UPLOAD_FAILED, exception.toString());
+        }
         stopSelf();
     }
+
+    /**
+     * Override this to tell what message type it should send on success
+     * @return a text string for success in uploading
+     */
+    public abstract String successMessageType();
 
     /**
      * Method that must be overridden, this will show the extended service which files it is to use
@@ -98,21 +106,20 @@ public abstract class BasicUploadService extends Service implements IWrite, Iden
         } else {
             String errorMsg = "Failed to get identity:"+oldIdentityId+" -"+newIdentityId;
             Log.e(tag, errorMsg);
-            sendIntent("error", errorMsg);
+            sendIntent(Messaging.UPLOAD_FAILED, errorMsg);
             stopSelf();
         }
     }
 
     /**
      * Sends intent to AwesomePossum library where it can be handled
-     * @param key the key/type of the message
-     * @param value the actual message to be sent
+     * @param type the type of the message, should always be a constant from Messaging
+     * @param message the actual message to be sent
      */
-    protected void sendIntent(String key, String value) {
+    protected void sendIntent(String type, String message) {
         Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
-        intent.putExtra(key, value);
-//        intent.setPackage(getPackageName()); // Locks it to the same package
-        Log.d(tag, "The package is:"+getPackageName());
+        intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, type);
+        intent.putExtra(Messaging.POSSUM_MESSAGE, message);
         sendBroadcast(intent);
     }
 

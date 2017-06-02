@@ -86,18 +86,8 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
             }
 
             @Override
-            public long restartInterval() {
-                return 0;
-            }
-
-            @Override
             protected int detectorRequestCode() {
                 return 0;
-            }
-
-            @Override
-            public void detectorWakelockActivated() {
-
             }
 
             @Override
@@ -157,18 +147,8 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
             }
 
             @Override
-            public long restartInterval() {
-                return 0;
-            }
-
-            @Override
             protected int detectorRequestCode() {
                 return 0;
-            }
-
-            @Override
-            public void detectorWakelockActivated() {
-
             }
 
             @Override

@@ -11,10 +11,13 @@ import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 
 import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
 
 import junit.framework.Assert;
+
+import net.danlew.android.joda.JodaTimeAndroid;
 
 import org.junit.After;
 import org.junit.Before;
@@ -61,6 +64,7 @@ public class AwesomePossumTest {
         MockitoAnnotations.initMocks(this);
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         cameraInfo.canDisableShutterSound = true;
+        JodaTimeAndroid.init(RuntimeEnvironment.application);
         ShadowCamera.addCameraInfo(Camera.CameraInfo.CAMERA_FACING_FRONT, cameraInfo);
         when(mockedContext.getSystemService(Context.ACTIVITY_SERVICE)).thenReturn(mockedActivityManager);
         when(mockedContext.getSystemService(Context.ALARM_SERVICE)).thenReturn(mockedAlarmManager);
@@ -68,7 +72,7 @@ public class AwesomePossumTest {
         when(mockedContext.getSystemService(Context.CONNECTIVITY_SERVICE)).thenReturn(mockedConnectivityManager);
         when(mockedContext.getSystemService(Context.SENSOR_SERVICE)).thenReturn(mockedSensorManager);
         when(mockedContext.getPackageManager()).thenReturn(mockedPackageManager);
-        when(mockedContext.getApplicationContext()).thenReturn(RuntimeEnvironment.application);
+        when(mockedContext.getApplicationContext()).thenReturn(mockedContext);
         when(mockedContext.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
         when(mockedPackageManager.getPackageInfo(anyString(), eq(0))).thenReturn(mockedPackageInfo);
         when(mockedContext.getPackageName()).thenReturn(RuntimeEnvironment.application.getPackageName());
@@ -95,9 +99,14 @@ public class AwesomePossumTest {
 
     @Test
     public void testListenAfterAuthorized() throws Exception {
-        AwesomePossum.authorizeGathering(RuntimeEnvironment.application, "fakeKurt", "fakeBucketKey");
-        AwesomePossum.startListening(mockedContext);
+        NetworkInfo mockedNetworkInfo = mock(NetworkInfo.class);
+        when(mockedConnectivityManager.getActiveNetworkInfo()).thenReturn(mockedNetworkInfo);
+        when(mockedNetworkInfo.isConnected()).thenReturn(true);
+        verify(mockedContext, never()).startService(any(Intent.class));
+        Assert.assertTrue(AwesomePossum.authorizeGathering(mockedContext, "fakeKurt", "fakeBucketKey"));
         verify(mockedContext, times(1)).startService(any(Intent.class));
+        AwesomePossum.startListening(mockedContext);
+        verify(mockedContext, times(2)).startService(any(Intent.class));
     }
 
     @Test
@@ -107,20 +116,5 @@ public class AwesomePossumTest {
 //        Assert.assertTrue(permissions.contains(Manifest.permission.ACCESS_FINE_LOCATION));
 //        Assert.assertTrue(permissions.contains(Manifest.permission.CAMERA));
 //        Assert.assertTrue(permissions.contains(Manifest.permission.RECORD_AUDIO));
-    }
-
-    @Test
-    public void testTerminateBeforeInitialize() throws Exception {
-        try {
-            Context mockContext = mock(Context.class);
-            AwesomePossum.stopListening(mockContext);
-        } catch (Exception e) {
-            Assert.fail("Should not have gotten here, was not initialized");
-        }
-    }
-
-    @Test
-    public void testTerminateAfterInitialize() throws Exception {
-
     }
 }

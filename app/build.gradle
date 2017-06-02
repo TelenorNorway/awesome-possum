@@ -21,14 +21,14 @@ android {
 
     buildTypes {
         debug {
-            resValue "string", "bucketKey", properties["bucketKey"] // Setting the bucket key from local.properties
+            resValue "string", "bucket", properties["bucket"] // Setting the S3 bucket from local.properties
             debuggable true
             useProguard false
             jniDebuggable true
             testCoverageEnabled false
         }
         release {
-            resValue "string", "bucketKey", properties["bucketKey"] // Setting the bucket key from local.properties
+            resValue "string", "bucket", properties["bucket"] // Setting the S3 bucket from local.properties
             debuggable false
             testCoverageEnabled false
             minifyEnabled false
