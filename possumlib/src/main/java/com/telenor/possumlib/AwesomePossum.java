@@ -184,16 +184,16 @@ public final class AwesomePossum {
     /**
      * Add listener for trustScore changes. Not implemented yet.
      *
-     * @param listener listener for changes to trustscore
+     * @param listener listener for changes to trustScore
      */
     public static void addTrustListener(IPossumTrust listener) {
         trustListeners.add(listener);
     }
 
     /**
-     * Remove listener for trustscore changes. Not implemented yet.
+     * Remove listener for trustScore changes. Not implemented yet.
      *
-     * @param listener listener for changes to trustscore
+     * @param listener listener for changes to trustScore
      */
     public static void removeTrustListener(IPossumTrust listener) {
         trustListeners.remove(listener);
