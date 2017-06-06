@@ -13,9 +13,14 @@ import android.os.Build;
 
 import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.PossumTestRunner;
+import com.telenor.possumlib.changeevents.BluetoothChangeEvent;
+import com.telenor.possumlib.changeevents.LocationChangeEvent;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.detectors.BluetoothDetector;
 
+import net.danlew.android.joda.JodaTimeAndroid;
+
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,6 +30,7 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
 import org.robolectric.internal.Shadow;
 import org.robolectric.shadows.ShadowBluetoothAdapter;
@@ -48,8 +54,10 @@ public class BluetoothDetectorTest {
     @Mock
     private Context mockedContext;
     private EventBus eventBus;
+//    @Mock
+//    private BluetoothAdapter mockedBluetoothAdapter;
     private ShadowBluetoothAdapter shadowBluetoothAdapter;
-    //    private BluetoothAdapter mockedBluetoothAdapter;
+    private BluetoothAdapter bluetoothAdapter;
     @Mock
     private BluetoothDevice mockedBluetoothDevice;
 
@@ -57,12 +65,15 @@ public class BluetoothDetectorTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        JodaTimeAndroid.init(RuntimeEnvironment.application);
         eventBus = new EventBus();
-        BluetoothAdapter bluetoothAdapter = Shadow.newInstanceOf(BluetoothAdapter.class);
+        bluetoothAdapter = Shadow.newInstanceOf(BluetoothAdapter.class);
         shadowBluetoothAdapter = Shadows.shadowOf(bluetoothAdapter);
         shadowBluetoothAdapter.setEnabled(true);
+        when(mockedContext.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
         when(mockedContext.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(mockedBluetoothManager);
         when(mockedContext.checkPermission(anyString(), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
+//        when(mockedBluetoothManager.getAdapter()).thenReturn(mockedBluetoothAdapter);
         when(mockedBluetoothManager.getAdapter()).thenReturn(bluetoothAdapter);
         bluetoothDetector = new BluetoothDetector(mockedContext, "fakeUnique", "fakeId", eventBus);
     }
@@ -86,18 +97,99 @@ public class BluetoothDetectorTest {
         Assert.assertEquals(DetectorType.Bluetooth, bluetoothDetector.detectorType());
         Assert.assertEquals(12000, bluetoothDetector.detectInterval());
         Assert.assertEquals(900000, bluetoothDetector.minimumInterval());
+        Assert.assertTrue(bluetoothDetector.isValidSet());
+        Assert.assertEquals("Bluetooth", bluetoothDetector.detectorName());
+        Method storeWithIntervalMethod = BluetoothDetector.class.getDeclaredMethod("storeWithInterval");
+        storeWithIntervalMethod.setAccessible(true);
+        Assert.assertFalse((boolean)storeWithIntervalMethod.invoke(bluetoothDetector));
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+    @Test
+    public void testStopScanWhenNotScanning() throws Exception {
+        BluetoothAdapter mockedBluetoothAdapter = mock(BluetoothAdapter.class);
+        when(mockedBluetoothManager.getAdapter()).thenReturn(mockedBluetoothAdapter);
+        bluetoothDetector = new BluetoothDetector(mockedContext, "fakeUnique", "fakeId", eventBus);
+        Method stopScanMethod = BluetoothDetector.class.getDeclaredMethod("stopScan");
+        stopScanMethod.setAccessible(true);
+        stopScanMethod.invoke(bluetoothDetector);
+        verify(mockedBluetoothAdapter, times(1)).isDiscovering();
+        verify(mockedBluetoothAdapter, times(0)).cancelDiscovery();
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+    @Test
+    public void testStopScanWhenScanning() throws Exception {
+        BluetoothAdapter mockedBluetoothAdapter = mock(BluetoothAdapter.class);
+        when(mockedBluetoothAdapter.isDiscovering()).thenReturn(true);
+        when(mockedBluetoothManager.getAdapter()).thenReturn(mockedBluetoothAdapter);
+        bluetoothDetector = new BluetoothDetector(mockedContext, "fakeUnique", "fakeId", eventBus);
+        Method stopScanMethod = BluetoothDetector.class.getDeclaredMethod("stopScan");
+        stopScanMethod.setAccessible(true);
+        stopScanMethod.invoke(bluetoothDetector);
+        verify(mockedBluetoothAdapter, times(1)).isDiscovering();
+        verify(mockedBluetoothAdapter, times(1)).cancelDiscovery();
+    }
+
+    @Test
+    public void testEventReceived() throws Exception {
+        bluetoothDetector.eventReceived(new LocationChangeEvent());
+        Field timerField = BluetoothDetector.class.getDeclaredField("timer");
+        timerField.setAccessible(true);
+        Assert.assertNull(timerField.get(bluetoothDetector));
+        bluetoothDetector.eventReceived(new BluetoothChangeEvent());
+        Assert.assertNotNull(timerField.get(bluetoothDetector));
+    }
+
+    @Test
+    public void testTimer() throws Exception {
+        Field timerField = BluetoothDetector.class.getDeclaredField("timer");
+        timerField.setAccessible(true);
+        Assert.assertNull(timerField.get(bluetoothDetector));
+        Method reCreateTimerMethod = BluetoothDetector.class.getDeclaredMethod("reCreateTimer");
+        reCreateTimerMethod.setAccessible(true);
+        reCreateTimerMethod.invoke(bluetoothDetector);
+        Assert.assertNotNull(timerField.get(bluetoothDetector));
+    }
+
+    @Test
+    public void testScanForBluetoothBeforeMinInterval() throws Exception {
+        Field lastScanField = BluetoothDetector.class.getDeclaredField("lastStart");
+        lastScanField.setAccessible(true);
+        lastScanField.set(bluetoothDetector, DateTime.now().getMillis()-bluetoothDetector.minimumInterval() - 10000);
+        Field timerField = BluetoothDetector.class.getDeclaredField("timer");
+        timerField.setAccessible(true);
+        Assert.assertNull(timerField.get(bluetoothDetector));
+        Method scanMethod = BluetoothDetector.class.getDeclaredMethod("scanForBluetooth");
+        scanMethod.setAccessible(true);
+        scanMethod.invoke(bluetoothDetector);
+        Assert.assertNotNull(timerField.get(bluetoothDetector));
+    }
+
+    @Test
+    public void testScanForBluetoothAfterMinInterval() throws Exception {
+        Field lastScanField = BluetoothDetector.class.getDeclaredField("lastStart");
+        lastScanField.setAccessible(true);
+        lastScanField.set(bluetoothDetector, DateTime.now().getMillis()-10);
+        Field timerField = BluetoothDetector.class.getDeclaredField("timer");
+        timerField.setAccessible(true);
+        Assert.assertNull(timerField.get(bluetoothDetector));
+        Method scanMethod = BluetoothDetector.class.getDeclaredMethod("scanForBluetooth");
+        scanMethod.setAccessible(true);
+        scanMethod.invoke(bluetoothDetector);
+        Assert.assertNull(timerField.get(bluetoothDetector));
     }
 
     @Test
     public void testRegisterReceiverOnInitialize() throws Exception {
         Field field = BluetoothDetector.class.getDeclaredField("receiver");
         field.setAccessible(true);
-        BroadcastReceiver receiver = (BroadcastReceiver)field.get(bluetoothDetector);
+        BroadcastReceiver receiver = (BroadcastReceiver) field.get(bluetoothDetector);
         Assert.assertNotNull(receiver);
         verify(mockedContext).registerReceiver(Matchers.eq(receiver), any(IntentFilter.class));
         Field fieldIntentFilter = BluetoothDetector.class.getDeclaredField("intentFilter");
         fieldIntentFilter.setAccessible(true);
-        IntentFilter intentFilter = (IntentFilter)fieldIntentFilter.get(bluetoothDetector);
+        IntentFilter intentFilter = (IntentFilter) fieldIntentFilter.get(bluetoothDetector);
         Assert.assertTrue(intentFilter.hasAction(BluetoothDevice.ACTION_FOUND));
         Assert.assertTrue(intentFilter.hasAction(BluetoothAdapter.ACTION_STATE_CHANGED));
     }
@@ -125,6 +217,7 @@ public class BluetoothDetectorTest {
         Assert.assertTrue(bluetoothDetector.isAvailable());
         Assert.assertTrue(bluetoothDetector.isEnabled());
     }
+
     @Test
     public void testInitWithAdapterWithModelNotLoaded() throws Exception {
         Assert.assertTrue(bluetoothDetector.isAvailable());
@@ -164,7 +257,7 @@ public class BluetoothDetectorTest {
     public void testBLEIsDisabled() throws Exception {
         Method method = BluetoothDetector.class.getDeclaredMethod("isBLEDevice");
         method.setAccessible(true);
-        boolean isBle = (boolean)method.invoke(bluetoothDetector);
+        boolean isBle = (boolean) method.invoke(bluetoothDetector);
         Assert.assertFalse(isBle);
     }
 

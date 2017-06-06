@@ -5,21 +5,47 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_alignParentBottom="true"
-        android:weightSum="2"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_alignParentTop="true"
+        android:orientation="horizontal"
+        android:weightSum="2">
         <Button
+            style="?android:buttonBarButtonStyle"
             android:layout_width="0dp"
             android:layout_weight="1"
-            android:text="@string/startup"
-            android:onClick="startListen"
+            android:onClick="toggleLearning"
+            android:text="@string/learningOn"
             android:layout_height="wrap_content" />
         <Button
+            style="?android:buttonBarButtonStyle"
             android:layout_width="0dp"
             android:layout_weight="1"
-            android:text="@string/stop_listen"
-            android:onClick="stopListen"
+            android:onClick="toggleAuth"
+            android:text="@string/authOn"
             android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <Button
+            style="?android:buttonBarButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="toggleListen"
+            android:text="@string/listenOn" />
+
+        <Button
+            style="?android:buttonBarButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="upload"
+            android:text="@string/upload" />
     </LinearLayout>
 </RelativeLayout>

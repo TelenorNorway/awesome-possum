@@ -3,4 +3,10 @@
     <string name="startup">Start Listen</string>
     <string name="stop_listen">Stop Listen</string>
     <string name="upload">Upload</string>
+    <string name="learningOn">Learning On</string>
+    <string name="learningOff">Learning Off</string>
+    <string name="authOn">Authentication On</string>
+    <string name="authOff">Authentication Off</string>
+    <string name="listenOn">Listen On</string>
+    <string name="listenOff">Listen Off</string>
 </resources>

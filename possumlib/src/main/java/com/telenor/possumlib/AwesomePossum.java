@@ -2,6 +2,7 @@ package com.telenor.possumlib;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -34,8 +35,8 @@ import org.joda.time.DateTime;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * SDK for handling all things related to the Awesome Possum project
@@ -58,8 +59,8 @@ public final class AwesomePossum {
     private static BroadcastReceiver trustReceiver;
     private static BroadcastReceiver serviceMessageReceiver;
     private static final String tag = AwesomePossum.class.getName();
-    private static Set<IPossumTrust> trustListeners = new ConcurrentSkipListSet<>();
-    private static Set<IPossumMessage> messageListeners = new ConcurrentSkipListSet<>();
+    private static Queue<IPossumTrust> trustListeners = new ConcurrentLinkedQueue<>();
+    private static Queue<IPossumMessage> messageListeners = new ConcurrentLinkedQueue<>();
     private static SharedPreferences preferences;
 
     /**
@@ -144,6 +145,21 @@ public final class AwesomePossum {
     }
 
     /**
+     * Check for whether the AwesomePossum is actively listening for sensordata
+     * @param context a valid android context
+     * @return true if the Collector service is running, false if not
+     */
+    public static boolean isListening(@NonNull Context context) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (CollectorService.class.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Enables you to request the needed permissions
      *
      * @param activity an android activity to handle the requesting
@@ -170,7 +186,7 @@ public final class AwesomePossum {
      *
      * @param listener listener for changes to trustscore
      */
-    public void addTrustListener(IPossumTrust listener) {
+    public static void addTrustListener(IPossumTrust listener) {
         trustListeners.add(listener);
     }
 
@@ -179,8 +195,16 @@ public final class AwesomePossum {
      *
      * @param listener listener for changes to trustscore
      */
-    public void removeTrustListener(IPossumTrust listener) {
+    public static void removeTrustListener(IPossumTrust listener) {
         trustListeners.remove(listener);
+    }
+
+    /**
+     * Used for finding out if any part of your system is being notified of authentication calls
+     * @return true if you have something listening to authentication, false if not
+     */
+    public static boolean isAuthenticating() {
+        return trustListeners.size() > 0;
     }
 
     /**
@@ -275,6 +299,7 @@ public final class AwesomePossum {
         Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
         intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, Messaging.LEARNING);
         context.sendBroadcast(intent);
+        Log.i(tag, "Is learning now set to:"+isLearning);
     }
 
     /**
