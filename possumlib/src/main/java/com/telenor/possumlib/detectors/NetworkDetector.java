@@ -9,12 +9,12 @@ import android.net.wifi.WifiManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
-import com.telenor.possumlib.changeevents.BasicChangeEvent;
+import com.telenor.possumlib.changeevents.PossumEvent;
 import com.telenor.possumlib.changeevents.WifiChangeEvent;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.interfaces.IOnReceive;
+import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.Has;
 
 import org.joda.time.DateTime;
@@ -33,8 +33,16 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
     private boolean isRegistered;
     private boolean isScanning;
 
-    public NetworkDetector(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) throws IllegalArgumentException {
-        super(context, identification, secretKeyHash, eventBus);
+    /**
+     * Constructor for NetworkDetector
+     *
+     * @param context a valid android context
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public NetworkDetector(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, encryptedKurt, eventBus, authenticating);
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -50,14 +58,6 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
     @Override
     public boolean isEnabled() {
         return wifiManager != null;
-    }
-
-    /**
-     * Minimum time between scan of networks
-     * @return amount of time in milliseconds
-     */
-    private long minimumUserActionTime() {
-        return 900000; // 15 minutes
     }
 
     @Override
@@ -103,8 +103,8 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
     }
 
     @Override
-    public boolean isAvailable() {
-        return true;
+    public String requiredPermission() {
+        return null;
     }
 
     @Override
@@ -118,7 +118,7 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
     }
 
     @Override
-    public void eventReceived(BasicChangeEvent object) {
+    public void eventReceived(PossumEvent object) {
         if (object instanceof WifiChangeEvent && isListening()) {
             if (object.message() == null) {
                 performScan();

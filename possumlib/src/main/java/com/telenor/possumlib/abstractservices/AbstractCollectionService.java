@@ -1,4 +1,4 @@
-package com.telenor.possumlib.services;
+package com.telenor.possumlib.abstractservices;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -7,27 +7,33 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.util.Log;
 
-import com.google.common.eventbus.EventBus;
 import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.Messaging;
+import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.Get;
+import com.telenor.possumlib.utils.Send;
+
+import net.danlew.android.joda.JodaTimeAndroid;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /***
  * Service that handles all actions pertaining to collecting the data from the sensors.
  */
-public class CollectorService extends Service {
+public abstract class AbstractCollectionService extends Service {
+    protected String encryptedKurt;
     private static final ConcurrentLinkedQueue<AbstractDetector> detectors = new ConcurrentLinkedQueue<>();
     private BroadcastReceiver receiver;
-    private EventBus eventBus = new EventBus();
+    private PossumBus eventBus = new PossumBus();
+    private Handler terminationHandler = new Handler(Looper.getMainLooper());
     private final static Messenger messenger = new Messenger(new PossumHandler());
-    private static final String tag = CollectorService.class.getName();
+    private static final String tag = AbstractCollectionService.class.getName();
 
     /**
      * onStartCommand - ensuring that the service is NOT sticky, initializing the detectors and
@@ -42,19 +48,36 @@ public class CollectorService extends Service {
     public int onStartCommand(Intent intent, int flags, int requestCode) {
         super.onStartCommand(intent, flags, requestCode);
         // Ensures all detectors are terminated and cleared before adding new ones
-        clearAllDetectors();
-
-        Log.d(tag, "Start collection");
-        // Adding all detectors
-        detectors.addAll(Get.Detectors(this,
-                intent.getStringExtra("encryptedKurt"),
-                intent.getStringExtra("secretKeyHash"), eventBus));
-        for (AbstractDetector detector : detectors) {
-            detector.startListening();
+        encryptedKurt = intent.getStringExtra("encryptedKurt");
+        if (encryptedKurt == null) {
+            Log.e(tag, "Missing needed value in intent. EncryptedKurt is null. Terminating service..");
+            Send.messageIntent(this, Messaging.COLLECTION_FAILED, "Missing kurtId in service");
+            stopSelf();
+        } else {
+            clearAllDetectors();
+            Log.d(tag, "Start collection:"+isAuthenticating());
+            // Adding all detectors
+            detectors.addAll(Get.Detectors(this, encryptedKurt, eventBus, isAuthenticating()));
+            for (AbstractDetector detector : detectors) {
+                detector.startListening();
+            }
+            if (timeSpentGathering() > 0) {
+                terminationHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        performPostAction();
+                    }
+                }, timeSpentGathering());
+            }
         }
-
         return START_NOT_STICKY;
     }
+
+    /**
+     * Defines whether the service is authenticating or data gathering
+     * @return true if authenticating, false if gathering
+     */
+    protected abstract boolean isAuthenticating();
 
     /**
      * Pushes all stored detectors to upload and terminates them
@@ -72,10 +95,15 @@ public class CollectorService extends Service {
         public void handleMessage(Message message) {
             switch (message.what) {
                 default:
-                    Log.d(tag, "Message received:" + message);
+                    Log.d(tag, "Service received message:" + message);
             }
         }
     }
+
+    /**
+     * Defines function to do something after collection is complete
+     */
+    public abstract void performPostAction();
 
     /**
      * onCreate - starts up all relevant sensors and setting service as a foreground service
@@ -85,6 +113,7 @@ public class CollectorService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        JodaTimeAndroid.init(this);
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -99,14 +128,11 @@ public class CollectorService extends Service {
         if (action == null) return;
         switch (action) {
             case Messaging.REQUEST_DETECTORS:
-                Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
                 JsonArray detectorObjects = new JsonArray();
                 for (AbstractDetector detector : detectors) {
                     detectorObjects.add(detector.toJson());
                 }
-                intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, Messaging.DETECTORS_STATUS);
-                intent.putExtra(Messaging.DETECTORS, detectorObjects.toString());
-                sendBroadcast(intent);
+                Send.messageIntent(this, Messaging.DETECTORS_STATUS, detectorObjects.toString());
                 break;
             default:
         }
@@ -119,10 +145,18 @@ public class CollectorService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(tag, "Destroying Collector service");
+        Log.d(tag, "Destroying Collector service:"+this);
         unregisterReceiver(receiver);
+        receiver = null;
         clearAllDetectors();
     }
+
+    /**
+     * The time spent gathering data before it either stops itself or uses the data for an
+     * authentication attempt. If time spent is 0, it equals waiting until terminated
+     * @return the time in milliseconds
+     */
+    public abstract long timeSpentGathering();
 
     @Override
     public IBinder onBind(Intent intent) {

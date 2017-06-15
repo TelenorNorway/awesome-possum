@@ -10,16 +10,16 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.PowerManager;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.telenor.possumlib.FileManipulator;
 import com.telenor.possumlib.JodaInit;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.SensorEvents;
 import com.telenor.possumlib.abstractdetectors.AbstractAndroidRegularDetector;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
-import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
+import com.telenor.possumlib.changeevents.PossumEvent;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.interfaces.IPossumEventListener;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -68,7 +68,8 @@ public class AbstractAndroidRegularDetectorTest {
     private int requestCode = 12345;
     private int counter;
     private File fakeFile;
-    private EventBus eventBus;
+    private IPossumEventListener listener;
+    private PossumBus eventBus;
     private AbstractAndroidRegularDetector androidRegularSensor;
     private Object sourceReceived;
 
@@ -79,7 +80,14 @@ public class AbstractAndroidRegularDetectorTest {
         MockitoAnnotations.initMocks(this);
         JodaInit.initializeJodaTime();
         counter = 0;
-        eventBus = new EventBus();
+        listener = new IPossumEventListener() {
+            @Override
+            public void eventReceived(PossumEvent event) {
+                counter++;
+                Assert.assertTrue(event.message().contains("Accelerometer FIFO SIZE 5000 5000"));
+            }
+        };
+        eventBus = new PossumBus();
         sensorManager = (SensorManager) RuntimeEnvironment.application.getSystemService(Context.SENSOR_SERVICE);
         shadow = Shadows.shadowOf(sensorManager);
         shadow.addSensor(Sensor.TYPE_ACCELEROMETER, mockedSensor);
@@ -106,15 +114,9 @@ public class AbstractAndroidRegularDetectorTest {
     @Test
     public void testInitFiresEventAboutFifoQueue() throws Exception {
         Assert.assertNull(sourceReceived);
-        eventBus.register(this);
+        eventBus.register(listener);
         androidRegularSensor = getDetector(RuntimeEnvironment.application, eventBus);
         Assert.assertEquals(1, counter);
-    }
-
-    @Subscribe
-    public void detectMetaEvent(MetaDataChangeEvent event) {
-        counter++;
-        Assert.assertTrue(event.message().contains("Accelerometer FIFO SIZE 5000 5000"));
     }
 
     @Test
@@ -155,8 +157,8 @@ public class AbstractAndroidRegularDetectorTest {
         verify(mockedSensorManager, times(1)).unregisterListener(any(SensorEventListener.class), eq(mockedSensor));
     }
 
-    private AbstractAndroidRegularDetector getDetector(Context context, EventBus eventBus) {
-        return new AbstractAndroidRegularDetector(context, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", eventBus) {
+    private AbstractAndroidRegularDetector getDetector(Context context, PossumBus eventBus) {
+        return new AbstractAndroidRegularDetector(context, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
             @Override
             public long guaranteedListenInterval() {
                 return guaranteedListen;
@@ -165,6 +167,11 @@ public class AbstractAndroidRegularDetectorTest {
             @Override
             protected int detectorRequestCode() {
                 return requestCode;
+            }
+
+            @Override
+            public String requiredPermission() {
+                return null;
             }
 
             @Override

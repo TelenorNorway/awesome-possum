@@ -32,24 +32,32 @@
     <!-- Necessary for all neural network transmissions and data sending -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <application>
-        <meta-data
-            android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version" />
+    <application> <!--  android:name="android.support.multidex.MultiDexApplication" -->
+        <!--<meta-data-->
+            <!--android:name="com.google.android.gms.version"-->
+            <!--android:value="@integer/google_play_services_version" />-->
 
         <service
-            android:name=".services.CollectorService"
+            android:name=".services.DataCollectionService"
             android:exported="false"
-            android:process=":possumCollector" />
+            android:process=":possum" />
+
         <service
-            android:name=".services.UploadService"
-            android:process=":possumUploader" />
+            android:name=".services.AuthenticationService"
+            android:exported="false"
+            android:process=":possum" />
+
+        <service
+            android:name=".services.DataUploadService"
+            android:exported="false"
+            android:process=":possum" />
         <service
             android:name=".services.SendKurtService"
-            android:process=":possumUploader" />
+            android:exported="false"
+            android:process=":possum" />
         <service
             android:name="com.amazonaws.mobileconnectors.s3.transferutility.TransferService"
             android:enabled="true"
-            android:process=":possumUploader" />
+            android:process=":possum" />
     </application>
 </manifest>

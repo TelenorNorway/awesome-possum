@@ -5,9 +5,9 @@ import android.support.annotation.NonNull;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.joda.time.DateTime;
 
@@ -15,8 +15,17 @@ import org.joda.time.DateTime;
  * Used to detect touch movements on a given view
  */
 public class GestureDetector extends AbstractEventDrivenDetector implements View.OnTouchListener {
-    public GestureDetector(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) throws IllegalArgumentException {
-        super(context, identification, secretKeyHash, eventBus);
+
+    /**
+     * Constructor for GestureDetector
+     *
+     * @param context a valid android context
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public GestureDetector(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, encryptedKurt, eventBus, authenticating);
     }
 
     @Override
@@ -32,6 +41,11 @@ public class GestureDetector extends AbstractEventDrivenDetector implements View
     @Override
     public boolean isAvailable() {
         return true;
+    }
+
+    @Override
+    public String requiredPermission() {
+        return null;
     }
 
     @Override

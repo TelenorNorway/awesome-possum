@@ -1,12 +1,9 @@
 package com.telenor.possumlib.changeevents;
 
-/**
- * Class for handling basic events with google's eventBus library
- */
-public abstract class BasicChangeEvent {
+public class PossumEvent {
     private String eventType;
     private String message;
-    public BasicChangeEvent(String eventType, String message) {
+    public PossumEvent(String eventType, String message) {
         this.eventType = eventType;
         this.message = message;
     }
@@ -17,4 +14,5 @@ public abstract class BasicChangeEvent {
     public String message() {
         return message;
     }
+
 }

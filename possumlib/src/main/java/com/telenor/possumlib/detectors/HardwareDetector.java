@@ -4,9 +4,9 @@ import android.content.Context;
 import android.os.Build;
 import android.support.annotation.NonNull;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.Get;
 
 /**
@@ -14,8 +14,16 @@ import com.telenor.possumlib.utils.Get;
  * the metaData
  */
 public class HardwareDetector extends AbstractDetector {
-    public HardwareDetector(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) throws IllegalArgumentException {
-        super(context, identification, secretKeyHash, eventBus);
+    /**
+     * Constructor for the Hardware Detector
+     *
+     * @param context        a valid android context
+     * @param identification the encrypted kurt
+     * @param eventBus       the event bus used for sending messages to and from
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public HardwareDetector(Context context, String identification, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, identification, eventBus, authenticating);
         findHardwareSpecs();
     }
 
@@ -25,8 +33,8 @@ public class HardwareDetector extends AbstractDetector {
     }
 
     @Override
-    public boolean isAvailable() {
-        return true;
+    public String requiredPermission() {
+        return null;
     }
 
     @Override

@@ -1,15 +1,18 @@
 package com.telenor.possumlib.abstractdetectors;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import com.google.gson.JsonObject;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
+import com.telenor.possumlib.changeevents.PossumEvent;
+import com.telenor.possumlib.interfaces.IPossumEventListener;
 import com.telenor.possumlib.interfaces.ISensorStatusUpdate;
+import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.FileUtil;
 
 import org.joda.time.DateTime;
@@ -22,73 +25,97 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.telenor.possumlib.utils.ExceptionUtil.combineAllStackTraces;
-
 /**
  * Basic detector abstract, storing all needed components needed to detect and run. Even if not
  * every implementation of this will run but utilize a different method of sampling, it is still
  * the base.
  */
-public abstract class AbstractDetector implements Comparable<AbstractDetector> {
+public abstract class AbstractDetector implements IPossumEventListener, Comparable<AbstractDetector> {
     protected static final String tag = AbstractDetector.class.getName();
     private final ReentrantLock lock = new ReentrantLock();
     private boolean isListening;
     private Context context;
-    private final EventBus eventBus;
+    private final PossumBus eventBus;
     public static final int MINIMUM_SAMPLES = 500;
     private final String encryptedKurt;
-    private final String secretKeyHash;
+    private final boolean isAuthenticating;
     int storedValues;
 
     protected final Queue<String> sessionValues = new ConcurrentLinkedQueue<>();
     private final List<ISensorStatusUpdate> listeners = new ArrayList<>();
 
-    protected AbstractDetector(Context context, @NonNull String encryptedKurt, @NonNull String secretKeyHash, @NonNull EventBus eventBus) {
-        if (context == null) throw new RuntimeException("Missing context on detector:"+this);
+    /**
+     * Constructor for the most basic of all detector abstractions
+     *
+     * @param context        a valid android context
+     * @param encryptedKurt  the encrypted kurt id
+     * @param eventBus       an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    protected AbstractDetector(Context context, @NonNull String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+        if (context == null) throw new RuntimeException("Missing context on detector:" + this);
         this.encryptedKurt = encryptedKurt;
-        this.secretKeyHash = secretKeyHash;
         this.context = context;
         this.eventBus = eventBus;
+        isAuthenticating = authenticating;
     }
 
     /**
      * Handy method for getting a present timestamp
+     *
      * @return long timestamp in millis
      */
     public long now() {
         return DateTime.now().getMillis();
     }
+
     /**
      * Whether the detector is enabled on the phone. This is usually a yes or no, depending on model
      * etc. The detector cannot be used if it is not enabled. All subclasses must check for its
      * respective confirmation of whether or not it exist on the phone
+     *
      * @return true if sensor is present, false if not present
      */
     public abstract boolean isEnabled();
 
     /**
      * Whether the detector is currently available (not same as enabled which is whether or not
-     * the detector is something the phone has). Must be implemented by the the subclassed detectors.
+     * the detector is something the phone has). Should be overridden by the subclassed detectors.
+     *
      * @return true if available or false if not
      */
-    public abstract boolean isAvailable();
+    public boolean isAvailable() {
+        return isPermitted();
+    }
+
+    /**
+     * The required permission to use the detector, if any. Must be overridden. If null, no
+     * permission is needed.
+     *
+     * @return a manifest permission or null for none needed
+     */
+    public abstract String requiredPermission();
 
     /**
      * For detectors requiring access to certain privileges - like location or camera,
+     *
      * @return whether the user has permitted the use of the sensor. Should be part of the
      * availability.
      */
     public boolean isPermitted() {
-        return true;
+        return requiredPermission() == null ||
+                ContextCompat.checkSelfPermission(context(), requiredPermission()) == PackageManager.PERMISSION_GRANTED;
     }
 
     /**
-     * Gives you access to the eventbus used
-     * @return
+     * Gives you access to the eventBus used
+     *
+     * @return the assigned eventBus
      */
-    public EventBus eventBus() {
+    public PossumBus eventBus() {
         return eventBus;
     }
+
     /**
      * Starts to startListening to the detectors dataSource. If the detector is not enabled, it will not
      * start to startListening. The moment it starts to startListening, a sessionTimestamp is saved recording which
@@ -103,9 +130,9 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
             isListening = true;
         } else {
             if (!isEnabled()) {
-                eventBus.post(new MetaDataChangeEvent(now()+" DETECTOR OFFLINE ("+ detectorName()+") DISABLED"));
+                eventBus.post(new MetaDataChangeEvent(now() + " DETECTOR OFFLINE (" + detectorName() + ") DISABLED"));
             } else if (!isAvailable()) {
-                eventBus.post(new MetaDataChangeEvent(now()+" DETECTOR OFFLINE ("+ detectorName()+") UNAVAILABLE"));
+                eventBus.post(new MetaDataChangeEvent(now() + " DETECTOR OFFLINE (" + detectorName() + ") UNAVAILABLE"));
             }
         }
         return isListening;
@@ -130,8 +157,10 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
         }
         return filesSize;
     }
+
     /**
      * Yields the detectors stored space, either fileSize or streamSize
+     *
      * @return number of bytes taken up by file
      */
     public long fileSize() {
@@ -152,6 +181,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
 
     /**
      * Stores data and clears memory of stored data
+     *
      * @param file file to store data in
      */
     protected void storeData(@NonNull File file) {
@@ -167,6 +197,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
 
     /**
      * Method for determining if the dataset is valid. Mostly not used, defaults to true
+     *
      * @return true if the set is valid and should be used
      */
     public boolean isValidSet() {
@@ -175,13 +206,14 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
 
     /**
      * Returns a json object with the common things needed to explain detector
+     *
      * @return jsonobject with compact form of the detector
      */
     public JsonObject toJson() {
         JsonObject object = new JsonObject();
         object.addProperty("type", detectorType());
         object.addProperty("encryptedKurt", encryptedKurt);
-        object.addProperty("secretKeyHash", secretKeyHash);
+        object.addProperty("isAuthenticating", isAuthenticating);
         object.addProperty("isAvailable", isAvailable());
         object.addProperty("isEnabled", isEnabled());
         object.addProperty("isListening", isListening());
@@ -198,16 +230,8 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
     }
 
     /**
-     * Returns whether the detector is of type wakeup or not. Wakeup detector will awaken the processor
-     * to deliver the data, while non-wakeup will store internally until full then replace
-     * @return true if it wakes up processor, false if not
-     */
-    public boolean isWakeUpDetector() {
-        return false;
-    }
-
-    /**
      * Adds a listener for updates to the sensors availability
+     *
      * @param listener a given listener for the event
      */
     public void addSensorUpdateListener(ISensorStatusUpdate listener) {
@@ -216,6 +240,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
 
     /**
      * Removes a listener for updates to the sensors availability
+     *
      * @param listener a given listener for the event
      */
     public void removeSensorUpdateListener(ISensorStatusUpdate listener) {
@@ -247,6 +272,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
 
     /**
      * Each sensor needs access to a context, the different implementation must take this into account
+     *
      * @return the context the sensor supplies
      */
     public Context context() {
@@ -255,6 +281,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
 
     /**
      * A handle to the actual stored data
+     *
      * @return the File storing the data
      */
     public File storedData() {
@@ -292,6 +319,7 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
      * Official "name" of detector, a simple string using the english language. Should not be used
      * for official UI use - if so, use detectorType and map it to a resource name so it can be
      * localized
+     *
      * @return string with "name" or "designation" of detector
      */
     public abstract String detectorName();
@@ -315,19 +343,17 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
         }
     }
 
-    @VisibleForTesting
     protected long timestamp() {
         return DateTime.now().getMillis();
     }
 
-    @VisibleForTesting
     protected String bucketKey() {
-        return "data/" + AwesomePossum.versionName() + "/" + detectorName() + "/" + encryptedKurt + "/" + secretKeyHash + "/"  + timestamp()+ ".zip";
+        return "possumlibdata/" + AwesomePossum.versionName() + "/" + detectorName() + "/" + encryptedKurt + "/" + timestamp() + ".zip";
     }
 
     protected boolean stageForUpload(File file) {
         if (file == null) {
-            Log.e(tag, "Stage for upload failed - no file ("+ detectorName()+")");
+            Log.e(tag, "Stage for upload failed - no file (" + detectorName() + ")");
             return false;
         }
         if (file.length() == 0) {
@@ -338,6 +364,8 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
                 bucketKey());
         if (!file.renameTo(dest)) {
             Log.e(tag, "Unable to stage: " + file.getName());
+        } else {
+            Log.i(tag, "Staged for upload:"+dest.getAbsolutePath());
         }
         return true;
     }
@@ -349,12 +377,21 @@ public abstract class AbstractDetector implements Comparable<AbstractDetector> {
             }
         } catch (InterruptedException ignore) {
         }
-        throw new RuntimeException("Unable to acquire lock\n\n" + combineAllStackTraces());
+        throw new RuntimeException("Unable to acquire lock");
     }
 
     protected void unlock() {
         if (lock.isLocked()) {
             lock.unlock();
         }
+    }
+
+    /**
+     * Default implementation of IPossumEventListener
+     *
+     * @param object the event received
+     */
+    public void eventReceived(PossumEvent object) {
+
     }
 }

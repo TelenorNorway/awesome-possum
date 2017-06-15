@@ -2,10 +2,10 @@ package com.telenor.possumlib.detectortests;
 
 import android.view.MotionEvent;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.detectors.GestureDetector;
+import com.telenor.possumlib.models.PossumBus;
 
 import net.danlew.android.joda.JodaTimeAndroid;
 
@@ -19,13 +19,13 @@ import org.robolectric.RuntimeEnvironment;
 @RunWith(PossumTestRunner.class)
 public class GestureDetectorTest {
     private GestureDetector gestureDetector;
-    private EventBus eventBus;
+    private PossumBus eventBus;
 
     @Before
     public void setUp() throws Exception {
-        eventBus  = new EventBus();
+        eventBus  = new PossumBus();
         JodaTimeAndroid.init(RuntimeEnvironment.application);
-        gestureDetector = new GestureDetector(RuntimeEnvironment.application, "fakeUnique", "fakeId", eventBus);
+        gestureDetector = new GestureDetector(RuntimeEnvironment.application, "fakeUnique", eventBus, false);
         if (gestureDetector.storedData().exists()) {
             Assert.assertTrue(gestureDetector.storedData().delete());
         }

@@ -4,9 +4,6 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Ordering;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -62,18 +59,8 @@ public class FileUtil {
      *
      * @return files to be uploaded
      */
-    public static List<File> getFilesReadyForUpload(Context context) {
-        return Ordering
-                .natural()
-                .onResultOf(
-                        new Function<File, Long>() {
-                            public Long apply(File file) {
-                                return file.lastModified();
-                            }
-                        })
-                .sortedCopy(Arrays.asList(FileUtil
-                        .getUploadDirectory(context)
-                        .listFiles()));
+    public static List<File> getFilesReadyForUpload(@NonNull Context context) {
+        return Arrays.asList(FileUtil.getUploadDirectory(context).listFiles());
     }
 
     public static File toUploadFile(Context context, String bucketKey) {

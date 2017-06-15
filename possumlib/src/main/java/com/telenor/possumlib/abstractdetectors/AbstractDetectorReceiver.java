@@ -5,10 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.interfaces.IOnReceive;
+import com.telenor.possumlib.models.PossumBus;
 
 import java.util.List;
 
@@ -20,8 +19,17 @@ public abstract class AbstractDetectorReceiver extends AbstractDetector implemen
     private boolean registered;
     private final IntentFilter intentFilter = new IntentFilter();
 
-    protected AbstractDetectorReceiver(@NonNull Context context, @NonNull List<? extends String> intentFilterList, String identification, String secretKeyHash, EventBus eventBus) {
-        super(context, identification, secretKeyHash, eventBus);
+    /**
+     * An abstract detector with a broadcast receiver, able to intercept messages from outside
+     * intents, either internal or external
+     * @param context a valid android context
+     * @param intentFilterList the intentFilter you want to limit the receiver to
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    protected AbstractDetectorReceiver(@NonNull Context context, @NonNull List<? extends String> intentFilterList, String encryptedKurt, PossumBus eventBus, boolean authenticating) {
+        super(context, encryptedKurt, eventBus, authenticating);
         for (Object filter : intentFilterList) {
             intentFilter.addAction((String)filter);
         }
@@ -52,7 +60,6 @@ public abstract class AbstractDetectorReceiver extends AbstractDetector implemen
         }
     }
 
-    @VisibleForTesting
     protected IntentFilter intentFilter() {
         return intentFilter;
     }

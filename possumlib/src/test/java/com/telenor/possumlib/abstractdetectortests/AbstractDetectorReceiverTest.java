@@ -6,12 +6,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.FileManipulator;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.abstractdetectors.AbstractDetectorReceiver;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.interfaces.ISensorStatusUpdate;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -41,7 +41,7 @@ public class AbstractDetectorReceiverTest {
     private Context mockedContext;
 
     private boolean isEnabled;
-    private EventBus eventBus;
+    private PossumBus eventBus;
     private boolean sensorDidChange;
     private File fakeFile;
     private boolean onReceiveFired;
@@ -50,7 +50,7 @@ public class AbstractDetectorReceiverTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        eventBus = new EventBus();
+        eventBus = new PossumBus();
         isEnabled = true;
         storageSizeInUpload = 0;
         onReceiveFired = false;
@@ -64,8 +64,8 @@ public class AbstractDetectorReceiverTest {
         abstractDetectorReceiver = null;
     }
 
-    private AbstractDetectorReceiver getDetector(Context context, EventBus eventBus, final int detectType, final String detectorName) {
-        return new AbstractDetectorReceiver(context, Arrays.asList("test1","test2"), "fakeUnique", "fakeId", eventBus) {
+    private AbstractDetectorReceiver getDetector(Context context, PossumBus eventBus, final int detectType, final String detectorName) {
+        return new AbstractDetectorReceiver(context, Arrays.asList("test1","test2"), "fakeUnique", eventBus, false) {
             @Override
             public void onReceive(Context context, Intent intent) {
                 onReceiveFired = true;
@@ -84,6 +84,11 @@ public class AbstractDetectorReceiverTest {
             @Override
             public boolean isAvailable() {
                 return true;
+            }
+
+            @Override
+            public String requiredPermission() {
+                return null;
             }
 
             @Override

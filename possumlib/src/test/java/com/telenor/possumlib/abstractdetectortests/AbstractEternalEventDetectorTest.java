@@ -2,10 +2,10 @@ package com.telenor.possumlib.abstractdetectortests;
 
 import android.content.Context;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.abstractdetectors.AbstractEternalEventDetector;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -22,13 +22,16 @@ public class AbstractEternalEventDetectorTest {
     private AbstractEternalEventDetector eternalEventDetector;
     @Mock
     private Context mockedContext;
-    private EventBus eventBus;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        eventBus = new EventBus();
-        eternalEventDetector = new AbstractEternalEventDetector(mockedContext, "fakeUnique", "fakeId", eventBus) {
+        eternalEventDetector = new AbstractEternalEventDetector(mockedContext, "fakeUnique", new PossumBus(), false) {
+            @Override
+            public String requiredPermission() {
+                return null;
+            }
+
             @Override
             public int detectorType() {
                 return DetectorType.MetaData;

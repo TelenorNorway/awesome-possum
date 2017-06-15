@@ -2,9 +2,8 @@ package com.telenor.possumlib.abstractdetectors;
 
 import android.content.Context;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import com.telenor.possumlib.changeevents.BasicChangeEvent;
+import com.telenor.possumlib.changeevents.PossumEvent;
+import com.telenor.possumlib.models.PossumBus;
 
 /**
  * Abstract reactive detector, meant to fire only upon a given criteria fulfilled.
@@ -12,8 +11,16 @@ import com.telenor.possumlib.changeevents.BasicChangeEvent;
  * being done
  */
 public abstract class AbstractEventDrivenDetector extends AbstractDetector {
-    public AbstractEventDrivenDetector(Context context, String encryptedKurt, String secretKeyHash, EventBus eventBus) throws IllegalArgumentException {
-        super(context, encryptedKurt, secretKeyHash, eventBus);
+    /**
+     * Constructor for the Abstract EventDriven Detector
+     *
+     * @param context a valid android context
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public AbstractEventDrivenDetector(Context context, String encryptedKurt, PossumBus eventBus, boolean authenticating) {
+        super(context, encryptedKurt, eventBus, authenticating);
     }
 
     @Override
@@ -42,8 +49,8 @@ public abstract class AbstractEventDrivenDetector extends AbstractDetector {
      * @param object a changeObject of general type so that the abstractions can implement the
      *               desired types
      */
-    @Subscribe
-    public void eventReceived(BasicChangeEvent object) {
+    @Override
+    public void eventReceived(PossumEvent object) {
         if (object.message() != null && isListening()) {
             sessionValues.add(object.message());
             if (storeWithInterval()) {

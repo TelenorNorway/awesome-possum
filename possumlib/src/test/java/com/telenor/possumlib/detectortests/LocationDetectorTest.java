@@ -9,12 +9,12 @@ import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Process;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.io.LineReader;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.detectors.LocationDetector;
 import com.telenor.possumlib.interfaces.ISensorStatusUpdate;
+import com.telenor.possumlib.models.PossumBus;
 
 import junit.framework.Assert;
 
@@ -45,14 +45,14 @@ public class LocationDetectorTest {
     private LocationManager mockedLocationManager;
     private Context mockedContext;
     private int changedStatus;
-    private EventBus eventBus;
+    private PossumBus eventBus;
     private File fakeFile;
 
     @Before
     public void setUp() throws Exception {
         mockedContext = mock(Context.class);
         changedStatus = 0;
-        eventBus = new EventBus();
+        eventBus = new PossumBus();
         JodaTimeAndroid.init(RuntimeEnvironment.application);
         mockedLocationManager = mock(LocationManager.class);
         when(mockedContext.getSystemService(Context.LOCATION_SERVICE)).thenReturn(mockedLocationManager);
@@ -68,7 +68,7 @@ public class LocationDetectorTest {
             Assert.assertTrue(fakeFile.delete());
         }
         Assert.assertTrue(fakeFile.createNewFile());
-        locationDetector = new LocationDetector(mockedContext, "fakeUnique", "fakeId", eventBus) {
+        locationDetector = new LocationDetector(mockedContext, "fakeUnique", eventBus, false) {
             @Override
             public File storedData() {
                 return fakeFile;
@@ -95,7 +95,7 @@ public class LocationDetectorTest {
         mockedLocationManager = mock(LocationManager.class);
         when(mockedContext.getSystemService(Context.LOCATION_SERVICE)).thenReturn(mockedLocationManager);
         when(mockedLocationManager.getAllProviders()).thenReturn(Collections.<String>emptyList());
-        locationDetector = new LocationDetector(mockedContext, "fakeUnique", "fakeId", eventBus);
+        locationDetector = new LocationDetector(mockedContext, "fakeUnique", eventBus, false);
         Assert.assertFalse(locationDetector.isEnabled());
     }
 

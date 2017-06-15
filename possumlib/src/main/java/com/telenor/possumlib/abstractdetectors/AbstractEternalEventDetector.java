@@ -1,8 +1,7 @@
 package com.telenor.possumlib.abstractdetectors;
 
 import android.content.Context;
-
-import com.google.common.eventbus.EventBus;
+import com.telenor.possumlib.models.PossumBus;
 
 /**
  * Abstraction of an eternal event detector, in effect one that always listens and never turns off.
@@ -10,8 +9,16 @@ import com.google.common.eventbus.EventBus;
  * or similar detectors.
  */
 public abstract class AbstractEternalEventDetector extends AbstractEventDrivenDetector {
-    public AbstractEternalEventDetector(Context context, String identification, String secretKeyHash, EventBus eventBus) throws IllegalArgumentException {
-        super(context, identification, secretKeyHash, eventBus);
+    /**
+     * Constructor for AbstractEternalEventDetector
+     *
+     * @param context a valid android context
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public AbstractEternalEventDetector(Context context, String encryptedKurt, PossumBus eventBus, boolean authenticating) {
+        super(context, encryptedKurt, eventBus, authenticating);
         super.startListening();
     }
 

@@ -5,26 +5,48 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_alignParentTop="true"
-        android:orientation="horizontal"
-        android:weightSum="2">
-        <Button
-            style="?android:buttonBarButtonStyle"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:onClick="toggleLearning"
-            android:text="@string/learningOn"
+        android:layout_margin="20dp"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2">
+            <Button
+                style="?android:buttonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:enabled="false"
+                android:onClick="toggleLearning"
+                android:text="@string/learningOn"
+                android:layout_height="wrap_content" />
+            <Button
+                style="?android:buttonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:enabled="false"
+                android:onClick="toggleAuth"
+                android:text="@string/authOn"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:text="@string/myKurtId"
             android:layout_height="wrap_content" />
-        <Button
-            style="?android:buttonBarButtonStyle"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:onClick="toggleAuth"
-            android:text="@string/authOn"
-            android:layout_height="wrap_content" />
+        <EditText
+            android:id="@+id/uniqueKurt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text" />
     </LinearLayout>
 
+    <!--<com.github.mikephil.charting.charts.BarChart-->
+        <!--android:id="@+id/barChart"-->
+        <!--android:layout_centerInParent="true"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content" />-->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

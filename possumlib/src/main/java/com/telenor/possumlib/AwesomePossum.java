@@ -2,7 +2,6 @@ package com.telenor.possumlib;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -18,15 +17,19 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.telenor.possumlib.constants.Constants;
 import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
 import com.telenor.possumlib.interfaces.IPossumMessage;
 import com.telenor.possumlib.interfaces.IPossumTrust;
-import com.telenor.possumlib.services.CollectorService;
+import com.telenor.possumlib.services.AuthenticationService;
+import com.telenor.possumlib.services.DataCollectionService;
+import com.telenor.possumlib.services.DataUploadService;
 import com.telenor.possumlib.services.SendKurtService;
-import com.telenor.possumlib.services.UploadService;
-import com.telenor.possumlib.utils.Get;
 import com.telenor.possumlib.utils.Has;
 
 import net.danlew.android.joda.JodaTimeAndroid;
@@ -57,11 +60,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public final class AwesomePossum {
     private static boolean initComplete = false;
     private static BroadcastReceiver trustReceiver;
+    private static JsonParser parser;
     private static BroadcastReceiver serviceMessageReceiver;
     private static final String tag = AwesomePossum.class.getName();
     private static Queue<IPossumTrust> trustListeners = new ConcurrentLinkedQueue<>();
     private static Queue<IPossumMessage> messageListeners = new ConcurrentLinkedQueue<>();
     private static SharedPreferences preferences;
+    private static boolean isListening;
+    private static DateTime lastAuthenticated;
 
     /**
      * Main method of controlling all sensors. This static class is init'ed by calling this method.
@@ -72,7 +78,9 @@ public final class AwesomePossum {
     private static void init(@NonNull Context context) {
         if (initComplete) return;
         context = context.getApplicationContext();// Important since context needs to be equal for receivers
+//        ConnectSdk.sdkInitialize(context);
         initComplete = true;
+        parser = new JsonParser();
         preferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES, Context.MODE_PRIVATE);
         JodaTimeAndroid.init(context);
         trustReceiver = new BroadcastReceiver() {
@@ -99,13 +107,42 @@ public final class AwesomePossum {
     }
 
     private static void handleTrustIntent(Intent intent) {
-        int detectorType = intent.getIntExtra("detector", 0);
-        if (detectorType == 0) return;
-        int newTrustScore = intent.getIntExtra("trustScore", 0);
+        String detectorsString = intent.getStringExtra("detectors");
+        if (detectorsString == null) return;
+        JsonArray detectors = (JsonArray) parser.parse(detectorsString);
         int combinedTrustScore = intent.getIntExtra("totalTrustScore", 0);
-        for (IPossumTrust listener : trustListeners) {
-            listener.changeInTrust(detectorType, newTrustScore, combinedTrustScore);
+        for (JsonElement detectorEl : detectors) {
+            JsonObject detectorTrust = detectorEl.getAsJsonObject();
+            int detectorType = detectorTrust.get("detectorType").getAsInt();
+            int newTrustScore = intent.getIntExtra("trustScore", 0);
+            for (IPossumTrust listener : trustListeners) {
+                listener.changeInTrust(detectorType, newTrustScore, combinedTrustScore);
+            }
         }
+    }
+
+    /**
+     * Sets the last authentication attempt time
+     *
+     * @param authenticationDate a datetime for the last attempted authentication
+     */
+    private static void setAuthenticationDate(@NonNull DateTime authenticationDate) {
+        AwesomePossum.lastAuthenticated = authenticationDate;
+    }
+
+    /**
+     * Starts an attempt to authenticate
+     *
+     * @param context a valid android context
+     * @return true if it starts an attempt, false if too little time has passed
+     */
+    public static boolean authenticate(@NonNull Context context) {
+        if (lastAuthenticated == null || lastAuthenticated.plusMinutes(2).isBeforeNow()) {
+            setAuthenticationDate(DateTime.now());
+            Intent intent = new Intent(context, AuthenticationService.class);
+            context.sendBroadcast(intent);
+            return true;
+        } else return false;
     }
 
     private static void handleServiceIntent(@NonNull Intent intent) {
@@ -135,28 +172,22 @@ public final class AwesomePossum {
      */
     public static void startListening(@NonNull Context context, @NonNull String encryptedKurt) throws GatheringNotAuthorizedException {
         init(context);
-        if (allowGathering()) {
-            Intent intent = new Intent(context, CollectorService.class);
+        if (isAuthorized(context)) {
+            Intent intent = new Intent(context, DataCollectionService.class);
             intent.putExtra("isLearning", false);
             intent.putExtra("encryptedKurt", encryptedKurt);
-            intent.putExtra("secretKeyHash", Get.secretKeyHash(preferences));
             context.startService(intent);
+            isListening = true;
         } else throw new GatheringNotAuthorizedException();
     }
 
     /**
-     * Check for whether the AwesomePossum is actively listening for sensordata
-     * @param context a valid android context
+     * Check for whether the AwesomePossum is actively listening for sensorData
+     *
      * @return true if the Collector service is running, false if not
      */
-    public static boolean isListening(@NonNull Context context) {
-        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (CollectorService.class.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
+    public static boolean isListening() {
+        return isListening;
     }
 
     /**
@@ -168,14 +199,8 @@ public final class AwesomePossum {
     public static boolean requestNeededPermissions(@NonNull Activity activity) {
         init(activity);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            List<String> missingPermissions = new ArrayList<>();
-            for (String permission : dangerousPermissions()) {
-                if (ContextCompat.checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED) {
-                    missingPermissions.add(permission);
-                }
-            }
-            if (missingPermissions.size() > 0) {
-                ActivityCompat.requestPermissions(activity, missingPermissions.toArray(new String[]{}), Constants.AwesomePossumPermissionsRequestCode);
+            if (missingPermissions(activity).size() > 0) {
+                ActivityCompat.requestPermissions(activity, missingPermissions(activity).toArray(new String[]{}), Constants.AwesomePossumPermissionsRequestCode);
                 return false;
             } else return true;
         } else return true;
@@ -186,7 +211,7 @@ public final class AwesomePossum {
      *
      * @param listener listener for changes to trustScore
      */
-    public static void addTrustListener(IPossumTrust listener) {
+    public static void addTrustListener(@NonNull IPossumTrust listener) {
         trustListeners.add(listener);
     }
 
@@ -201,6 +226,7 @@ public final class AwesomePossum {
 
     /**
      * Used for finding out if any part of your system is being notified of authentication calls
+     *
      * @return true if you have something listening to authentication, false if not
      */
     public static boolean isAuthenticating() {
@@ -214,7 +240,8 @@ public final class AwesomePossum {
      * @param context a valid android context
      */
     public static void stopListening(@NonNull Context context) {
-        context.stopService(new Intent(context, CollectorService.class));
+        context.stopService(new Intent(context, DataCollectionService.class));
+        isListening = false;
         if (initComplete) {
             context = context.getApplicationContext(); // Important since context needs to be equal
             context.unregisterReceiver(serviceMessageReceiver);
@@ -226,6 +253,7 @@ public final class AwesomePossum {
 
     /**
      * Add a interface listener for messages
+     *
      * @param messageListener a listener you want to add
      */
     public static void addMessageListener(IPossumMessage messageListener) {
@@ -234,6 +262,7 @@ public final class AwesomePossum {
 
     /**
      * Remove a specific listener for messages
+     *
      * @param messageListener a listener you want to remove
      */
     public static void removeMessageListener(IPossumMessage messageListener) {
@@ -248,15 +277,14 @@ public final class AwesomePossum {
     }
 
     /**
-     * @param context a valid android context
+     * @param context       a valid android context
      * @param encryptedKurt the encrypted key identifying the user
-     * @param bucket the S3 amazon bucket to upload to
+     * @param bucket        the S3 amazon bucket to upload to
      * @return true if upload was started, false if no network to upload on or not initialized
      */
     public static boolean startUpload(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucket) {
         if (preferences == null) return false;
-        Intent intent = new Intent(context, UploadService.class);
-        intent.putExtra("secretKeyHash", Get.secretKeyHash(preferences));
+        Intent intent = new Intent(context, DataUploadService.class);
         intent.putExtra("encryptedKurt", encryptedKurt);
         intent.putExtra("bucket", bucket);
         boolean startedUpload;
@@ -299,7 +327,7 @@ public final class AwesomePossum {
         Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
         intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, Messaging.LEARNING);
         context.sendBroadcast(intent);
-        Log.i(tag, "Is learning now set to:"+isLearning);
+        Log.i(tag, "Is learning now set to:" + isLearning);
     }
 
     /**
@@ -331,7 +359,7 @@ public final class AwesomePossum {
      * library. Until it is done, no data will be collected
      *
      * @param encryptedKurt the unique id reflecting the user who is authorized
-     * @param bucket     the S3 amazon bucket key of where you are uploading
+     * @param bucket        the S3 amazon bucket key of where you are uploading
      * @return true if authorized, false if not initialized yet
      */
     public static boolean authorizeGathering(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucket) {
@@ -342,8 +370,6 @@ public final class AwesomePossum {
             if (Has.network(context)) {
                 Intent intent = new Intent(context, SendKurtService.class);
                 intent.putExtra("encryptedKurt", encryptedKurt);
-                String secretKeyHash = Get.secretKeyHash(preferences);
-                intent.putExtra("secretKeyHash", secretKeyHash);
                 intent.putExtra("bucket", bucket);
                 context.startService(intent);
             }
@@ -352,12 +378,13 @@ public final class AwesomePossum {
     }
 
     /**
-     * Call this method to check whether user has allowed the Awesome Possum to gether data
+     * Call this method to check whether user has allowed the Awesome Possum to gather data
      *
-     * @return true if allowed, false if not allowed yet (or if library isn't initialized yet)
+     * @return true if allowed, false if not allowed yet
      */
-    private static boolean allowGathering() {
-        return initComplete && (preferences.getString(Constants.ENCRYPTED_KURT, null) != null || preferences.getString(Constants.ENCRYPTED_TEMP_KURT, null) != null);
+    public static boolean isAuthorized(@NonNull Context context) {
+        init(context);
+        return (preferences.getString(Constants.ENCRYPTED_KURT, null) != null || preferences.getString(Constants.ENCRYPTED_TEMP_KURT, null) != null);
     }
 
     /**
@@ -400,5 +427,26 @@ public final class AwesomePossum {
             }
         });
         return builder.create();
+    }
+
+    private static List<String> missingPermissions(@NonNull Context context) {
+        List<String> missingPermissions = new ArrayList<>();
+        for (String permission : dangerousPermissions()) {
+            if (ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+                missingPermissions.add(permission);
+            }
+        }
+        return missingPermissions;
+    }
+
+    /**
+     * Handy function for finding out if the user has disabled or missing permissions. Should it be
+     * so, you can call the requestNeededPermissions to ask for all the lacking rights.
+     *
+     * @param context a valid android context
+     * @return true if there are missing permissions, false if all are granted
+     */
+    public static boolean hasMissingPermissions(@NonNull Context context) {
+        return missingPermissions(context).size() > 0;
     }
 }

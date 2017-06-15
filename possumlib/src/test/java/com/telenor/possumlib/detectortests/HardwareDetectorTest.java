@@ -1,9 +1,9 @@
 package com.telenor.possumlib.detectortests;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.io.CharStreams;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.detectors.HardwareDetector;
+import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.FileUtil;
 
 import org.junit.After;
@@ -23,16 +23,16 @@ import java.util.List;
 @RunWith(RobolectricTestRunner.class)
 public class HardwareDetectorTest {
     private HardwareDetector hardwareDetector;
-    private EventBus eventBus;
+    private PossumBus eventBus;
     private File fakeFile;
     @Before
     public void setUp() throws Exception {
-        eventBus = new EventBus();
+        eventBus = new PossumBus();
         fakeFile = FileUtil.getFile(RuntimeEnvironment.application, "Hardware");
         if (fakeFile.exists()) {
             Assert.assertTrue(fakeFile.delete());
         }
-        hardwareDetector = new HardwareDetector(RuntimeEnvironment.application, "id", "secretHash", eventBus);
+        hardwareDetector = new HardwareDetector(RuntimeEnvironment.application, "id", eventBus, false);
     }
 
     @After

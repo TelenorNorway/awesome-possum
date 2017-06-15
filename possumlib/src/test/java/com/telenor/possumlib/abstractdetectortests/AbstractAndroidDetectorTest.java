@@ -7,12 +7,12 @@ import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.PowerManager;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.FileManipulator;
 import com.telenor.possumlib.JodaInit;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.abstractdetectors.AbstractAndroidDetector;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.FileUtil;
 
 import org.junit.After;
@@ -45,7 +45,7 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
     private AlarmManager mockedAlarmManager;
     @Mock
     private PowerManager mockedPowerManager;
-    private EventBus eventBus;
+    private PossumBus eventBus;
 
     private ShadowSensorManager shadow;
     private SensorManager sensorManager;
@@ -57,7 +57,7 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
         MockitoAnnotations.initMocks(this);
         JodaInit.initializeJodaTime();
         storageInUpload = 0;
-        eventBus = new EventBus();
+        eventBus = new PossumBus();
         when(mockedContext.getString(anyInt())).thenReturn("Accelerometer");
         when(mockedContext.checkPermission(anyString(), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
         when(mockedContext.getSystemService(Context.SENSOR_SERVICE)).thenReturn(RuntimeEnvironment.application.getSystemService(Context.SENSOR_SERVICE));
@@ -78,8 +78,8 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
         FileUtil.clearDirectory(RuntimeEnvironment.application);
     }
 
-    private AbstractAndroidDetector getDetector(Context context, EventBus eventBus) {
-        return new AbstractAndroidDetector(context, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", eventBus) {
+    private AbstractAndroidDetector getDetector(Context context, PossumBus eventBus) {
+        return new AbstractAndroidDetector(context, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
             @Override
             public long guaranteedListenInterval() {
                 return 0;
@@ -98,6 +98,11 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
             @Override
             public String detectorName() {
                 return "Accelerometer";
+            }
+
+            @Override
+            public String requiredPermission() {
+                return null;
             }
 
             @Override
@@ -140,7 +145,7 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
     }
 
     private AbstractAndroidDetector getMockedSensor() {
-        return new AbstractAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", eventBus) {
+        return new AbstractAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
             @Override
             public long guaranteedListenInterval() {
                 return 0;
@@ -159,6 +164,11 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
             @Override
             public String detectorName() {
                 return "Accelerometer";
+            }
+
+            @Override
+            public String requiredPermission() {
+                return null;
             }
 
             @Override

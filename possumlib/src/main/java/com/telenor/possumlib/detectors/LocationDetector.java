@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -14,12 +13,11 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.models.PossumBus;
 
 import java.util.List;
 import java.util.Timer;
@@ -29,7 +27,6 @@ import java.util.TimerTask;
  * Uses gps with network to retrieve a position regularly
  */
 public class LocationDetector extends AbstractDetector implements LocationListener {
-    private static final String SINGLE_POSITION_SCAN = "SINGLE_POSITION_SCAN";
     private LocationManager locationManager;
     private boolean gpsAvailable;
     private boolean networkAvailable;
@@ -39,8 +36,16 @@ public class LocationDetector extends AbstractDetector implements LocationListen
     private List<String> providers;
     private Timer timer;
 
-    public LocationDetector(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) {
-        super(context, identification, secretKeyHash, eventBus);
+    /**
+     * Constructor for the location detector
+     *
+     * @param context a valid android context
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public LocationDetector(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, encryptedKurt, eventBus, authenticating);
         locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         if (locationManager == null) {
             Log.d(tag, "No positioning available");
@@ -142,14 +147,6 @@ public class LocationDetector extends AbstractDetector implements LocationListen
         super.terminate();
     }
 
-    /**
-     * Confirms whether detector is permitted to be used
-     * @return true if allowed, else false
-     */
-    public boolean isPermitted() {
-        return ContextCompat.checkSelfPermission(context(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    }
-
     private void cancelScan() {
         if (isPermitted()) {
             locationManager.removeUpdates(this);
@@ -160,31 +157,48 @@ public class LocationDetector extends AbstractDetector implements LocationListen
     private void performScan() {
         Location lastLocation = lastLocation();
         // Only scan if enabled, a last location is missing or the lastlocation is at least 15 minutes since
-        if (isEnabled() && (lastLocation == null || lastLocation.getTime() < (now() - 15 * 60 * 1000))) {
-            boolean scanStarted = false;
-            if (isProviderAvailable(LocationManager.GPS_PROVIDER) && isPermitted()) {
-                locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, this, Looper.getMainLooper());
-                scanStarted = true;
-            }
-            if (isProviderAvailable(LocationManager.NETWORK_PROVIDER) && isPermitted()) {
-                locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, this, Looper.getMainLooper());
-                scanStarted = true;
-            }
-            if (scanStarted) {
-                if (timer != null) {
-                    timer.cancel();
-                    timer.purge();
+        if (isEnabled()) {
+            boolean canScan = false;
+            if (lastLocation != null) {
+                long timeLastLocation = lastLocation.getTime();
+                long fifteenMinutesAgo = now() - 15*60*1000;
+                if (timeLastLocation < fifteenMinutesAgo) {
+                    canScan = true;
+                } else {
+                    long timeDiff = now() - timeLastLocation;
+                    Log.w(tag, "Cannot scan for position, too short time has passed since last: "+(timeDiff/60000)+" minutes");
                 }
-                timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        cancelScan();
+            } else {
+                canScan = true;
+            }
+            if (canScan) {
+                boolean scanStarted = false;
+                if (isProviderAvailable(LocationManager.GPS_PROVIDER) && isPermitted()) {
+                    locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, this, Looper.getMainLooper());
+                    scanStarted = true;
+                }
+                if (isProviderAvailable(LocationManager.NETWORK_PROVIDER) && isPermitted()) {
+                    locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, this, Looper.getMainLooper());
+                    scanStarted = true;
+                }
+                if (scanStarted) {
+                    if (timer != null) {
+                        timer.cancel();
+                        timer.purge();
                     }
-                }, scanTimeout());
+                    timer = new Timer();
+                    timer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            cancelScan();
+                        }
+                    }, scanTimeout());
+                } else {
+                    Log.w(tag, "Cannot scan for position, missing provider for scan");
+                }
             }
         } else {
-            Log.d(tag, "Unable to scan for position:" + isAvailable() + "/" + isEnabled());
+            Log.w(tag, "Cannot scan for position, not enabled");
         }
     }
 
@@ -306,6 +320,11 @@ public class LocationDetector extends AbstractDetector implements LocationListen
 
     @Override
     public boolean isAvailable() {
-        return (gpsAvailable || networkAvailable) && isPermitted();
+        return (gpsAvailable || networkAvailable) && super.isAvailable();
+    }
+
+    @Override
+    public String requiredPermission() {
+        return Manifest.permission.ACCESS_FINE_LOCATION;
     }
 }

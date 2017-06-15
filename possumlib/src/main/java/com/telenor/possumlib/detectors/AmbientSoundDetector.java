@@ -2,65 +2,102 @@ package com.telenor.possumlib.detectors;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageManager;
+import android.media.AudioFormat;
 import android.media.AudioManager;
+import android.media.AudioRecord;
+import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
-import com.google.common.eventbus.EventBus;
-import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
-import com.telenor.possumlib.changeevents.AmbientSoundChangeEvent;
-import com.telenor.possumlib.changeevents.BasicChangeEvent;
+import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.models.PossumBus;
+import com.telenor.possumlib.utils.sound.MFCC;
+
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /***
  * Uses microphone for ambient sound analysis. Will be switched with AudioRecord instead of
  * MediaRecord soon, stay tuned..
  */
-public class AmbientSoundDetector extends AbstractEventDrivenDetector {
+public class AmbientSoundDetector extends AbstractDetector {
     private AudioManager audioManager;
-    private MediaRecorder mediaRecorder;
+    private AudioRecord audioRecorder;
     private Handler audioHandler;
-    private boolean isRecording;
+    private final int bufferSize;
+    private final int windowSamples;
+    private final int recordingSamples;
+    private boolean disabledMute;
     private boolean supportsUnprocessed;
+    private ExecutorService backgroundService = Executors.newSingleThreadExecutor();
 
-    public AmbientSoundDetector(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) throws IllegalArgumentException {
-        super(context, identification, secretKeyHash, eventBus);
-        isRecording = false;
-        audioHandler  = new Handler(Looper.getMainLooper());
+    /**
+     * Constructor for an ambient sound detector
+     *
+     * @param context        a valid android context
+     * @param identification the encrypted kurt
+     * @param eventBus       the event bus used for sending messages to and from
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public AmbientSoundDetector(Context context, String identification, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, identification, eventBus, authenticating);
+        windowSamples = sampleRate() * windowSize() / 1000;
+        recordingSamples = sampleRate() * ((int) listenInterval() / 1000);
+        bufferSize = AudioTrack.getMinBufferSize(sampleRate(), AudioFormat.CHANNEL_OUT_MONO, audioEncoding());
+        audioHandler = getAudioHandler();
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        audioRecorder = getAudioRecord();
         supportsUnprocessed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && Boolean.parseBoolean(audioManager.getProperty("android.media.property.SUPPORT_AUDIO_SOURCE_UNPROCESSED"));
     }
 
-    @Override
-    protected boolean storeWithInterval() {
-        return true;
+    protected Handler getAudioHandler() {
+        return new Handler(Looper.getMainLooper());
     }
 
+    // TODO: Criteria for voice enabled
     @Override
     public boolean isEnabled() {
-        // TODO: Criteria for voice enabled
-        return audioManager != null;
+        return audioManager != null && audioRecorder != null;
     }
 
-    private boolean supportsUnprocessed() {
+    protected AudioRecord getAudioRecord() {
+        return new AudioRecord(MediaRecorder.AudioSource.MIC,
+                sampleRate(),
+                AudioFormat.CHANNEL_IN_MONO,
+                audioEncoding(),
+                bufferSize);
+    }
+
+    /**
+     * Handy function for finding out if the current setup supports
+     * unprocessed sound
+     *
+     * @return true if it does, else false
+     */
+    public boolean supportsUnprocessed() {
         return supportsUnprocessed;
     }
 
-    @Override
-    public boolean isPermitted() {
-        return ContextCompat.checkSelfPermission(context(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+    /**
+     * Handy function for finding out if the mic is muted
+     *
+     * @return true if muted, false if not
+     */
+    public boolean isMuted() {
+        return audioManager.isMicrophoneMute();
     }
 
+    // TODO: Criteria for sound available ?
+
     @Override
-    public boolean isAvailable() {
-        // TODO: Criteria for voice available
-        return isPermitted() && !audioManager.isMusicActive();
+    public String requiredPermission() {
+        return Manifest.permission.RECORD_AUDIO;
     }
 
     @Override
@@ -73,67 +110,109 @@ public class AmbientSoundDetector extends AbstractEventDrivenDetector {
         return "AmbientSound";
     }
 
-    private boolean isRecording() {
-        return isRecording;
-    }
-
-    @Override
-    public void eventReceived(BasicChangeEvent object) {
-        if (object instanceof AmbientSoundChangeEvent) {
-            listenForSounds();
-        }
+    /**
+     * Returns whether it is actually recording
+     *
+     * @return true if it is recording
+     */
+    public boolean isRecording() {
+        return audioRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING;
     }
 
     @Override
     public boolean startListening() {
         boolean started = super.startListening();
-        if (started) {
-            listenForSounds();
+        if (started && isAvailable()) {
+            if (isMuted()) {
+                audioManager.setMicrophoneMute(false);
+                disabledMute = true;
+            }
+            Log.d(tag, "Start recording ambient sound");
+            audioRecorder.startRecording();
+            audioHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    stopListening();
+                }
+            }, listenInterval());
+            backgroundService.submit(new RecordThread());
         }
         return started;
     }
 
-    private void listenForSounds() {
-        Log.d(tag, "Start recording ambient sound");
-        if (audioManager.isMicrophoneMute()) {
-            audioManager.setMicrophoneMute(false);
+    private class RecordThread implements Runnable {
+        @Override
+        public void run() {
+            short[] buffer = new short[bufferSize];
+            short[] data = new short[2 * recordingSamples];
+            int recordedSamples = 0;
+            int readSize;
+            while (isListening() && isRecording() && recordedSamples < recordingSamples) {
+                if ((readSize = audioRecorder.read(buffer, 0, bufferSize)) != AudioRecord.ERROR_INVALID_OPERATION) {
+                    System.arraycopy(buffer, 0, data, recordedSamples, readSize);
+                    recordedSamples += readSize;
+                }
+            }
+            List<double[]> features = MFCC.getFeaturesFromRecording(data, recordedSamples,
+                    sampleRate(), windowSamples);
+            stopRecording();
+            MFCC.writeFeaturesToFile(features, storedData());
         }
-//        if (isPermitted()) {
-//            mediaRecorder = new MediaRecorder();
-//            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-//            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-//            mediaRecorder.setOutputFile(storedData().getAbsolutePath());
-//            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-//
-//            try {
-//                mediaRecorder.prepare();
-//                mediaRecorder.start();
-//                isRecording = true;
-//                audioHandler.postDelayed(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        stopListening();
-//                    }
-//                }, listenInterval());
-//            } catch (Exception e) {
-//                Log.e(tag, "Failed to start recording:",e);
-//            }
-//        }
+    }
+
+    /**
+     * The presently used audio encoding. Override to change
+     *
+     * @return value of encoding used
+     */
+    public int audioEncoding() {
+        return AudioFormat.ENCODING_PCM_16BIT;
+    }
+
+    /**
+     * The presently used sampleRate in Hertz. Override to change
+     *
+     * @return int value of present sampleRate
+     */
+    public int sampleRate() {
+        return 48000;
+    }
+
+    /**
+     * the MFCC window size in milliseconds, presently default is 64. Override to change
+     *
+     * @return the window size in milliseconds
+     */
+    public int windowSize() {
+        return 64;
+    }
+
+    /**
+     * The present recording length
+     *
+     * @return the recording length in milliseconds
+     */
+    public long listenInterval() {
+        return 3000;
+    }
+
+    private void stopRecording() {
+        if (audioRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+            Log.d(tag, "Stopping recording of ambient sound");
+            audioRecorder.stop();
+        }
     }
 
     @Override
     public void stopListening() {
-        if (isRecording() && mediaRecorder != null) {
-            Log.d(tag, "Stopping recording of voice");
-//            mediaRecorder.stop();
-//            mediaRecorder.reset();
-//            mediaRecorder.release();
-            mediaRecorder = null;
-            isRecording = false;
+        Log.i(tag, "Something fired the stopListening method of the ambient sound...");
+        if (disabledMute) {
+            // Since I disabled mute to record, here I re-enable mute
+            audioManager.setMicrophoneMute(true);
+            disabledMute = false;
         }
-    }
-
-    private long listenInterval() {
-        return 5000; // 5 seconds startListening interval
+        if (isRecording() && audioRecorder != null) {
+            stopRecording();
+        }
     }
 }

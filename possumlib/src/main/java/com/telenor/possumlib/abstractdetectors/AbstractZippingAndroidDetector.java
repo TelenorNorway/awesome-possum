@@ -4,8 +4,8 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.io.CountingOutputStream;
+import com.telenor.possumlib.models.CountingOutputStream;
+import com.telenor.possumlib.models.PossumBus;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -21,8 +21,18 @@ public abstract class AbstractZippingAndroidDetector extends AbstractAndroidRegu
     private volatile ZipOutputStream outerStream;
     private CountingOutputStream innerStream;
 
-    protected AbstractZippingAndroidDetector(Context context, int sensorType, String identification, String secretKeyHash, EventBus eventBus) {
-        super(context, sensorType, identification, secretKeyHash, eventBus);
+    /**
+     * Constructor for all android sensor zipping detectors (all the heavy duty ones, like
+     * accelerometer and gyroscope etc)
+     *
+     * @param context    Any android context
+     * @param sensorType The Sensor.Type you wish to use for this sensor
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    protected AbstractZippingAndroidDetector(Context context, int sensorType, String encryptedKurt, PossumBus eventBus, boolean authenticating) {
+        super(context, sensorType, encryptedKurt, eventBus, authenticating);
     }
 
     @Override
@@ -78,6 +88,11 @@ public abstract class AbstractZippingAndroidDetector extends AbstractAndroidRegu
         }
     }
 
+    /**
+     * Overridden basic store to file due to zipping nature. Question is: Do we make it use
+     * zipStream still or is that unnecessary now that it shouldn't record for hours?
+     * @param file file to store data in
+     */
     @Override
     protected void storeData(@NonNull File file) {
         for (String value : sessionValues) {

@@ -5,7 +5,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.support.annotation.NonNull;
 
-import com.google.common.eventbus.EventBus;
+import com.telenor.possumlib.models.PossumBus;
 
 /***
  * AbstractAndroidDetector class that handles all detecting of sensor changes from the android
@@ -18,14 +18,17 @@ public abstract class AbstractAndroidDetector extends AbstractDetector {
     SensorManager sensorManager;
 
     /**
-     * Constructor for all abstract sensors. Note that it is abstract, requiring you to extend it
+     * Constructor for all android sensor detectors. Note that it is abstract, requiring you to extend it
      * for each sensor you wish to startListening to.
      *
      * @param context    Any android context
      * @param sensorType The Sensor.Type you wish to use for this sensor
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    protected AbstractAndroidDetector(Context context, int sensorType, String identification, String secretKeyHash, @NonNull EventBus eventBus) {
-        super(context, identification, secretKeyHash, eventBus);
+    protected AbstractAndroidDetector(Context context, int sensorType, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, encryptedKurt, eventBus, authenticating);
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager == null) {
             isEnabled = false;

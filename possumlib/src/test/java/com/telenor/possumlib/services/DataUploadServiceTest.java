@@ -16,12 +16,12 @@ import org.robolectric.shadows.ShadowServiceManager;
 import org.robolectric.util.ServiceController;
 
 @RunWith(PossumTestRunner.class)
-public class UploadServiceTest {
-    private ServiceController<UploadService> serviceController;
+public class DataUploadServiceTest {
+    private ServiceController<DataUploadService> serviceController;
     @Before
     public void setUp() throws Exception {
         JodaInit.initializeJodaTime();
-        serviceController = Robolectric.buildService(UploadService.class).attach();
+        serviceController = Robolectric.buildService(DataUploadService.class).attach();
         ShadowServiceManager.addService("upload", serviceController.get().onBind(null));
     }
 
@@ -33,14 +33,14 @@ public class UploadServiceTest {
     @Test
     public void testOnCreateInit() throws Exception {
 //        Assert.assertNull(shadowService.getLastForegroundNotification());
-        UploadService beforeCreate = serviceController.get();
+        DataUploadService beforeCreate = serviceController.get();
         Assert.assertNotNull(beforeCreate);
         Notification beforeNotification = Shadows.shadowOf(beforeCreate).getLastForegroundNotification();
         Assert.assertNull(beforeNotification);
 
 //        Assert.fail("Size before:"+ShadowApplication.getInstance().getForegroundThreadScheduler().size());
 
-        UploadService service = serviceController.create().get();
+        DataUploadService service = serviceController.create().get();
         Assert.assertNotNull(service);
     }
 

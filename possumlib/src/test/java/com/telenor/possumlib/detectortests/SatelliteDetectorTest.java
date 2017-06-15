@@ -7,10 +7,10 @@ import android.location.GpsStatus;
 import android.location.LocationManager;
 import android.os.Process;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.detectors.SatelliteDetector;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -33,12 +33,12 @@ public class SatelliteDetectorTest {
     private LocationManager mockedLocationManager;
     private Context mockedContext;
     private GpsStatus mockedGpsStatus;
-    private EventBus eventBus;
+    private PossumBus eventBus;
 
     @Before
     public void setUp() throws Exception {
         mockedContext = Mockito.mock(Context.class);
-        eventBus = new EventBus();
+        eventBus = new PossumBus();
         mockedLocationManager = Mockito.mock(LocationManager.class);
         List<String> allProviders = new ArrayList<>();
         allProviders.add(LocationManager.GPS_PROVIDER);
@@ -46,7 +46,7 @@ public class SatelliteDetectorTest {
         when(mockedLocationManager.getAllProviders()).thenReturn(allProviders);
         mockedGpsStatus = Mockito.mock(GpsStatus.class);
         setLocationDetectorWith(true, PackageManager.PERMISSION_GRANTED);
-        satelliteDetector = new SatelliteDetector(mockedContext, "encryptedFake", "secretKey", eventBus);
+        satelliteDetector = new SatelliteDetector(mockedContext, "encryptedFake", eventBus, false);
     }
 
     private void setLocationDetectorWith(boolean enabled, int permission) {

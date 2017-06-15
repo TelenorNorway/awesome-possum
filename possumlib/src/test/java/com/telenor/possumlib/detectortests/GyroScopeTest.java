@@ -4,10 +4,10 @@ import android.content.Context;
 import android.hardware.Sensor;
 import android.support.annotation.NonNull;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.constants.ReqCodes;
 import com.telenor.possumlib.detectors.GyroScope;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -26,14 +26,14 @@ public class GyroScopeTest extends GeneralSensorTest {
     private GyroScope gyroScope;
     private boolean event1;
     private boolean event2;
-    private EventBus eventBus;
+    private PossumBus eventBus;
     @Before
     public void setUp() throws Exception {
         super.setUp(Sensor.TYPE_GYROSCOPE);
         event1 = false;
         event2 = false;
-        eventBus = new EventBus();
-        gyroScope = new GyroScope(mockedContext, "fakeUnique", "fakeId", eventBus){
+        eventBus = new PossumBus();
+        gyroScope = new GyroScope(mockedContext, "fakeUnique", eventBus, false){
             @Override
             public Context context() {
                 return mockedContext;

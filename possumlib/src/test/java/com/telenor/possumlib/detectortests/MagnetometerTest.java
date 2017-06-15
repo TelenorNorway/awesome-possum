@@ -4,9 +4,9 @@ import android.content.Context;
 import android.hardware.Sensor;
 import android.support.annotation.NonNull;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.detectors.Magnetometer;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -19,12 +19,12 @@ import java.io.File;
 @RunWith(PossumTestRunner.class)
 public class MagnetometerTest extends GeneralSensorTest {
     private Magnetometer magnetometer;
-    private EventBus eventBus;
+    private PossumBus eventBus;
     @Before
     public void setUp() throws Exception {
         super.setUp(Sensor.TYPE_MAGNETIC_FIELD);
-        eventBus = new EventBus();
-        magnetometer = new Magnetometer(mockedContext, "fakeUnique", "fakeId", eventBus){
+        eventBus = new PossumBus();
+        magnetometer = new Magnetometer(mockedContext, "fakeUnique", eventBus, false) {
             @Override
             public Context context() {
                 return mockedContext;

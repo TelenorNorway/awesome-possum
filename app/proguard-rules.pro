@@ -103,7 +103,7 @@
 # Extras
 #
 
--keep class com.telenor.awesomepossum.fragments.**
+#-keep class com.telenor.awesomepossum.fragments.**
 -keep class com.amazonaws.auth.AWS4Signer
 -keep class com.amazonaws.services.s3.internal.S3Signer
 -keep class com.telenor.possumlib.tensorflow.TensorFlowInferenceInterface { *; }

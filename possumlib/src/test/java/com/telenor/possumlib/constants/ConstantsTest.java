@@ -17,6 +17,5 @@ public class ConstantsTest {
         Assert.assertEquals("tempEncryptedKurt", Constants.ENCRYPTED_TEMP_KURT);
         Assert.assertEquals("isLearning", Constants.IS_LEARNING);
         Assert.assertEquals("startTime", Constants.START_TIME);
-        Assert.assertEquals("secretKeyHash", Constants.SECRET_KEY_KEY);
     }
 }

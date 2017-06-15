@@ -13,18 +13,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
-import com.telenor.possumlib.changeevents.BasicChangeEvent;
 import com.telenor.possumlib.changeevents.BluetoothChangeEvent;
+import com.telenor.possumlib.changeevents.PossumEvent;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.joda.time.DateTime;
 
@@ -38,7 +35,6 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
     private BluetoothAdapter bluetoothAdapter;
     private BroadcastReceiver receiver;
     private ScanCallback callback;
-    @VisibleForTesting
     private IntentFilter intentFilter;
 
     private boolean isBLE = false;
@@ -48,8 +44,16 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
 
     private static final String tag = BluetoothDetector.class.getName();
 
-    public BluetoothDetector(final Context context, String encryptedKurt, String secretKeyHash, @NonNull EventBus eventBus) {
-        super(context, encryptedKurt, secretKeyHash, eventBus);
+    /**
+     * Constructor for a Bluetooth Detector
+     *
+     * @param context a valid android context
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public BluetoothDetector(final Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, encryptedKurt, eventBus, authenticating);
         // TODO: Confirm coarse/fine location and bluetooth admin for this
         BluetoothManager bluetoothManager;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -207,11 +211,6 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
         }
     }
 
-    @Override
-    public boolean isPermitted() {
-        return ContextCompat.checkSelfPermission(context(), Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED;
-    }
-
     public boolean isBLEDevice() {
         return isBLE;
     }
@@ -238,7 +237,7 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
     }
 
     @Override
-    public void eventReceived(BasicChangeEvent object) {
+    public void eventReceived(PossumEvent object) {
         if (object instanceof BluetoothChangeEvent) {
             scanForBluetooth();
         }
@@ -256,6 +255,11 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
 
     @Override
     public boolean isAvailable() {
-        return bluetoothAdapter != null && bluetoothAdapter.isEnabled() && isPermitted();
+        return bluetoothAdapter != null && bluetoothAdapter.isEnabled() && super.isAvailable();
+    }
+
+    @Override
+    public String requiredPermission() {
+        return Manifest.permission.BLUETOOTH_ADMIN;
     }
 }

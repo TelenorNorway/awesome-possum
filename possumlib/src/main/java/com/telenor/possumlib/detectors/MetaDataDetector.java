@@ -3,22 +3,35 @@ package com.telenor.possumlib.detectors;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractEternalEventDetector;
-import com.telenor.possumlib.changeevents.BasicChangeEvent;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
+import com.telenor.possumlib.changeevents.PossumEvent;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.models.PossumBus;
 
 /**
  * Sensor meant to take in different events regarding the apps events
  */
 public class MetaDataDetector extends AbstractEternalEventDetector {
-    public MetaDataDetector(Context context, String encryptedKurt, String secretKeyHash, @NonNull EventBus eventBus) throws IllegalArgumentException {
-        super(context, encryptedKurt, secretKeyHash, eventBus);
+    /**
+     * Constructor for the MetaDataDetector
+     *
+     * @param context a valid android context
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public MetaDataDetector(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, encryptedKurt, eventBus, authenticating);
     }
 
     @Override
-    public void eventReceived(BasicChangeEvent object) {
+    public String requiredPermission() {
+        return null;
+    }
+
+    @Override
+    public void eventReceived(PossumEvent object) {
         if (object instanceof MetaDataChangeEvent && isListening()) {
             super.eventReceived(object);
         }

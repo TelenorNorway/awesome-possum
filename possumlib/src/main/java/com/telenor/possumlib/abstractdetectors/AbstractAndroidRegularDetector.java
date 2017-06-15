@@ -7,8 +7,8 @@ import android.hardware.SensorEventListener;
 import android.os.Build;
 import android.os.SystemClock;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.joda.time.DateTime;
 
@@ -18,8 +18,16 @@ public abstract class AbstractAndroidRegularDetector extends AbstractAndroidDete
     private static final long MIN_INTERVAL_NANO = MIN_INTERVAL_MICRO * 1000;
     private long lastRecord;
 
-    protected AbstractAndroidRegularDetector(Context context, int sensorType, String identification, String secretKeyHash, EventBus eventBus) {
-        super(context, sensorType, identification, secretKeyHash, eventBus);
+    /**
+     * Constructor for regular android sensor detectors
+     * @param context    Any android context
+     * @param sensorType The Sensor.Type you wish to use for this sensor
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    protected AbstractAndroidRegularDetector(Context context, int sensorType, String encryptedKurt, PossumBus eventBus, boolean authenticating) {
+        super(context, sensorType, encryptedKurt, eventBus, authenticating);
         if (sensor != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" "+ detectorName() + " FIFO SIZE " + sensor.getFifoMaxEventCount() + " " + sensor.getFifoReservedEventCount()));

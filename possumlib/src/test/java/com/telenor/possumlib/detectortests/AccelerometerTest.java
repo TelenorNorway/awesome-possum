@@ -3,10 +3,10 @@ package com.telenor.possumlib.detectortests;
 import android.hardware.Sensor;
 import android.support.annotation.NonNull;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.constants.ReqCodes;
 import com.telenor.possumlib.detectors.Accelerometer;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -23,13 +23,13 @@ import static com.telenor.possumlib.SensorEvents.createSensorEvent;
 @RunWith(PossumTestRunner.class)
 public class AccelerometerTest extends GeneralSensorTest {
     private Accelerometer accelerometer;
-    private EventBus eventBus;
+    private PossumBus eventBus;
 
     @Before
     public void setUp() throws Exception {
         super.setUp(Sensor.TYPE_ACCELEROMETER);
-        eventBus = new EventBus();
-        accelerometer = new Accelerometer(mockedContext, "fakeUnique", "fakeId", eventBus){
+        eventBus = new PossumBus();
+        accelerometer = new Accelerometer(mockedContext, "fakeUnique", eventBus, false){
             @Override
             public boolean isEnabled() {
                 return sensorIsEnabled;

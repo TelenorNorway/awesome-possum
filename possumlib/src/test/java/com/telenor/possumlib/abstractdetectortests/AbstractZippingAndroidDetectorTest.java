@@ -8,11 +8,11 @@ import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.PowerManager;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.JodaInit;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.abstractdetectors.AbstractZippingAndroidDetector;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -40,10 +40,8 @@ public class AbstractZippingAndroidDetectorTest {
     private AbstractZippingAndroidDetector androidSensor;
     private boolean wakeLockActivated;
     private long guaranteedListenInterval = 1000;
-    private long restartInterval = 1000;
     private long sizeOfUpload;
     private File fakeFile;
-    private EventBus eventBus;
     @Mock
     private Context mockedContext;
     @Mock
@@ -60,8 +58,8 @@ public class AbstractZippingAndroidDetectorTest {
         MockitoAnnotations.initMocks(this);
         wakeLockActivated = false;
         sizeOfUpload = 100;
-        eventBus = new EventBus();
-        fakeFile = new File(RuntimeEnvironment.application.getFilesDir().getAbsolutePath()+"/testFile");
+        PossumBus eventBus = new PossumBus();
+        fakeFile = new File(RuntimeEnvironment.application.getFilesDir().getAbsolutePath() + "/testFile");
         if (fakeFile.exists()) {
             Assert.assertTrue(fakeFile.delete());
         }
@@ -75,7 +73,7 @@ public class AbstractZippingAndroidDetectorTest {
         when(mockedContext.getSystemService(Context.POWER_SERVICE)).thenReturn(mockedPowerManager);
         when(mockedContext.getSystemService(Context.ALARM_SERVICE)).thenReturn(mockedAlarmManager);
         when(mockedSensorManager.getDefaultSensor(anyInt())).thenReturn(mockedSensor);
-        androidSensor = new AbstractZippingAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, "fakeUnique", "fakeId", eventBus) {
+        androidSensor = new AbstractZippingAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
             @Override
             public long guaranteedListenInterval() {
                 return guaranteedListenInterval;
@@ -90,6 +88,7 @@ public class AbstractZippingAndroidDetectorTest {
             public File storedData() {
                 return fakeFile;
             }
+
             @Override
             public boolean stageForUpload(File file) {
                 return file.length() > 0;
@@ -103,6 +102,11 @@ public class AbstractZippingAndroidDetectorTest {
             @Override
             public String detectorName() {
                 return "Accelerometer";
+            }
+
+            @Override
+            public String requiredPermission() {
+                return null;
             }
 
             @Override
@@ -133,11 +137,11 @@ public class AbstractZippingAndroidDetectorTest {
     public void testStartListening() throws Exception {
         Field outerStreamField = AbstractZippingAndroidDetector.class.getDeclaredField("outerStream");
         outerStreamField.setAccessible(true);
-        ZipOutputStream zipStreamBefore = (ZipOutputStream)outerStreamField.get(androidSensor);
+        ZipOutputStream zipStreamBefore = (ZipOutputStream) outerStreamField.get(androidSensor);
         Assert.assertNull(zipStreamBefore);
         Assert.assertTrue(androidSensor.startListening());
         Assert.assertTrue(androidSensor.isListening());
-        ZipOutputStream zipStream = (ZipOutputStream)outerStreamField.get(androidSensor);
+        ZipOutputStream zipStream = (ZipOutputStream) outerStreamField.get(androidSensor);
         Assert.assertNotNull(zipStream);
     }
 
@@ -146,11 +150,11 @@ public class AbstractZippingAndroidDetectorTest {
         Field outerStreamField = AbstractZippingAndroidDetector.class.getDeclaredField("outerStream");
         outerStreamField.setAccessible(true);
         Assert.assertTrue(androidSensor.startListening());
-        ZipOutputStream zipStream = (ZipOutputStream)outerStreamField.get(androidSensor);
+        ZipOutputStream zipStream = (ZipOutputStream) outerStreamField.get(androidSensor);
         Assert.assertNotNull(zipStream);
         Assert.assertTrue(androidSensor.isListening());
         androidSensor.stopListening();
-        ZipOutputStream zipStreamAfter = (ZipOutputStream)outerStreamField.get(androidSensor);
+        ZipOutputStream zipStreamAfter = (ZipOutputStream) outerStreamField.get(androidSensor);
         Assert.assertNull(zipStreamAfter);
         Assert.assertFalse(androidSensor.isListening());
     }
@@ -160,7 +164,7 @@ public class AbstractZippingAndroidDetectorTest {
         Method zipMethod = AbstractZippingAndroidDetector.class.getDeclaredMethod("createZipStream", OutputStream.class);
         zipMethod.setAccessible(true);
         OutputStream oStream = new FileOutputStream(fakeFile);
-        ZipOutputStream zipStream = (ZipOutputStream)zipMethod.invoke(androidSensor, oStream);
+        ZipOutputStream zipStream = (ZipOutputStream) zipMethod.invoke(androidSensor, oStream);
         Assert.assertNotNull(zipStream);
         long fileSize = fakeFile.length();
         zipStream.write("This is a test".getBytes());
@@ -173,8 +177,8 @@ public class AbstractZippingAndroidDetectorTest {
         Assert.assertEquals(100, androidSensor.fileSize());
         sizeOfUpload = 200;
         Assert.assertEquals(200, androidSensor.fileSize());
-        for (int i = 0 ; i < 10 ; i++) {
-            androidSensor.sessionValues().add("Test"+i);
+        for (int i = 0; i < 10; i++) {
+            androidSensor.sessionValues().add("Test" + i);
         }
         androidSensor.storeData();
         Assert.assertEquals(200, androidSensor.fileSize());
@@ -184,14 +188,14 @@ public class AbstractZippingAndroidDetectorTest {
     public void testFileSizeAndStoreDataDoesChangeWhenListening() throws Exception {
         Assert.assertEquals(100, androidSensor.fileSize());
         Assert.assertTrue(androidSensor.startListening());
-        for (int i = 0 ; i < 10 ; i++) {
-            androidSensor.sessionValues().add("Test"+i);
+        for (int i = 0; i < 10; i++) {
+            androidSensor.sessionValues().add("Test" + i);
         }
         Assert.assertEquals(10, androidSensor.sessionValues().size());
         sizeOfUpload = 200;
         androidSensor.storeData();
-        Assert.assertTrue(androidSensor.fileSize() > 200);
         Assert.assertEquals(0, androidSensor.sessionValues().size());
+        Assert.assertTrue(androidSensor.fileSize() > 200);
     }
 
     @Test
@@ -208,10 +212,10 @@ public class AbstractZippingAndroidDetectorTest {
     public void testPrepareForUpload() throws Exception {
         Field outerStream = AbstractZippingAndroidDetector.class.getDeclaredField("outerStream");
         outerStream.setAccessible(true);
-        ZipOutputStream zipStream = (ZipOutputStream)outerStream.get(androidSensor);
+        ZipOutputStream zipStream = (ZipOutputStream) outerStream.get(androidSensor);
         Assert.assertNull(zipStream);
         Assert.assertTrue(androidSensor.startListening());
-        zipStream = (ZipOutputStream)outerStream.get(androidSensor);
+        zipStream = (ZipOutputStream) outerStream.get(androidSensor);
         Assert.assertNotNull(zipStream);
 
         androidSensor.prepareUpload();

@@ -5,18 +5,31 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.support.annotation.NonNull;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractZippingAndroidDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.constants.ReqCodes;
+import com.telenor.possumlib.models.PossumBus;
 
 
 /**
  * Detects changes in the gyroscope
  */
 public class GyroScope extends AbstractZippingAndroidDetector {
-    public GyroScope(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) {
-        super(context, Sensor.TYPE_GYROSCOPE, identification, secretKeyHash, eventBus);
+    /**
+     * Constructor for the gyroscope
+     *
+     * @param context    Any android context
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public GyroScope(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, Sensor.TYPE_GYROSCOPE, encryptedKurt, eventBus, authenticating);
+    }
+
+    @Override
+    public String requiredPermission() {
+        return null;
     }
 
     @Override

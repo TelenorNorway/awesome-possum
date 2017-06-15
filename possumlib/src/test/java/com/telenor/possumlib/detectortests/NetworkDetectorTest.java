@@ -9,11 +9,11 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.FileManipulator;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.detectors.NetworkDetector;
+import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.FileUtil;
 
 import org.junit.After;
@@ -45,7 +45,7 @@ public class NetworkDetectorTest {
     private NetworkInfo mockedNetworkInfo;
     @Mock
     private Context mockedApplicationContext;
-    private EventBus eventBus;
+    private PossumBus eventBus;
     private boolean checkedValue;
 
     @SuppressLint("WifiManagerPotentialLeak")
@@ -53,7 +53,7 @@ public class NetworkDetectorTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         checkedValue = false;
-        eventBus = new EventBus();
+        eventBus = new PossumBus();
         WifiConfiguration wifiConfiguration = new WifiConfiguration();
         wifiConfiguration.SSID = "FakeNetwork";
         File dataDir = FileManipulator.getDataDir(RuntimeEnvironment.application);
@@ -70,7 +70,7 @@ public class NetworkDetectorTest {
         when(mockedApplicationContext.getSystemService(Context.WIFI_SERVICE)).thenReturn(mockedWifiService);
         when(mockedApplicationContext.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
         when(mockedWifiService.isWifiEnabled()).thenReturn(true);
-        networkDetector = new NetworkDetector(mockedContext, "fakeUnique", "fakeId", eventBus);
+        networkDetector = new NetworkDetector(mockedContext, "fakeUnique", eventBus, false);
     }
 
     @After
@@ -102,7 +102,7 @@ public class NetworkDetectorTest {
         when(mockedApplicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)).thenReturn(mockedConnectivityManager);
         when(mockedConnectivityManager.getActiveNetworkInfo()).thenReturn(mockedNetworkInfo);
         when(mockedApplicationContext.getSystemService(Context.WIFI_SERVICE)).thenReturn(null);
-        networkDetector = new NetworkDetector(mockedContext, "fakeUnique", "fakeId", eventBus);
+        networkDetector = new NetworkDetector(mockedContext, "fakeUnique", eventBus, false);
         Assert.assertFalse(networkDetector.isEnabled());
     }
 
@@ -185,7 +185,7 @@ public class NetworkDetectorTest {
 
     @Test
     public void testOnReceiveNetworkChange() throws Exception {
-        networkDetector = new NetworkDetector(mockedContext, "fakeUnique", "fakeId", eventBus) {
+        networkDetector = new NetworkDetector(mockedContext, "fakeUnique", eventBus, false) {
             @Override
             public void sensorStatusChanged() {
                 checkedValue = true;

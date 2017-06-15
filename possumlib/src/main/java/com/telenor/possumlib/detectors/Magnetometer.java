@@ -6,17 +6,30 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.support.annotation.NonNull;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractZippingAndroidDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.constants.ReqCodes;
+import com.telenor.possumlib.models.PossumBus;
 
 /**
  * Measures magnetic field variations detected by the device. Not used atm.
  */
 public class Magnetometer extends AbstractZippingAndroidDetector implements SensorEventListener {
-    public Magnetometer(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) {
-        super(context, Sensor.TYPE_MAGNETIC_FIELD, identification, secretKeyHash, eventBus);
+    /**
+     * Constructor for the Magnetometer
+     *
+     * @param context    Any android context
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public Magnetometer(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, Sensor.TYPE_MAGNETIC_FIELD, encryptedKurt, eventBus, authenticating);
+    }
+
+    @Override
+    public String requiredPermission() {
+        return null;
     }
 
     @Override

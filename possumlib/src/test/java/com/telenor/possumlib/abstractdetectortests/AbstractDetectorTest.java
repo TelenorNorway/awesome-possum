@@ -1,15 +1,15 @@
 package com.telenor.possumlib.abstractdetectortests;
 
 import android.content.Context;
-import android.content.pm.PackageInfo;
 
-import com.google.common.eventbus.EventBus;
+import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.FileManipulator;
 import com.telenor.possumlib.JodaInit;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.interfaces.ISensorStatusUpdate;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -38,14 +38,14 @@ public class AbstractDetectorTest {
     private File fakedStoredData;
     private boolean didChangeSensorUpdate;
     private long timestamp;
-    private EventBus eventBus;
+    private PossumBus eventBus;
 
     @Before
     public void setUp() throws Exception {
         isActuallyEnabled = true;
         isActuallyAvailable = true;
         didChangeSensorUpdate = false;
-        eventBus = new EventBus();
+        eventBus = new PossumBus();
         timestamp = System.currentTimeMillis();
         JodaInit.initializeJodaTime();
         fakedStoredData = FileManipulator.getFileWithName(RuntimeEnvironment.application, "Accelerometer");
@@ -64,8 +64,8 @@ public class AbstractDetectorTest {
         }
     }
 
-    private AbstractDetector getDetector(Context context, EventBus eventBus, final String detectorName) {
-        return new AbstractDetector(context, "fakeUnique", "fakeId", eventBus) {
+    private AbstractDetector getDetector(Context context, PossumBus eventBus, final String detectorName) {
+        return new AbstractDetector(context, "fakeUnique", eventBus, false) {
             @Override
             public boolean isEnabled() {
                 return isActuallyEnabled;
@@ -74,6 +74,11 @@ public class AbstractDetectorTest {
             @Override
             public boolean isAvailable() {
                 return isActuallyAvailable;
+            }
+
+            @Override
+            public String requiredPermission() {
+                return null;
             }
 
             @Override
@@ -148,7 +153,6 @@ public class AbstractDetectorTest {
 
     @Test
     public void testDefaultValues() throws Exception {
-        Assert.assertFalse(abstractDetector.isWakeUpDetector());
         Assert.assertTrue(abstractDetector.isPermitted());
     }
 
@@ -282,9 +286,7 @@ public class AbstractDetectorTest {
         Method bucketKeyMethod = AbstractDetector.class.getDeclaredMethod("bucketKey");
         bucketKeyMethod.setAccessible(true);
         String bucketKey = (String) bucketKeyMethod.invoke(abstractDetector);
-        Context context = RuntimeEnvironment.application;
-        PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-        String shouldBe = "data/" + packageInfo.versionName + "/Accelerometer/fakeUnique/fakeId/" + timestamp + ".zip";
+        String shouldBe = "data/" + AwesomePossum.versionName() + "/Accelerometer/fakeUnique/" + timestamp + ".zip";
         Assert.assertEquals(shouldBe, bucketKey);
     }
 

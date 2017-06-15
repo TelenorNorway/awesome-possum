@@ -2,21 +2,18 @@ package com.telenor.possumlib.detectors;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
 import com.telenor.possumlib.asynctasks.AsyncFaceTask;
-import com.telenor.possumlib.changeevents.BasicChangeEvent;
 import com.telenor.possumlib.changeevents.ImageChangeEvent;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
+import com.telenor.possumlib.changeevents.PossumEvent;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.tensorflow.TensorFlowInferenceInterface;
 
 import org.joda.time.DateTime;
@@ -38,8 +35,15 @@ public class ImageDetector extends AbstractEventDrivenDetector {
     private static final String fullPath = "file:///android_asset/"+fileName;
     public TensorFlowInferenceInterface tensorFlowInterface;
 
-    public ImageDetector(Context context, String identification, String secretKeyHash, @NonNull EventBus eventBus) {
-        super(context, identification, secretKeyHash, eventBus);
+    /**
+     * Constructor for Image detector
+     * @param context a valid android context
+     * @param encryptedKurt the encrypted kurt id
+     * @param eventBus an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
+     */
+    public ImageDetector(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, encryptedKurt, eventBus, authenticating);
         totalFaces = 0;
         // Load tensorFlow interface
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -82,7 +86,6 @@ public class ImageDetector extends AbstractEventDrivenDetector {
         }
     }
 
-    @VisibleForTesting
     protected TensorFlowInferenceInterface getTensorFlowInterface() {
         return new TensorFlowInferenceInterface();
     }
@@ -104,12 +107,12 @@ public class ImageDetector extends AbstractEventDrivenDetector {
 
     @Override
     public boolean isAvailable() {
-        return isPermitted() && modelLoaded;
+        return modelLoaded && super.isAvailable();
     }
 
     @Override
-    public boolean isPermitted() {
-        return ContextCompat.checkSelfPermission(context(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+    public String requiredPermission() {
+        return Manifest.permission.CAMERA;
     }
 
     @Override
@@ -123,7 +126,7 @@ public class ImageDetector extends AbstractEventDrivenDetector {
     }
 
     @Override
-    public void eventReceived(BasicChangeEvent object) {
+    public void eventReceived(PossumEvent object) {
         if (!isAvailable() || !isEnabled()) return;
         if (object instanceof ImageChangeEvent) {
             ImageChangeEvent event = (ImageChangeEvent)object;
@@ -149,7 +152,6 @@ public class ImageDetector extends AbstractEventDrivenDetector {
         }
     }
 
-    @VisibleForTesting
     protected AsyncFaceTask getFaceTask(boolean continuous) {
         try {
             return new AsyncFaceTask(context(), this,

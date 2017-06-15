@@ -3,13 +3,11 @@ package com.telenor.possumlib.asynctasks;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
-import com.google.common.base.Joiner;
 import com.telenor.possumlib.interfaces.IWrite;
 import com.telenor.possumlib.utils.FileUtil;
 
@@ -71,7 +69,6 @@ public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
         return null;
     }
 
-    @VisibleForTesting
     private TransferListener createTransferListener(final File file, final AtomicInteger filesLeft) {
         return new TransferListener() {
             @Override
@@ -137,12 +134,7 @@ public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
             int failed = filesFailed.get();
             int unsuccessful = canceled + failed;
             if (unsuccessful > 0) {
-                String exMsg = "Upload " + (unsuccessful == totalNumberOfFiles ? "" : "partly ") + "unsuccessful: "
-                        + Joiner.on(", ").skipNulls().join(new String[]{
-                        canceled > 0 ? canceled + "/" + totalNumberOfFiles + " canceled" : null,
-                        failed > 0 ? failed + "/" + totalNumberOfFiles + " failed" : null,
-                });
-                exception = new Exception(exMsg);
+                exception = new Exception("Upload "+ (unsuccessful == totalNumberOfFiles ? "" : "partly ") + "unsuccessful");
             }
         }
         listener.uploadComplete(exception, message);

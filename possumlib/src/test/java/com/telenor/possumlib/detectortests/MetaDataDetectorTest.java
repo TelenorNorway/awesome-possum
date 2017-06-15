@@ -1,11 +1,11 @@
 package com.telenor.possumlib.detectortests;
 
-import com.google.common.eventbus.EventBus;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
 import com.telenor.possumlib.changeevents.SatelliteChangeEvent;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.detectors.MetaDataDetector;
+import com.telenor.possumlib.models.PossumBus;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -23,15 +23,15 @@ import java.util.List;
 @RunWith(PossumTestRunner.class)
 public class MetaDataDetectorTest {
     private MetaDataDetector metaDataDetector;
-    private EventBus eventBus;
+    private PossumBus eventBus;
     private File fakeFile;
     @Before
     public void setUp() throws Exception {
-        eventBus = new EventBus();
+        eventBus = new PossumBus();
         fakeFile = new File(RuntimeEnvironment.application.getFilesDir()+"/MetaData");
         if (fakeFile.exists()) Assert.assertTrue(fakeFile.delete());
         Assert.assertTrue(fakeFile.createNewFile());
-        metaDataDetector = new MetaDataDetector(RuntimeEnvironment.application, "fakeUnique", "fakeId", eventBus) {
+        metaDataDetector = new MetaDataDetector(RuntimeEnvironment.application, "fakeUnique", eventBus, false) {
             @Override
             public File storedData() {
                 return fakeFile;
