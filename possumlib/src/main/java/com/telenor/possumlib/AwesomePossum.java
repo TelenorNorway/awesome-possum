@@ -36,7 +36,6 @@ import com.telenor.possumlib.utils.Has;
 import net.danlew.android.joda.JodaTimeAndroid;
 
 import org.joda.time.DateTime;
-import org.opencv.android.OpenCVLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,12 +98,6 @@ public final class AwesomePossum {
         };
         context.registerReceiver(trustReceiver, new IntentFilter(Messaging.POSSUM_TRUST));
         context.registerReceiver(serviceMessageReceiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
-
-        if (!OpenCVLoader.initDebug(context)) {
-            Log.d(tag, "OpenCV not loaded");
-        } else {
-            Log.d(tag, "OpenCV loaded");
-        }
 
         // In case of first time start, set installation time
         long startTime = preferences.getLong(Constants.START_TIME, 0);
