@@ -89,6 +89,15 @@ public class ImageDetector extends AbstractDetector {
     }
 
     @Override
+    public void stopListening() {
+        if (asyncFaceTask != null) {
+            asyncFaceTask.cancel(true);
+            asyncFaceTask = null;
+        }
+        super.stopListening();
+    }
+
+    @Override
     public boolean isEnabled() {
         return Camera.getNumberOfCameras() > 0;
     }
@@ -127,32 +136,6 @@ public class ImageDetector extends AbstractDetector {
         return listen;
     }
 
-//    @Override
-//    public void eventReceived(PossumEvent object) {
-//        if (!isAvailable() || !isEnabled()) return;
-//        if (object instanceof ImageChangeEvent) {
-//            ImageChangeEvent event = (ImageChangeEvent)object;
-//            if (asyncFaceTask != null) {
-//                asyncFaceTask.cancel(true);
-//                asyncFaceTask = null;
-//                Log.d(tag, "Stopping eventual image capture running");
-//            }
-//            switch (event.eventType()) {
-//                case IMAGE_SINGLE:
-//                    Log.d(tag, "Starting execution of single image snapshot");
-//                    snapImage(getFaceTask(false));
-//                    break;
-//                case IMAGE_CONTINUOUS:
-//                    Log.d(tag, "Starting execution of repeating image snapshots");
-//                    break;
-//                case STOP_IMAGE_CAPTURE:
-//                    break;
-//                default:
-//                    Log.w(tag, "Unknown event received:" + event.eventType());
-//            }
-//        }
-//    }
-
     private AsyncFaceTask getFaceTask() {
         try {
             return new AsyncFaceTask(context(), this,
@@ -185,7 +168,6 @@ public class ImageDetector extends AbstractDetector {
         weight_list = weight_list.replace(",", "");
         // Write to data file
         sessionValues.add(DateTime.now().getMillis() + " " + weight_list);
-        storeData();
     }
 
     public void resetTotalFaces() {
