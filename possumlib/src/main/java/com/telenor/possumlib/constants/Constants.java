@@ -11,4 +11,5 @@ public class Constants {
 
     // These should not be part of the library...I think...
     public static final String START_TIME = "startTime";
+    public static final String BUCKET = "telenor-nr-awesome-possum";
 }

@@ -1,7 +1,5 @@
 package com.telenor.possumlib.services;
 
-import android.util.Log;
-
 import com.telenor.possumlib.abstractservices.AbstractCollectionService;
 
 /**
@@ -9,17 +7,9 @@ import com.telenor.possumlib.abstractservices.AbstractCollectionService;
  * analysis
  */
 public class AuthenticationService extends AbstractCollectionService {
-    private static final String tag = AuthenticationService.class.getName();
-
     @Override
     protected boolean isAuthenticating() {
         return true;
-    }
-
-    @Override
-    public void performPostAction() {
-        // TODO: Perform upload
-        Log.i(tag, "Performing upload");
     }
 
     @Override

@@ -30,11 +30,13 @@ import com.telenor.possumlib.services.AuthenticationService;
 import com.telenor.possumlib.services.DataCollectionService;
 import com.telenor.possumlib.services.DataUploadService;
 import com.telenor.possumlib.services.SendKurtService;
+import com.telenor.possumlib.services.VerificationService;
 import com.telenor.possumlib.utils.Has;
 
 import net.danlew.android.joda.JodaTimeAndroid;
 
 import org.joda.time.DateTime;
+import org.opencv.android.OpenCVLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,11 +94,17 @@ public final class AwesomePossum {
         serviceMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                handleServiceIntent(intent);
+                handleServiceIntent(context, intent);
             }
         };
         context.registerReceiver(trustReceiver, new IntentFilter(Messaging.POSSUM_TRUST));
         context.registerReceiver(serviceMessageReceiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
+
+        if (!OpenCVLoader.initDebug(context)) {
+            Log.d(tag, "OpenCV not loaded");
+        } else {
+            Log.d(tag, "OpenCV loaded");
+        }
 
         // In case of first time start, set installation time
         long startTime = preferences.getLong(Constants.START_TIME, 0);
@@ -122,6 +130,19 @@ public final class AwesomePossum {
     }
 
     /**
+     * Starts a verification of whether Awesome Possum should be terminated and unauthorized.
+     * Should the gathering be done or the AP project be done, the started service will send
+     * an intent with information that it should be terminated
+     * @param context a valid android context
+     * @param identityPoolId the identity pool id it will use
+     */
+    private static void requestVerification(@NonNull Context context, @NonNull String identityPoolId) {
+        Intent intent = new Intent(context, VerificationService.class);
+        intent.putExtra("identityPoolId", identityPoolId);
+        context.startService(intent);
+    }
+
+    /**
      * Sets the last authentication attempt time
      *
      * @param authenticationDate a datetime for the last attempted authentication
@@ -137,6 +158,7 @@ public final class AwesomePossum {
      * @return true if it starts an attempt, false if too little time has passed
      */
     public static boolean authenticate(@NonNull Context context) {
+        // TODO: Should this be a separate method or should it be part of the "listen" method?
         if (lastAuthenticated == null || lastAuthenticated.plusMinutes(2).isBeforeNow()) {
             setAuthenticationDate(DateTime.now());
             Intent intent = new Intent(context, AuthenticationService.class);
@@ -145,19 +167,29 @@ public final class AwesomePossum {
         } else return false;
     }
 
-    private static void handleServiceIntent(@NonNull Intent intent) {
+    private static void handleServiceIntent(@NonNull Context context, @NonNull Intent intent) {
+        init(context);
         String messageType = intent.getStringExtra(Messaging.POSSUM_MESSAGE_TYPE);
-        if (Messaging.VERIFICATION_SUCCESS.equals(messageType)) {
-            // Successfully uploaded authentication
-            if (initComplete) {
+        if (messageType == null) return;
+        SharedPreferences.Editor editor;
+        switch (messageType) {
+            case Messaging.VERIFICATION_SUCCESS:
+                // Successfully uploaded authentication
                 String tempKurt = preferences.getString(Constants.ENCRYPTED_TEMP_KURT, null);
-                SharedPreferences.Editor editor = preferences.edit();
+                editor = preferences.edit();
                 editor.putString(Constants.ENCRYPTED_KURT, tempKurt);
                 editor.putString(Constants.ENCRYPTED_TEMP_KURT, null);
                 editor.apply();
-            } else {
-                Log.e(tag, "Upload of verification is successful but unable to store results");
-            }
+                break;
+            case Messaging.POSSUM_TERMINATE:
+                Log.d(tag, "Found that the AwesomePossum should be terminated. Initialize shutdown procedure");
+                editor = preferences.edit();
+                editor.putString(Constants.ENCRYPTED_KURT, null);
+                editor.putString(Constants.ENCRYPTED_TEMP_KURT, null);
+                editor.apply();
+                break;
+            default:
+                Log.d(tag, "Unhandled message:"+messageType);
         }
         for (IPossumMessage listener : messageListeners) {
             listener.possumMessageReceived(messageType, intent.getStringExtra(Messaging.POSSUM_MESSAGE));
@@ -168,11 +200,13 @@ public final class AwesomePossum {
      * Starts to listen/gather data while app is running
      *
      * @param encryptedKurt the encrypted kurt id
+     * @param identityPoolId the identity pool id it will verify with
      * @throws GatheringNotAuthorizedException If the user hasn't accepted the app, this exception is thrown
      */
-    public static void startListening(@NonNull Context context, @NonNull String encryptedKurt) throws GatheringNotAuthorizedException {
+    public static void startListening(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String identityPoolId) throws GatheringNotAuthorizedException {
         init(context);
         if (isAuthorized(context)) {
+            requestVerification(context, identityPoolId);
             Intent intent = new Intent(context, DataCollectionService.class);
             intent.putExtra("isLearning", false);
             intent.putExtra("encryptedKurt", encryptedKurt);
@@ -277,16 +311,16 @@ public final class AwesomePossum {
     }
 
     /**
-     * @param context       a valid android context
-     * @param encryptedKurt the encrypted key identifying the user
-     * @param bucket        the S3 amazon bucket to upload to
+     * @param context           a valid android context
+     * @param encryptedKurt     the encrypted key identifying the user
+     * @param identityPoolId    the identity pool id it will use
      * @return true if upload was started, false if no network to upload on or not initialized
      */
-    public static boolean startUpload(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucket) {
+    public static boolean startUpload(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String identityPoolId) {
         if (preferences == null) return false;
         Intent intent = new Intent(context, DataUploadService.class);
         intent.putExtra("encryptedKurt", encryptedKurt);
-        intent.putExtra("bucket", bucket);
+        intent.putExtra("identityPoolId", identityPoolId);
         boolean startedUpload;
         if (Has.network(context)) {
             context.startService(intent);
@@ -359,10 +393,10 @@ public final class AwesomePossum {
      * library. Until it is done, no data will be collected
      *
      * @param encryptedKurt the unique id reflecting the user who is authorized
-     * @param bucket        the S3 amazon bucket key of where you are uploading
+     * @param identityPoolId    the identity pool id you are using
      * @return true if authorized, false if not initialized yet
      */
-    public static boolean authorizeGathering(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String bucket) {
+    public static boolean authorizeGathering(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String identityPoolId) {
         init(context);
         String previouslyStoredKurt = preferences.getString(Constants.ENCRYPTED_KURT, null);
         if (previouslyStoredKurt == null || !encryptedKurt.equals(previouslyStoredKurt)) {
@@ -370,7 +404,7 @@ public final class AwesomePossum {
             if (Has.network(context)) {
                 Intent intent = new Intent(context, SendKurtService.class);
                 intent.putExtra("encryptedKurt", encryptedKurt);
-                intent.putExtra("bucket", bucket);
+                intent.putExtra("identityPoolId", identityPoolId);
                 context.startService(intent);
             }
         }

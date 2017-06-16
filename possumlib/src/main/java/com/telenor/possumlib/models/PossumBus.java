@@ -24,4 +24,8 @@ public class PossumBus {
     public void unregister(IPossumEventListener listener) {
         listeners.remove(listener);
     }
+
+    public void clearAll() {
+        listeners.clear();
+    }
 }

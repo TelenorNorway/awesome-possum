@@ -1,9 +1,11 @@
 package com.telenor.possumlib.interfaces;
 
+import com.amazonaws.services.s3.AmazonS3Client;
+
 /**
- * Quick and easy interface for giving the
+ * Quick and easy interface for giving the amazon client on finding it
  */
 public interface IAmazonIdentityConfirmed {
-    void foundAmazonIdentity();
+    void foundAmazonIdentity(AmazonS3Client client);
     void failedToFindAmazonIdentity();
 }

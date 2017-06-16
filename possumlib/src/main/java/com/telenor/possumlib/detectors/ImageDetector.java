@@ -7,11 +7,9 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
+import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.asynctasks.AsyncFaceTask;
-import com.telenor.possumlib.changeevents.ImageChangeEvent;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
-import com.telenor.possumlib.changeevents.PossumEvent;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.tensorflow.TensorFlowInferenceInterface;
@@ -23,11 +21,11 @@ import java.util.Arrays;
 /***
  * Uses camera to determine familiar places, face and face identity.
  */
-public class ImageDetector extends AbstractEventDrivenDetector {
+public class ImageDetector extends AbstractDetector {
     private static final String tag = ImageDetector.class.getName();
-    private static final String IMAGE_SINGLE = "IMAGE_SINGLE";
-    private static final String IMAGE_CONTINUOUS = "IMAGE_CONTINUOUS";
-    private static final String STOP_IMAGE_CAPTURE = "STOP_IMAGE_CAPTURE";
+//    private static final String IMAGE_SINGLE = "IMAGE_SINGLE";
+//    private static final String IMAGE_CONTINUOUS = "IMAGE_CONTINUOUS";
+//    private static final String STOP_IMAGE_CAPTURE = "STOP_IMAGE_CAPTURE";
     private boolean modelLoaded = false;
     private int totalFaces;
     private AsyncFaceTask asyncFaceTask;
@@ -91,18 +89,8 @@ public class ImageDetector extends AbstractEventDrivenDetector {
     }
 
     @Override
-    protected boolean storeWithInterval() {
-        return false;
-    }
-
-    @Override
     public boolean isEnabled() {
         return Camera.getNumberOfCameras() > 0;
-    }
-
-    @Override
-    public boolean isValidSet() {
-        return true;
     }
 
     @Override
@@ -126,37 +114,49 @@ public class ImageDetector extends AbstractEventDrivenDetector {
     }
 
     @Override
-    public void eventReceived(PossumEvent object) {
-        if (!isAvailable() || !isEnabled()) return;
-        if (object instanceof ImageChangeEvent) {
-            ImageChangeEvent event = (ImageChangeEvent)object;
+    public boolean startListening() {
+        boolean listen = super.startListening();
+        if (listen) {
             if (asyncFaceTask != null) {
                 asyncFaceTask.cancel(true);
                 asyncFaceTask = null;
                 Log.d(tag, "Stopping eventual image capture running");
             }
-            switch (event.eventType()) {
-                case IMAGE_SINGLE:
-                    Log.d(tag, "Starting execution of single image snapshot");
-                    snapImage(getFaceTask(false));
-                    break;
-                case IMAGE_CONTINUOUS:
-                    Log.d(tag, "Starting execution of repeating image snapshots");
-                    snapImage(getFaceTask(true));
-                    break;
-                case STOP_IMAGE_CAPTURE:
-                    break;
-                default:
-                    Log.w(tag, "Unknown event received:" + event.eventType());
-            }
+            snapImage(getFaceTask());
         }
+        return listen;
     }
 
-    protected AsyncFaceTask getFaceTask(boolean continuous) {
+//    @Override
+//    public void eventReceived(PossumEvent object) {
+//        if (!isAvailable() || !isEnabled()) return;
+//        if (object instanceof ImageChangeEvent) {
+//            ImageChangeEvent event = (ImageChangeEvent)object;
+//            if (asyncFaceTask != null) {
+//                asyncFaceTask.cancel(true);
+//                asyncFaceTask = null;
+//                Log.d(tag, "Stopping eventual image capture running");
+//            }
+//            switch (event.eventType()) {
+//                case IMAGE_SINGLE:
+//                    Log.d(tag, "Starting execution of single image snapshot");
+//                    snapImage(getFaceTask(false));
+//                    break;
+//                case IMAGE_CONTINUOUS:
+//                    Log.d(tag, "Starting execution of repeating image snapshots");
+//                    break;
+//                case STOP_IMAGE_CAPTURE:
+//                    break;
+//                default:
+//                    Log.w(tag, "Unknown event received:" + event.eventType());
+//            }
+//        }
+//    }
+
+    private AsyncFaceTask getFaceTask() {
         try {
             return new AsyncFaceTask(context(), this,
-                    Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT),
-                    continuous);
+                    Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT));
         } catch (Exception e) {
             eventBus().post(new MetaDataChangeEvent(DateTime.now().getMillis()+" Camera was busy when taking picture"));
             Log.e(tag, "Could not open camera, aborting");

@@ -31,7 +31,5 @@ public class AuthenticationServiceTest {
         Assert.assertNull(receiverField.get(serviceController.get()));
         AuthenticationService service = serviceController.create().get();
         Assert.assertNotNull(receiverField.get(service));
-        Assert.assertTrue(service.isAuthenticating());
-        Assert.assertEquals(3000, service.timeSpentGathering());
     }
 }

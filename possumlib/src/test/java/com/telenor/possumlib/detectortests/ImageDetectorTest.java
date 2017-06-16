@@ -75,11 +75,6 @@ public class ImageDetectorTest {
             protected TensorFlowInferenceInterface getTensorFlowInterface() {
                 return mockedTensorFlow;
             }
-
-            @Override
-            protected AsyncFaceTask getFaceTask(boolean continuous) {
-                return mockedAsyncFaceTask;
-            }
         };
     }
 

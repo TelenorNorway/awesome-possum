@@ -29,10 +29,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(PossumTestRunner.class)
-public class AsyncUploadTest {
+public class AmazonAsyncUploadTest {
     private Context mockedContext;
 
-    private AsyncUpload asyncUpload;
+    private AmazonAsyncUpload amazonAsyncUpload;
     private IWrite mockedListener;
     private TransferUtility mockedTransferUtility;
     private File dataDir;
@@ -78,13 +78,13 @@ public class AsyncUploadTest {
 //            }
 //        }).when(mockedDetector2).prepareUpload();
 //
-//        asyncUpload = new InstrumentedConnection();
+//        amazonAsyncUpload = new InstrumentedConnection();
         Robolectric.flushBackgroundThreadScheduler();
     }
 
     @After
     public void tearDown() throws Exception {
-        asyncUpload = null;
+        amazonAsyncUpload = null;
         FileUtil.clearDirectory(RuntimeEnvironment.application, dataDir);
         Thread.sleep(100); // Fix for shadowApplication being dead on test, causing shadowAsync do give nullPointer
     }
@@ -97,10 +97,10 @@ public class AsyncUploadTest {
 //    @Test
 //    public void testInvalidInit() throws Exception {
 //        try {
-//            asyncUpload = new UploadConnection(null, mockedListener, mockedTransferUtility, null);
+//            amazonAsyncUpload = new UploadConnection(null, mockedListener, mockedTransferUtility, null);
 //            Assert.fail("Should not accept missing context");
 //        } catch (Exception e) {
-//            Assert.assertEquals("Missing context on asyncUpload", e.getMessage());
+//            Assert.assertEquals("Missing context on amazonAsyncUpload", e.getMessage());
 //        }
 //    }
 
@@ -128,7 +128,7 @@ public class AsyncUploadTest {
 //    }
 
 //    private void execute() {
-//        asyncUpload.execute((Void) null);
+//        amazonAsyncUpload.execute((Void) null);
 //        ArgumentCaptor<Runnable> continuationCaptor = ArgumentCaptor.forClass(Runnable.class);
 //        continuationCaptor.getValue().run();
 //    }

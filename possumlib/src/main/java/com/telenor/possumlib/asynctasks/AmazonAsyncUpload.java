@@ -8,6 +8,7 @@ import android.util.Log;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
+import com.telenor.possumlib.constants.Constants;
 import com.telenor.possumlib.interfaces.IWrite;
 import com.telenor.possumlib.utils.FileUtil;
 
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
+public class AmazonAsyncUpload extends AsyncTask<Void, Integer, Exception> {
     protected Context context;
     private IWrite listener;
     private TransferUtility transferUtility;
@@ -28,11 +29,10 @@ public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
     private final AtomicLong bytesTransferred = new AtomicLong();
 
     private int totalNumberOfFiles;
-    private long totalNumberOfBytes;
 
-    private static final String tag = AsyncUpload.class.getName();
+    private static final String tag = AmazonAsyncUpload.class.getName();
 
-    public AsyncUpload(@NonNull Context context, @NonNull IWrite listener, @NonNull TransferUtility transferUtility, List<File> filesToUpload) {
+    public AmazonAsyncUpload(@NonNull Context context, @NonNull IWrite listener, @NonNull TransferUtility transferUtility, List<File> filesToUpload) {
         this.context = context;
         this.listener = listener;
         this.transferUtility = transferUtility;
@@ -59,11 +59,9 @@ public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
         filesCanceled.set(0);
         filesFailed.set(0);
         bytesTransferred.set(0);
-        totalNumberOfBytes = 0;
         for (File file : filesToUpload ) {
-            totalNumberOfBytes += file.length();
             transferUtility // Switch out upload below with a path?
-                    .upload("telenor-nr-awesome-possum", FileUtil.toBucketKey(file), file)
+                    .upload(Constants.BUCKET, FileUtil.toBucketKey(file), file)
                     .setTransferListener(createTransferListener(file, filesLeft));
         }
         return null;
@@ -99,12 +97,7 @@ public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
 
             @Override
             public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                long oldPercentage = computePercentage();
                 bytesTransferred.getAndAdd(bytesCurrent);
-                long newPercentage = computePercentage();
-                if (newPercentage > oldPercentage) {
-                    listener.bytesWritten((int) newPercentage);
-                }
             }
 
             @Override
@@ -118,9 +111,6 @@ public class AsyncUpload extends AsyncTask<Void, Integer, Exception> {
                 }
             }
         };
-    }
-    private long computePercentage() {
-        return 100 * bytesTransferred.get() / totalNumberOfBytes;
     }
 
     private void done() {

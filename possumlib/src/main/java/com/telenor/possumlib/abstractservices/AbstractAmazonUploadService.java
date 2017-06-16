@@ -1,48 +1,35 @@
 package com.telenor.possumlib.abstractservices;
 
-import android.content.Intent;
 import android.util.Log;
 
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
-import com.telenor.possumlib.asynctasks.AsyncUpload;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.telenor.possumlib.asynctasks.AmazonAsyncUpload;
 import com.telenor.possumlib.constants.Messaging;
-import com.telenor.possumlib.interfaces.IAmazonIdentityConfirmed;
-import com.telenor.possumlib.utils.AmazonFunctionality;
+import com.telenor.possumlib.interfaces.IWrite;
 import com.telenor.possumlib.utils.Send;
+
+import java.io.File;
+import java.util.List;
 
 /**
  * Handles all upload to the amazon cloud
  */
-public abstract class AbstractAmazonUploadService extends AbstractUploadService implements IAmazonIdentityConfirmed {
-    private AmazonFunctionality amazonFunctionality;
-
-    private static final String tag = AbstractAmazonUploadService.class.getName();
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        amazonFunctionality = new AmazonFunctionality(this, this);
-
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        amazonFunctionality.setCognitoProviderWithBucket(intent.getStringExtra("bucket"));
-        return super.onStartCommand(intent, flags, startId);
-    }
+public abstract class AbstractAmazonUploadService extends AbstractAmazonService implements IWrite {
+    private AmazonAsyncUpload amazonAsyncUpload;
 
     /**
      * Starts the actual upload, unless it has already started
      */
-    public void foundAmazonIdentity() {
-        if (isRunning.get()) {
-            Log.w(tag, "Already running upload, ignoring upload");
+    @Override
+    public void foundAmazonIdentity(AmazonS3Client amazonS3Client) {
+        if (!taskStarted.get()) {
+            taskStarted.set(true);
+            amazonAsyncUpload = new AmazonAsyncUpload(this, this,
+                    new TransferUtility(amazonS3Client, this),
+                    filesDesiredForUpload());
+            amazonAsyncUpload.execute((Void) null);
         }
-        isRunning.set(true);
-        asyncUpload = new AsyncUpload(this, this,
-                new TransferUtility(amazonFunctionality.amazonClient(), this),
-                filesDesiredForUpload());
-        asyncUpload.execute((Void) null);
     }
 
     /**
@@ -54,4 +41,44 @@ public abstract class AbstractAmazonUploadService extends AbstractUploadService 
         Send.messageIntent(this, Messaging.UPLOAD_FAILED, errorMsg);
         stopSelf();
     }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (amazonAsyncUpload != null && !amazonAsyncUpload.isCancelled()) {
+            amazonAsyncUpload.cancel(true);
+        }
+    }
+
+    /**
+     * Method handling what happens when the upload is complete, whether or not it failed
+     * @param exception should the upload have failed for any reason, this will not be null
+     * @param message the message you want relayed to the user when it is successful or not having
+     *                an error
+     */
+    public void uploadComplete(Exception exception, String message) {
+        Log.d(tag, "Upload complete:" + exception + " - " + message);
+        if (exception == null) {
+            Send.messageIntent(this, successMessageType(), message);
+        } else {
+            Send.messageIntent(this, Messaging.UPLOAD_FAILED, exception.toString());
+        }
+        stopSelf();
+    }
+
+    /**
+     * Override this to tell what message type it should send on success
+     *
+     * @return a text string for success in uploading
+     */
+    public abstract String successMessageType();
+
+    /**
+     * Method that must be overridden, this will show the extended service which files it is to use
+     * for uploading
+     *
+     * @return a list of file you want to upload
+     */
+    public abstract List<File> filesDesiredForUpload();
+
 }

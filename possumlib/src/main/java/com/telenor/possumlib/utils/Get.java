@@ -8,14 +8,12 @@ import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.detectors.Accelerometer;
 import com.telenor.possumlib.detectors.AmbientSoundDetector;
 import com.telenor.possumlib.detectors.BluetoothDetector;
-import com.telenor.possumlib.detectors.GestureDetector;
 import com.telenor.possumlib.detectors.GyroScope;
 import com.telenor.possumlib.detectors.HardwareDetector;
 import com.telenor.possumlib.detectors.ImageDetector;
 import com.telenor.possumlib.detectors.LocationDetector;
 import com.telenor.possumlib.detectors.MetaDataDetector;
 import com.telenor.possumlib.detectors.NetworkDetector;
-import com.telenor.possumlib.detectors.TypingRecognitionDetector;
 import com.telenor.possumlib.models.PossumBus;
 
 import java.util.ArrayList;
@@ -67,8 +65,8 @@ public class Get {
         detectors.add(new NetworkDetector(context, encryptedKurt, eventBus, isAuthenticating));
         detectors.add(new AmbientSoundDetector(context, encryptedKurt, eventBus, isAuthenticating));
         detectors.add(new ImageDetector(context, encryptedKurt, eventBus, isAuthenticating));
-        detectors.add(new TypingRecognitionDetector(context, encryptedKurt, eventBus, isAuthenticating));
-        detectors.add(new GestureDetector(context, encryptedKurt, eventBus, isAuthenticating));
+//        detectors.add(new TypingRecognitionDetector(context, encryptedKurt, eventBus, isAuthenticating)); // Not used atm
+//        detectors.add(new GestureDetector(context, encryptedKurt, eventBus, isAuthenticating)); // Not used atm
         return detectors;
     }
 }

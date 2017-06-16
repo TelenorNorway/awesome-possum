@@ -27,14 +27,14 @@ android {
 
     buildTypes {
         debug {
-            resValue "string", "bucket", properties["bucket"] // Setting the S3 bucket from local.properties
+            resValue "string", "identityPoolId", properties["identityPoolId"] // Setting the S3 identityPoolId from local.properties
             debuggable true
             useProguard false
             jniDebuggable true
             testCoverageEnabled true
         }
         release {
-            resValue "string", "bucket", properties["bucket"] // Setting the S3 bucket from local.properties
+            resValue "string", "identityPoolId", properties["identityPoolId"] // Setting the S3 identityPoolId from local.properties
             debuggable false
             testCoverageEnabled false
             minifyEnabled true
@@ -53,7 +53,7 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.telenor.connect:connect-android-sdk:0.7.0' // Causes dex overflow :O
+//    compile 'com.telenor.connect:connect-android-sdk:0.7.0' // Causes dex overflow :O
     compile 'com.android.support:appcompat-v7:25.3.1'
     //compile 'com.github.PhilJay:MPAndroidChart:v3.0.2'
     compile project(':possumlib')

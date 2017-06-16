@@ -12,11 +12,6 @@ public class DataCollectionService extends AbstractCollectionService {
     }
 
     @Override
-    public void performPostAction() {
-        stopSelf();
-    }
-
-    @Override
     public long timeSpentGathering() {
         return 0;
     }

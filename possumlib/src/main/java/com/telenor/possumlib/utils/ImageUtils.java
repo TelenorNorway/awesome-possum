@@ -3,6 +3,15 @@ package com.telenor.possumlib.utils;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PointF;
+import android.util.Log;
+
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
+
+import static org.opencv.imgproc.Imgproc.getAffineTransform;
+import static org.opencv.imgproc.Imgproc.warpAffine;
 
 public class ImageUtils {
     private static final String tag = ImageUtils.class.getName();
@@ -37,33 +46,32 @@ public class ImageUtils {
     }
 
     public static Bitmap alignFace(Bitmap face, PointF leftEye, PointF rightEye, PointF mouth) {
-        return face;
-//        Log.i(tag, "Face input: " + face.getWidth() + ", " + face.getHeight());
-//        MatOfPoint2f src = new MatOfPoint2f();
-//        MatOfPoint2f dest = new MatOfPoint2f();
-//
-//        // our reference points (source)
-//        src.fromArray(new Point(leftEye.x, leftEye.y), new Point(rightEye.x, rightEye.y), new Point(mouth.x, mouth.y));
-//
-//        double dimX = face.getWidth();
-//        double dimY = face.getHeight();
-//
-//        // http://openface-api.readthedocs.io/en/latest/openface.html
-//        // Alex: calculated from python script where inner eyes are interpolated from four eye points (also norm min/max)
-//        dest.fromArray(new Point(dimX*0.70726717, dimY*0.1557629), new Point(dimX*0.27657071, dimY*0.16412275), new Point(dimX*0.50020397, dimY*0.75058442));
-//
-//        Mat matrixTransformation = getAffineTransform(src, dest);
-//        Mat orgImage = new Mat();
-//        Mat alignedImage = new Mat();
-//
-//        Utils.bitmapToMat(face, orgImage);
-//
-//        warpAffine(orgImage, alignedImage, matrixTransformation, orgImage.size());
-//
-//        Bitmap alignedFace = Bitmap.createBitmap(face.getWidth(), face.getHeight(), Bitmap.Config.ARGB_8888);
-//        Utils.matToBitmap(alignedImage, alignedFace);
-//
-//        return alignedFace;
+        Log.i(tag, "Face input: " + face.getWidth() + ", " + face.getHeight());
+        MatOfPoint2f src = new MatOfPoint2f();
+        MatOfPoint2f dest = new MatOfPoint2f();
+
+        // our reference points (source)
+        src.fromArray(new Point(leftEye.x, leftEye.y), new Point(rightEye.x, rightEye.y), new Point(mouth.x, mouth.y));
+
+        double dimX = face.getWidth();
+        double dimY = face.getHeight();
+
+        // http://openface-api.readthedocs.io/en/latest/openface.html
+        // Alex: calculated from python script where inner eyes are interpolated from four eye points (also norm min/max)
+        dest.fromArray(new Point(dimX*0.70726717, dimY*0.1557629), new Point(dimX*0.27657071, dimY*0.16412275), new Point(dimX*0.50020397, dimY*0.75058442));
+
+        Mat matrixTransformation = getAffineTransform(src, dest);
+        Mat orgImage = new Mat();
+        Mat alignedImage = new Mat();
+
+        Utils.bitmapToMat(face, orgImage);
+
+        warpAffine(orgImage, alignedImage, matrixTransformation, orgImage.size());
+
+        Bitmap alignedFace = Bitmap.createBitmap(face.getWidth(), face.getHeight(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(alignedImage, alignedFace);
+
+        return alignedFace;
     }
 
     public static int[] RGBArrayToIntArray(int[][][] RGBArray, int dimension) {

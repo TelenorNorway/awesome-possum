@@ -1,38 +1,30 @@
 package com.telenor.possumlib.abstractservices;
 
-import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Looper;
-import android.os.Message;
-import android.os.Messenger;
 import android.util.Log;
 
-import com.google.gson.JsonArray;
-import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.Messaging;
-import com.telenor.possumlib.models.PossumBus;
-import com.telenor.possumlib.utils.Get;
+import com.telenor.possumlib.functionality.GatheringFunctionality;
+import com.telenor.possumlib.functionality.RestFunctionality;
+import com.telenor.possumlib.interfaces.IRestListener;
 import com.telenor.possumlib.utils.Send;
 
-import net.danlew.android.joda.JodaTimeAndroid;
-
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.net.MalformedURLException;
 
 /***
  * Service that handles all actions pertaining to collecting the data from the sensors.
  */
-public abstract class AbstractCollectionService extends Service {
-    protected String encryptedKurt;
-    private static final ConcurrentLinkedQueue<AbstractDetector> detectors = new ConcurrentLinkedQueue<>();
+public abstract class AbstractCollectionService extends AbstractBasicService implements IRestListener {
+    protected GatheringFunctionality gatheringFunctionality;
     private BroadcastReceiver receiver;
-    private PossumBus eventBus = new PossumBus();
+    private RestFunctionality restFunctionality;
     private Handler terminationHandler = new Handler(Looper.getMainLooper());
-    private final static Messenger messenger = new Messenger(new PossumHandler());
+    private String url;
     private static final String tag = AbstractCollectionService.class.getName();
 
     /**
@@ -46,31 +38,35 @@ public abstract class AbstractCollectionService extends Service {
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int requestCode) {
-        super.onStartCommand(intent, flags, requestCode);
         // Ensures all detectors are terminated and cleared before adding new ones
-        encryptedKurt = intent.getStringExtra("encryptedKurt");
+        String encryptedKurt = intent.getStringExtra("encryptedKurt");
+        url = intent.getStringExtra("url");
         if (encryptedKurt == null) {
             Log.e(tag, "Missing needed value in intent. EncryptedKurt is null. Terminating service..");
             Send.messageIntent(this, Messaging.COLLECTION_FAILED, "Missing kurtId in service");
             stopSelf();
         } else {
-            clearAllDetectors();
-            Log.d(tag, "Start collection:"+isAuthenticating());
-            // Adding all detectors
-            detectors.addAll(Get.Detectors(this, encryptedKurt, eventBus, isAuthenticating()));
-            for (AbstractDetector detector : detectors) {
-                detector.startListening();
-            }
+            gatheringFunctionality.setDetectorsWithKurtId(this, encryptedKurt, isAuthenticating());
+            gatheringFunctionality.startGathering();
             if (timeSpentGathering() > 0) {
                 terminationHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        performPostAction();
+                        if (isAuthenticating()) {
+                            try {
+                                restFunctionality.postData(url, gatheringFunctionality.getCollectedObject());
+                            } catch (MalformedURLException e) {
+                                Log.e(tag, "Failed to post data due to malformed url:",e);
+                                stopSelf();
+                            }
+                        } else {
+                            stopSelf();
+                        }
                     }
                 }, timeSpentGathering());
             }
         }
-        return START_NOT_STICKY;
+        return super.onStartCommand(intent, flags, requestCode);
     }
 
     /**
@@ -80,32 +76,6 @@ public abstract class AbstractCollectionService extends Service {
     protected abstract boolean isAuthenticating();
 
     /**
-     * Pushes all stored detectors to upload and terminates them
-     */
-    private void clearAllDetectors() {
-        for (AbstractDetector detector : detectors) {
-            detector.terminate();
-            detector.prepareUpload();
-        }
-        detectors.clear();
-    }
-
-    private static class PossumHandler extends Handler {
-        @Override
-        public void handleMessage(Message message) {
-            switch (message.what) {
-                default:
-                    Log.d(tag, "Service received message:" + message);
-            }
-        }
-    }
-
-    /**
-     * Defines function to do something after collection is complete
-     */
-    public abstract void performPostAction();
-
-    /**
      * onCreate - starts up all relevant sensors and setting service as a foreground service
      * Important to note: onCreate is always started before onStartCommand, in effect initialising
      * all variables and starting the service in the foreground
@@ -113,7 +83,8 @@ public abstract class AbstractCollectionService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        JodaTimeAndroid.init(this);
+        gatheringFunctionality = new GatheringFunctionality();
+        restFunctionality = new RestFunctionality(this);
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -128,11 +99,7 @@ public abstract class AbstractCollectionService extends Service {
         if (action == null) return;
         switch (action) {
             case Messaging.REQUEST_DETECTORS:
-                JsonArray detectorObjects = new JsonArray();
-                for (AbstractDetector detector : detectors) {
-                    detectorObjects.add(detector.toJson());
-                }
-                Send.messageIntent(this, Messaging.DETECTORS_STATUS, detectorObjects.toString());
+                Send.messageIntent(this, Messaging.DETECTORS_STATUS, gatheringFunctionality.detectorsAsJson().toString());
                 break;
             default:
         }
@@ -147,8 +114,8 @@ public abstract class AbstractCollectionService extends Service {
         super.onDestroy();
         Log.d(tag, "Destroying Collector service:"+this);
         unregisterReceiver(receiver);
+        gatheringFunctionality.stopGathering();
         receiver = null;
-        clearAllDetectors();
     }
 
     /**
@@ -159,7 +126,14 @@ public abstract class AbstractCollectionService extends Service {
     public abstract long timeSpentGathering();
 
     @Override
-    public IBinder onBind(Intent intent) {
-        return messenger.getBinder();
+    public void successfullyPushed() {
+        Log.i(tag, "Pushed data to rest service");
+        stopSelf();
+    }
+
+    @Override
+    public void failedToPush(Exception exception) {
+        Log.e(tag, "Failed to push to rest service:",exception);
+        stopSelf();
     }
 }

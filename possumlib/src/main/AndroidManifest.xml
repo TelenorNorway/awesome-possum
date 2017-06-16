@@ -33,9 +33,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application> <!--  android:name="android.support.multidex.MultiDexApplication" -->
-        <!--<meta-data-->
-            <!--android:name="com.google.android.gms.version"-->
-            <!--android:value="@integer/google_play_services_version" />-->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
 
         <service
             android:name=".services.DataCollectionService"
@@ -51,6 +51,12 @@
             android:name=".services.DataUploadService"
             android:exported="false"
             android:process=":possum" />
+
+        <service
+            android:name=".services.VerificationService"
+            android:exported="false"
+            android:process=":possumVerification" />
+
         <service
             android:name=".services.SendKurtService"
             android:exported="false"

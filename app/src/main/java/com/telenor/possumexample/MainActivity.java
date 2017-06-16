@@ -21,6 +21,10 @@ public class MainActivity extends AppCompatActivity implements IPossumTrust {
     private static final String tag = MainActivity.class.getName();
     private EditText uniqueKurt;
     //private BarChart barChart;
+//    private Button learnButton;
+//    private Button authenticateButton;
+    private Button listenButton;
+    private Button uploadButton;
     private SharedPreferences preferences;
     @Override
     public void onCreate(Bundle bundle) {
@@ -28,6 +32,10 @@ public class MainActivity extends AppCompatActivity implements IPossumTrust {
         setContentView(R.layout.activity_main);
         //barChart = (BarChart)findViewById(R.id.barChart);
         preferences = getSharedPreferences("dummyPrefs", MODE_PRIVATE);
+//        learnButton = (Button)findViewById(R.id.learnButton);
+//        authenticateButton = (Button)findViewById(R.id.authenticateButton);
+        listenButton = (Button)findViewById(R.id.listenButton);
+        uploadButton = (Button)findViewById(R.id.uploadButton);
         uniqueKurt = (EditText)findViewById(R.id.uniqueKurt);
         uniqueKurt.setText(myKurt());
         uniqueKurt.addTextChangedListener(new TextWatcher() {
@@ -54,11 +62,10 @@ public class MainActivity extends AppCompatActivity implements IPossumTrust {
 
     private void updatePreferences() {
         String suggestedKurt = uniqueKurt.getText().toString();
-        if (suggestedKurt.length() < 3) {
-            uniqueKurt.setText(myKurt());
-        } else {
-            preferences.edit().putString("storedKurt", suggestedKurt).apply();
-        }
+        preferences.edit().putString("storedKurt", suggestedKurt).apply();
+        boolean isEnabled = myKurt().length() > 0;
+        listenButton.setEnabled(isEnabled);
+        uploadButton.setEnabled(isEnabled);
     }
 
     public void toggleListen(View view) {
@@ -72,11 +79,11 @@ public class MainActivity extends AppCompatActivity implements IPossumTrust {
                     AwesomePossum.requestNeededPermissions(this);
                 } else {
                     Log.i(tag, "Starting to listen");
-                    AwesomePossum.startListening(this, myKurt());
+                    AwesomePossum.startListening(this, myKurt(), getString(R.string.identityPoolId));
                     ((Button)view).setText(R.string.listenOff);
                 }
             } catch (GatheringNotAuthorizedException e) {
-                AwesomePossum.getAuthorizeDialog(this, myKurt(), getString(R.string.bucket), "Join the Awesome Possum Project", "By clicking ok you accept that you are 18 years of age and that you allow Telenor to gather anonymous data about your phone", "Ok", "Cancel").show();
+                AwesomePossum.getAuthorizeDialog(this, myKurt(), getString(R.string.identityPoolId), "Join the Awesome Possum Project", "By clicking ok you accept that you are 18 years of age and that you allow Telenor to gather anonymous data about your phone", "Ok", "Cancel").show();
             }
         }
         Log.i(tag, "Clicked toggleListening - listening status now:"+AwesomePossum.isListening());
@@ -102,7 +109,7 @@ public class MainActivity extends AppCompatActivity implements IPossumTrust {
     }
 
     public void upload(View view) {
-        AwesomePossum.startUpload(this, myKurt(), getString(R.string.bucket));
+        AwesomePossum.startUpload(this, myKurt(), getString(R.string.identityPoolId));
     }
 
     @Override
