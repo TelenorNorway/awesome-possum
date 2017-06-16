@@ -4,7 +4,9 @@ import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.interfaces.IRestListener;
 
 import java.io.IOException;
@@ -12,6 +14,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Queue;
 
 /**
  * Handles communication with server, posting to it
@@ -25,8 +28,15 @@ public class RestFunctionality extends AsyncTask<JsonObject, Void, Exception> {
         this.listener = listener;
     }
 
-    public void postData(@NonNull String url, @NonNull JsonObject object) throws MalformedURLException {
+    public void postData(@NonNull String url, @NonNull String encryptedKurt, @NonNull Queue<AbstractDetector> detectors) throws MalformedURLException {
         this.url = new URL(url);
+        JsonObject object = new JsonObject();
+        object.addProperty("encryptedKurt", encryptedKurt);
+        JsonArray arrayData = new JsonArray();
+        for (AbstractDetector detector : detectors) {
+            arrayData.add(detector.jsonData());
+        }
+        object.add("detectors", arrayData);
         execute(object);
     }
 

@@ -23,6 +23,7 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
     protected GatheringFunctionality gatheringFunctionality;
     private BroadcastReceiver receiver;
     private RestFunctionality restFunctionality;
+    private String encryptedKurt;
     private Handler terminationHandler = new Handler(Looper.getMainLooper());
     private String url;
     private static final String tag = AbstractCollectionService.class.getName();
@@ -39,7 +40,7 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
     @Override
     public int onStartCommand(Intent intent, int flags, int requestCode) {
         // Ensures all detectors are terminated and cleared before adding new ones
-        String encryptedKurt = intent.getStringExtra("encryptedKurt");
+        encryptedKurt = intent.getStringExtra("encryptedKurt");
         url = intent.getStringExtra("url");
         if (encryptedKurt == null) {
             Log.e(tag, "Missing needed value in intent. EncryptedKurt is null. Terminating service..");
@@ -54,7 +55,7 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
                     public void run() {
                         if (isAuthenticating()) {
                             try {
-                                restFunctionality.postData(url, gatheringFunctionality.getCollectedObject());
+                                restFunctionality.postData(url, encryptedKurt, gatheringFunctionality.detectors());
                             } catch (MalformedURLException e) {
                                 Log.e(tag, "Failed to post data due to malformed url:",e);
                                 stopSelf();

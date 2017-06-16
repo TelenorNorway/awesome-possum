@@ -9,6 +9,7 @@ import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.Get;
 
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -56,5 +57,9 @@ public class GatheringFunctionality {
 
         collectedObject.add("detectors", detectors);
         return collectedObject;
+    }
+
+    public Queue<AbstractDetector> detectors() {
+        return detectors;
     }
 }

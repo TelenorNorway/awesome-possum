@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
@@ -185,6 +186,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * @param file file to store data in
      */
     protected void storeData(@NonNull File file) {
+        if (isAuthenticating) return; // Should the app attempt to authenticate, ignore storing to file
         if (sessionValues.size() > 0) {
             FileUtil.storeLines(file, sessionValues);
             sessionValues.clear();
@@ -218,6 +220,21 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
         object.addProperty("isEnabled", isEnabled());
         object.addProperty("isListening", isListening());
         object.addProperty("stored", storedData().length());
+        return object;
+    }
+
+    /**
+     * Gives the detectors stored data as a restful json object
+     * @return a jsonObject for all the data
+     */
+    public JsonObject jsonData() {
+        JsonObject object = new JsonObject();
+        object.addProperty("detectorName", detectorName());
+        JsonArray dataArray = new JsonArray();
+        for (String sessionValue : sessionValues) {
+            dataArray.add(sessionValue);
+        }
+        object.add("data", dataArray);
         return object;
     }
 
