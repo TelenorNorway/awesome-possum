@@ -4,6 +4,8 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.gson.JsonArray;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -176,12 +178,11 @@ public class FileUtil {
      * @param file  detectors stored file
      * @param lines lines to store in the file
      */
-    public static void storeLines(@NonNull File file, final Queue<String> lines) {
+    public static void storeLines(@NonNull File file, final Queue<JsonArray> lines) {
         try {
             FileWriter writer = new FileWriter(file, true);
-            while (!lines.isEmpty()) {
-                String line = lines.remove();
-                writer.append(line);
+            for (JsonArray array : lines) {
+                writer.append(array.toString());
                 writer.append("\r\n");
             }
             writer.close();

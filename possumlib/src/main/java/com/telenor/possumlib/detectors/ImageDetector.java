@@ -4,9 +4,12 @@ import android.Manifest;
 import android.content.Context;
 import android.hardware.Camera;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.asynctasks.AsyncFaceTask;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
@@ -16,19 +19,15 @@ import com.telenor.possumlib.tensorflow.TensorFlowInferenceInterface;
 
 import org.joda.time.DateTime;
 
-import java.util.Arrays;
-
 /***
  * Uses camera to determine familiar places, face and face identity.
  */
 public class ImageDetector extends AbstractDetector {
     private static final String tag = ImageDetector.class.getName();
-//    private static final String IMAGE_SINGLE = "IMAGE_SINGLE";
-//    private static final String IMAGE_CONTINUOUS = "IMAGE_CONTINUOUS";
-//    private static final String STOP_IMAGE_CAPTURE = "STOP_IMAGE_CAPTURE";
     private boolean modelLoaded = false;
     private int totalFaces;
     private AsyncFaceTask asyncFaceTask;
+    private Handler handler = new Handler(Looper.getMainLooper());
     private static final String fileName = "tensorflow_facerecognition.pb";
     private static final String fullPath = "file:///android_asset/"+fileName;
     public TensorFlowInferenceInterface tensorFlowInterface;
@@ -119,7 +118,7 @@ public class ImageDetector extends AbstractDetector {
 
     @Override
     public String detectorName() {
-        return "Image";
+        return "image";
     }
 
     @Override
@@ -132,8 +131,18 @@ public class ImageDetector extends AbstractDetector {
                 Log.d(tag, "Stopping eventual image capture running");
             }
             snapImage(getFaceTask());
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    stopListening();
+                }
+            }, listenInterval());
         }
         return listen;
+    }
+
+    private long listenInterval() {
+        return 5000;
     }
 
     private AsyncFaceTask getFaceTask() {
@@ -161,13 +170,12 @@ public class ImageDetector extends AbstractDetector {
 
     public void storeFace(float[] weights) {
         totalFaces += 1;
-        String weight_list = Arrays.toString(weights);
-        // Remove brackets and commas
-        weight_list = weight_list.replace("[", "");
-        weight_list = weight_list.replace("]", "");
-        weight_list = weight_list.replace(",", "");
-        // Write to data file
-        sessionValues.add(DateTime.now().getMillis() + " " + weight_list);
+        JsonArray array = new JsonArray();
+        array.add(""+now());
+        for (float weight : weights) {
+            array.add(""+weight);
+        }
+        sessionValues.add(array);
     }
 
     public void resetTotalFaces() {

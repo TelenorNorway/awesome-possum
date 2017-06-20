@@ -9,15 +9,12 @@ import android.net.wifi.WifiManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
-import com.telenor.possumlib.changeevents.PossumEvent;
-import com.telenor.possumlib.changeevents.WifiChangeEvent;
+import com.google.gson.JsonArray;
+import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.interfaces.IOnReceive;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.Has;
-
-import org.joda.time.DateTime;
 
 import java.util.List;
 
@@ -25,7 +22,7 @@ import java.util.List;
 /***
  * Uses network mac id's, decibel levels information and other network identification to pinpoint user identity.
  */
-public class NetworkDetector extends AbstractEventDrivenDetector implements IOnReceive {
+public class NetworkDetector extends AbstractDetector implements IOnReceive {
     private WifiManager wifiManager;
     private BroadcastReceiver receiver;
     private IntentFilter intentFilter = new IntentFilter();
@@ -93,11 +90,6 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
         return isScanning;
     }
 
-    @Override
-    protected boolean storeWithInterval() {
-        return false;
-    }
-
     public boolean wifiAvailable() {
         return wifiManager != null && wifiManager.isWifiEnabled() && wifiState == WifiManager.WIFI_STATE_ENABLED;
     }
@@ -114,16 +106,7 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
 
     @Override
     public String detectorName() {
-        return "Network";
-    }
-
-    @Override
-    public void eventReceived(PossumEvent object) {
-        if (object instanceof WifiChangeEvent && isListening()) {
-            if (object.message() == null) {
-                performScan();
-            }
-        }
+        return "network";
     }
 
     @Override
@@ -134,7 +117,11 @@ public class NetworkDetector extends AbstractEventDrivenDetector implements IOnR
                 if (!isListening()) return;
                 List<ScanResult> scanResults = wifiManager.getScanResults();
                 for (ScanResult scanResult : scanResults) {
-                    sessionValues.add(DateTime.now().getMillis() + " " + scanResult.BSSID + " " + scanResult.level);
+                    JsonArray array = new JsonArray();
+                    array.add(""+now());
+                    array.add(scanResult.BSSID);
+                    array.add(""+scanResult.level);
+                    sessionValues.add(array);
                 }
                 storeData();
                 isScanning = false;

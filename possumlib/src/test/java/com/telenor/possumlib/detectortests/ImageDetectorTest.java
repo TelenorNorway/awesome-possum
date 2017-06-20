@@ -91,9 +91,6 @@ public class ImageDetectorTest {
 
     @Test
     public void testDefaultValues() throws Exception {
-        Method storeWithIntervalMethod = ImageDetector.class.getDeclaredMethod("storeWithInterval");
-        storeWithIntervalMethod.setAccessible(true);
-        Assert.assertFalse((Boolean) storeWithIntervalMethod.invoke(imageDetector));
         int numberOfCameras = Camera.getNumberOfCameras();
         Assert.assertEquals(1, numberOfCameras);
         Assert.assertTrue(imageDetector.isEnabled());

@@ -1,14 +1,13 @@
 package com.telenor.possumlib.constants;
 
+import com.telenor.possumlib.PossumTestRunner;
+
 import junit.framework.Assert;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
-@Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(PossumTestRunner.class)
 public class ConstantsTest {
     @Test
     public void testConstantsValues() throws Exception {

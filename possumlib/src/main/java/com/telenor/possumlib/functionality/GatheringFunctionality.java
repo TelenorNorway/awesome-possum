@@ -2,9 +2,9 @@ package com.telenor.possumlib.functionality;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.Get;
@@ -26,6 +26,11 @@ public class GatheringFunctionality {
         stopGathering();
         detectors.clear();
         eventBus.clearAll();
+        addDetectors(context, encryptedKurt, authenticating);
+    }
+
+    @VisibleForTesting
+    protected void addDetectors(@NonNull Context context, @NonNull String encryptedKurt, boolean authenticating) {
         detectors.addAll(Get.Detectors(context, encryptedKurt, eventBus, authenticating));
     }
 
@@ -48,15 +53,6 @@ public class GatheringFunctionality {
             detectorObjects.add(detector.toJson());
         }
         return detectorObjects;
-    }
-
-    public JsonObject getCollectedObject() {
-        JsonObject collectedObject = new JsonObject();
-        JsonArray detectors = new JsonArray();
-        // TODO: Fill with the collected data
-
-        collectedObject.add("detectors", detectors);
-        return collectedObject;
     }
 
     public Queue<AbstractDetector> detectors() {

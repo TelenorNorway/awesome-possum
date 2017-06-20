@@ -2,6 +2,7 @@ package com.telenor.possumlib.abstractdetectors;
 
 import android.content.Context;
 
+import com.google.gson.JsonArray;
 import com.telenor.possumlib.changeevents.PossumEvent;
 import com.telenor.possumlib.models.PossumBus;
 
@@ -52,7 +53,9 @@ public abstract class AbstractEventDrivenDetector extends AbstractDetector {
     @Override
     public void eventReceived(PossumEvent object) {
         if (object.message() != null && isListening()) {
-            sessionValues.add(object.message());
+            JsonArray eventArray = new JsonArray();
+            eventArray.add(object.message());
+            sessionValues.add(eventArray);
             if (storeWithInterval()) {
                 storedValues++;
                 if (storedValues > MINIMUM_SAMPLES) {

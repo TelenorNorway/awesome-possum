@@ -132,7 +132,7 @@ public class AsyncFaceTask extends AsyncTask<Void, Void, Void> implements Camera
                             faces.get(i).recycle();
                             imageDetector.storeFace(imageDetector.tensorFlowInterface.getWeights(
                                     RGBArrayToIntArray(rgbArray, BMP_WIDTH)));
-                            Log.i(tag, "Face weights written to file");
+                            Log.i(tag, "Face weights stored in detector");
                         }
                         imageDetector.storeData();
                         semaphore_inner.release();

@@ -44,8 +44,7 @@
 
         <service
             android:name=".services.AuthenticationService"
-            android:exported="false"
-            android:process=":possum" />
+            android:exported="false"/>
 
         <service
             android:name=".services.DataUploadService"

@@ -14,6 +14,6 @@ public class AuthenticationService extends AbstractCollectionService {
 
     @Override
     public long timeSpentGathering() {
-        return 3000;
+        return 5000;
     }
 }

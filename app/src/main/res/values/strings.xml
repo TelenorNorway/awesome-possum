@@ -5,8 +5,8 @@
     <string name="upload">Upload</string>
     <string name="learningOn">Learning On</string>
     <string name="learningOff">Learning Off</string>
-    <string name="authOn">Authentication On</string>
-    <string name="authOff">Authentication Off</string>
+    <string name="authOn">Authenticate</string>
+    <string name="authOff">Authenticating…</string>
     <string name="listenOn">Listen On</string>
     <string name="listenOff">Listen Off</string>
     <string name="myKurtId">My kurt id</string>

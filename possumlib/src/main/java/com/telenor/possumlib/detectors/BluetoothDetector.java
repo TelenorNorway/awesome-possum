@@ -17,13 +17,10 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
-import com.telenor.possumlib.changeevents.BluetoothChangeEvent;
-import com.telenor.possumlib.changeevents.PossumEvent;
+import com.google.gson.JsonArray;
+import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
-
-import org.joda.time.DateTime;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -31,7 +28,7 @@ import java.util.TimerTask;
 /***
  * Uses bluetooth to find paired devices or even regularly discovered devices to both confirm is on correct device but also that person is in relative location to usually found devices.
  */
-public class BluetoothDetector extends AbstractEventDrivenDetector {
+public class BluetoothDetector extends AbstractDetector {
     private BluetoothAdapter bluetoothAdapter;
     private BroadcastReceiver receiver;
     private ScanCallback callback;
@@ -74,9 +71,12 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
             @Override
             public void onReceive(Context context, Intent intent) {
                 try {
+                    JsonArray array = new JsonArray();
                     switch (intent.getAction()) {
                         case BluetoothDevice.ACTION_PAIRING_REQUEST:
-                            sessionValues.add(DateTime.now().getMillis()+" "+intent.getAction());
+                            array.add(""+now());
+                            array.add(intent.getAction());
+                            sessionValues.add(array);
                             break;
                         case BluetoothDevice.ACTION_ACL_DISCONNECTED:
                         case BluetoothDevice.ACTION_ACL_CONNECTED:
@@ -90,9 +90,23 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
                             short Rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
                             short txPowerLevel = Short.MIN_VALUE;
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                                sessionValues.add(DateTime.now().getMillis() + " " + intent.getAction()+" "+device.getType() + " " + device.getAddress() + " " + Rssi + " " + txPowerLevel + " " + device.getBondState());
+                                array.add(""+now());
+                                array.add(intent.getAction());
+                                array.add(""+device.getType());
+                                array.add(device.getAddress());
+                                array.add(""+Rssi);
+                                array.add(""+txPowerLevel);
+                                array.add(""+device.getBondState());
+                                sessionValues.add(array);
                             } else {
-                                sessionValues.add(DateTime.now().getMillis() + " " + intent.getAction()+" -1 " + device.getAddress() + " " + Rssi + " " + txPowerLevel + " " + device.getBondState());
+                                array.add(""+now());
+                                array.add(intent.getAction());
+                                array.add("-1");
+                                array.add(device.getAddress());
+                                array.add(""+Rssi);
+                                array.add(""+txPowerLevel);
+                                array.add(""+device.getBondState());
+                                sessionValues.add(array);
                             }
                             break;
                         case BluetoothAdapter.ACTION_STATE_CHANGED:
@@ -132,7 +146,14 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
                             if (record != null) {
                                 txPowerLvl = (short) record.getTxPowerLevel(); // Transmission power level in Db
                             } else txPowerLvl = Short.MIN_VALUE;
-                            sessionValues.add(DateTime.now().getMillis() + " " + device.getType() + " " + device.getAddress() + " " + result.getRssi() + " " + txPowerLvl + " " + device.getBondState()); // + "\n"
+                            JsonArray array = new JsonArray();
+                            array.add(""+now());
+                            array.add(""+device.getType());
+                            array.add(device.getAddress());
+                            array.add(""+result.getRssi());
+                            array.add(""+txPowerLvl);
+                            array.add(""+device.getBondState());
+                            sessionValues.add(array);
                         } catch (Exception ignore) {
                         }
                     }
@@ -180,8 +201,18 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
         return 12000;
     }
 
+
+    @Override
+    public boolean startListening() {
+        boolean listen = super.startListening();
+        if (listen) {
+            scanForBluetooth();
+        }
+        return listen;
+    }
+
     private void scanForBluetooth() {
-        long nowStamp = DateTime.now().getMillis();
+        long nowStamp = now();
         long diff = nowStamp - lastStart;
         if (diff >= minimumInterval()) {
             Log.d(tag, "Starting bluetooth scan");
@@ -227,30 +258,13 @@ public class BluetoothDetector extends AbstractEventDrivenDetector {
     }
 
     @Override
-    public boolean isValidSet() {
-        return true;
-    }
-
-    @Override
-    protected boolean storeWithInterval() {
-        return false;
-    }
-
-    @Override
-    public void eventReceived(PossumEvent object) {
-        if (object instanceof BluetoothChangeEvent) {
-            scanForBluetooth();
-        }
-    }
-
-    @Override
     public int detectorType() {
         return DetectorType.Bluetooth;
     }
 
     @Override
     public String detectorName() {
-        return "Bluetooth";
+        return "bluetooth";
     }
 
     @Override

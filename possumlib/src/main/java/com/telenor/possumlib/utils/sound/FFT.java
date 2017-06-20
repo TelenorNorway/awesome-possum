@@ -1,6 +1,5 @@
 package com.telenor.possumlib.utils.sound;
 
-
 /*
 OC Volume - Java Speech Recognition Engine
 Copyright (c) 2002-2004, OrangeCow organization

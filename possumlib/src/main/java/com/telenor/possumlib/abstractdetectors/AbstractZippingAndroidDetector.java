@@ -4,6 +4,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.gson.JsonArray;
 import com.telenor.possumlib.models.CountingOutputStream;
 import com.telenor.possumlib.models.PossumBus;
 
@@ -95,10 +96,10 @@ public abstract class AbstractZippingAndroidDetector extends AbstractAndroidRegu
      */
     @Override
     protected void storeData(@NonNull File file) {
-        for (String value : sessionValues) {
+        for (JsonArray value : sessionValues) {
             try {
                 if (outerStream != null) {
-                    outerStream.write(value.getBytes());
+                    outerStream.write(value.toString().getBytes());
                     outerStream.write("\r\n".getBytes());
                 }
             } catch (Exception e) {

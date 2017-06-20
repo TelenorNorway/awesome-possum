@@ -26,8 +26,12 @@ public abstract class AbstractBasicService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        if (!OpenCVLoader.initDebug(this)) Log.d(tag, "OpenCV not loaded");
-        else Log.d(tag, "OpenCV loaded");
+        try {
+            if (!OpenCVLoader.initDebug(this)) Log.d(tag, "OpenCV not loaded");
+            else Log.d(tag, "OpenCV loaded");
+        } catch (final UnsatisfiedLinkError e) {
+            Log.e(tag, "Failed to initialize openCV library:",e);
+        }
         JodaTimeAndroid.init(this);
     }
 

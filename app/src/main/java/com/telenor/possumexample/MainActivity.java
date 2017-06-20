@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity implements IPossumTrust {
     private EditText uniqueKurt;
     //private BarChart barChart;
 //    private Button learnButton;
-//    private Button authenticateButton;
+    private Button authenticateButton;
     private Button listenButton;
     private Button uploadButton;
     private SharedPreferences preferences;
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements IPossumTrust {
         //barChart = (BarChart)findViewById(R.id.barChart);
         preferences = getSharedPreferences("dummyPrefs", MODE_PRIVATE);
 //        learnButton = (Button)findViewById(R.id.learnButton);
-//        authenticateButton = (Button)findViewById(R.id.authenticateButton);
+        authenticateButton = (Button)findViewById(R.id.authenticateButton);
         listenButton = (Button)findViewById(R.id.listenButton);
         uploadButton = (Button)findViewById(R.id.uploadButton);
         uniqueKurt = (EditText)findViewById(R.id.uniqueKurt);
@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements IPossumTrust {
         boolean isEnabled = myKurt().length() > 0;
         listenButton.setEnabled(isEnabled);
         uploadButton.setEnabled(isEnabled);
+        authenticateButton.setEnabled(isEnabled);
     }
 
     public void toggleListen(View view) {
@@ -99,12 +100,11 @@ public class MainActivity extends AppCompatActivity implements IPossumTrust {
     }
 
     public void toggleAuth(View view) {
-        if (AwesomePossum.isAuthenticating()) {
-            AwesomePossum.removeTrustListener(this);
-            ((Button)view).setText(R.string.authOn);
-        } else {
+        if (!AwesomePossum.isAuthenticating()) {
             AwesomePossum.addTrustListener(this);
-            ((Button)view).setText(R.string.authOff);
+            AwesomePossum.authenticate(this, myKurt(), true);
+            authenticateButton.setText(R.string.authOff);
+            authenticateButton.setEnabled(false);
         }
     }
 
@@ -120,5 +120,16 @@ public class MainActivity extends AppCompatActivity implements IPossumTrust {
     @Override
     public void changeInTrust(int detectorType, float newTrustScore, float combinedTrustScore) {
         Log.i(tag, "Trust change:"+detectorType+", "+newTrustScore+", "+combinedTrustScore);
+        authenticateButton.setText(R.string.authOn);
+        authenticateButton.setEnabled(myKurt().length() > 0);
+        AwesomePossum.removeTrustListener(this);
+    }
+
+    @Override
+    public void failedToAscertainTrust(Exception exception) {
+        Log.e(tag, "Failed to ascertain trust:",exception);
+        authenticateButton.setText(R.string.authOn);
+        authenticateButton.setEnabled(myKurt().length() > 0);
+        AwesomePossum.removeTrustListener(this);
     }
 }

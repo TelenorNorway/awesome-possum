@@ -2,15 +2,14 @@ package com.telenor.possumlib.constants;
 
 import android.hardware.Sensor;
 
+import com.telenor.possumlib.PossumTestRunner;
+
 import junit.framework.Assert;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
-@Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(PossumTestRunner.class)
 public class DetectorTypeTest {
     @Test
     public void testConstantsValues() throws Exception {

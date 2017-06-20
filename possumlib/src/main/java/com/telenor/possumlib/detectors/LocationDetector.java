@@ -15,6 +15,7 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
@@ -165,8 +166,7 @@ public class LocationDetector extends AbstractDetector implements LocationListen
                 if (timeLastLocation < fifteenMinutesAgo) {
                     canScan = true;
                 } else {
-                    long timeDiff = now() - timeLastLocation;
-                    Log.w(tag, "Cannot scan for position, too short time has passed since last: "+(timeDiff/60000)+" minutes");
+                    onLocationChanged(lastLocation); // Using the last known location since it is relatively short time since its update
                 }
             } else {
                 canScan = true;
@@ -203,8 +203,8 @@ public class LocationDetector extends AbstractDetector implements LocationListen
     }
 
     /**
-     * Finds the last recorded scanresult
-     * @return
+     * Finds the last recorded scanResult
+     * @return the last known location or null
      */
     @SuppressWarnings("MissingPermission")
     private Location lastLocation() {
@@ -237,8 +237,14 @@ public class LocationDetector extends AbstractDetector implements LocationListen
 
     @Override
     public void onLocationChanged(Location location) {
-        String output = location.getTime() + " " + location.getLatitude() + " " + location.getLongitude() + " " + location.getAltitude() + " " + location.getAccuracy() + " " + location.getProvider();
-        sessionValues.add(output);
+        JsonArray array = new JsonArray();
+        array.add(""+location.getTime());
+        array.add(""+location.getLatitude());
+        array.add(""+location.getLongitude());
+        array.add(""+location.getAltitude());
+        array.add(""+location.getAccuracy());
+        array.add(location.getProvider());
+        sessionValues.add(array);
         float speed = location.getSpeed();
         if (speed > maxSpeed) {
             maxSpeed = speed;
@@ -315,7 +321,7 @@ public class LocationDetector extends AbstractDetector implements LocationListen
 
     @Override
     public String detectorName() {
-        return "Position";
+        return "position";
     }
 
     @Override

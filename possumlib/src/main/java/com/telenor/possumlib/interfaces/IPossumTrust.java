@@ -5,4 +5,5 @@ package com.telenor.possumlib.interfaces;
  */
 public interface IPossumTrust {
     void changeInTrust(int detectorType, float newTrustScore, float combinedTrustScore);
+    void failedToAscertainTrust(Exception exception);
 }

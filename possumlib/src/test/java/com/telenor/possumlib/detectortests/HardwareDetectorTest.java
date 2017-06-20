@@ -1,6 +1,7 @@
 package com.telenor.possumlib.detectortests;
 
 import com.google.common.io.CharStreams;
+import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.detectors.HardwareDetector;
 import com.telenor.possumlib.models.PossumBus;
@@ -11,16 +12,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.annotation.Config;
 
 import java.io.File;
 import java.io.FileReader;
 import java.util.List;
 
-@Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(PossumTestRunner.class)
 public class HardwareDetectorTest {
     private HardwareDetector hardwareDetector;
     private PossumBus eventBus;

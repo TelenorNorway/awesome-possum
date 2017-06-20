@@ -28,7 +28,6 @@
                 android:layout_width="0dp"
                 android:id="@+id/authenticateButton"
                 android:layout_weight="1"
-                android:enabled="false"
                 android:onClick="toggleAuth"
                 android:text="@string/authOn"
                 android:layout_height="wrap_content" />

@@ -5,6 +5,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.support.annotation.NonNull;
 
+import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractZippingAndroidDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.constants.ReqCodes;
@@ -17,10 +18,10 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
     /**
      * Constructor for Accelerometer
      *
-     * @param context           Any android context
-     * @param encryptedKurt     the encrypted kurt id
-     * @param eventBus          an event bus for internal messages
-     * @param authenticating    whether the detector is used for authentication or data gathering
+     * @param context        Any android context
+     * @param encryptedKurt  the encrypted kurt id
+     * @param eventBus       an event bus for internal messages
+     * @param authenticating whether the detector is used for authentication or data gathering
      */
     public Accelerometer(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
         super(context, Sensor.TYPE_ACCELEROMETER, encryptedKurt, eventBus, authenticating);
@@ -39,7 +40,12 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (isInvalid(event)) return;
-        sessionValues.add(timestamp(event) + " " + event.values[0] + " " + event.values[1] + " " + event.values[2]);
+        JsonArray array = new JsonArray();
+        array.add(""+timestamp(event));
+        array.add(""+event.values[0]);
+        array.add(""+event.values[1]);
+        array.add(""+event.values[2]);
+        sessionValues.add(array);
         super.onSensorChanged(event);
     }
 
@@ -55,6 +61,6 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
 
     @Override
     public String detectorName() {
-        return "Accelerometer";
+        return "accelerometer";
     }
 }

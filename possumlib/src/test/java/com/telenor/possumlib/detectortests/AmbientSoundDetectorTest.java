@@ -5,6 +5,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.os.Handler;
 
+import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.detectors.AmbientSoundDetector;
 import com.telenor.possumlib.models.PossumBus;
@@ -19,7 +20,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowApplication;
@@ -36,8 +36,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@Config(manifest = Config.NONE, shadows = {ShadowAudioTrack.class, MyShadowAudioManager.class, ShadowAudioRecord.class})
-@RunWith(RobolectricTestRunner.class)
+@Config(shadows = {ShadowAudioTrack.class, MyShadowAudioManager.class, ShadowAudioRecord.class})
+@RunWith(PossumTestRunner.class)
 public class AmbientSoundDetectorTest {
     private AmbientSoundDetector ambientSoundDetector;
     @Mock
@@ -86,7 +86,7 @@ public class AmbientSoundDetectorTest {
         Assert.assertEquals("AmbientSound", ambientSoundDetector.detectorName());
         Assert.assertTrue(ambientSoundDetector.isEnabled());
         Assert.assertEquals(DetectorType.Audio, ambientSoundDetector.detectorType());
-        Assert.assertEquals(3000, ambientSoundDetector.listenInterval());
+        Assert.assertEquals(5000, ambientSoundDetector.listenInterval());
         Assert.assertEquals(48000, ambientSoundDetector.sampleRate());
         Assert.assertEquals(AudioFormat.ENCODING_PCM_16BIT, ambientSoundDetector.audioEncoding());
         Assert.assertEquals(64, ambientSoundDetector.windowSize());

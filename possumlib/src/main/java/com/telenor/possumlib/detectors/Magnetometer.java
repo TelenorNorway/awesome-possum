@@ -6,6 +6,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.support.annotation.NonNull;
 
+import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractZippingAndroidDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.constants.ReqCodes;
@@ -48,7 +49,12 @@ public class Magnetometer extends AbstractZippingAndroidDetector implements Sens
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (isInvalid(event)) return;
-        sessionValues.add(timestamp(event)+" "+event.values[0] + " " + event.values[1] + " " + event.values[2]);
+        JsonArray array = new JsonArray();
+        array.add(""+timestamp(event));
+        array.add(""+event.values[0]);
+        array.add(""+event.values[1]);
+        array.add(""+event.values[2]);
+        sessionValues.add(array);
         super.onSensorChanged(event);
     }
 
@@ -59,6 +65,6 @@ public class Magnetometer extends AbstractZippingAndroidDetector implements Sens
 
     @Override
     public String detectorName() {
-        return "Magnetometer";
+        return "magnetometer";
     }
 }

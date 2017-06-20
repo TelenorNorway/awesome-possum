@@ -42,7 +42,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     private final boolean isAuthenticating;
     int storedValues;
 
-    protected final Queue<String> sessionValues = new ConcurrentLinkedQueue<>();
+    protected final Queue<JsonArray> sessionValues = new ConcurrentLinkedQueue<>();
     private final List<ISensorStatusUpdate> listeners = new ArrayList<>();
 
     /**
@@ -193,7 +193,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
         }
     }
 
-    public Queue<String> sessionValues() {
+    public Queue<JsonArray> sessionValues() {
         return sessionValues;
     }
 
@@ -209,7 +209,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     /**
      * Returns a json object with the common things needed to explain detector
      *
-     * @return jsonobject with compact form of the detector
+     * @return jsonObject with compact form of the detector
      */
     public JsonObject toJson() {
         JsonObject object = new JsonObject();
@@ -227,15 +227,12 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * Gives the detectors stored data as a restful json object
      * @return a jsonObject for all the data
      */
-    public JsonObject jsonData() {
-        JsonObject object = new JsonObject();
-        object.addProperty("detectorName", detectorName());
-        JsonArray dataArray = new JsonArray();
-        for (String sessionValue : sessionValues) {
-            dataArray.add(sessionValue);
+    public JsonArray jsonData() {
+        JsonArray outputArr = new JsonArray();
+        for (JsonArray arr : sessionValues) {
+            outputArr.add(arr);
         }
-        object.add("data", dataArray);
-        return object;
+        return outputArr;
     }
 
     /**
@@ -345,6 +342,10 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * Zip data and move to upload directory.
      */
     public void prepareUpload() {
+        if (isAuthenticating) {
+            // Should not be a file to upload, ignoring rest of method
+            return;
+        }
         lock();
         try {
             File file = storedData();
@@ -369,6 +370,10 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     }
 
     protected boolean stageForUpload(File file) {
+        if (isAuthenticating) {
+            // Should not be a file to stage, ignoring method
+            return false;
+        }
         if (file == null) {
             Log.e(tag, "Stage for upload failed - no file (" + detectorName() + ")");
             return false;

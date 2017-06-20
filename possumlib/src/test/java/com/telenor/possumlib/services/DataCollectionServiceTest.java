@@ -25,7 +25,6 @@ import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.util.ServiceController;
 
 import java.lang.reflect.Field;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 @RunWith(PossumTestRunner.class)
 public class DataCollectionServiceTest {
@@ -66,10 +65,6 @@ public class DataCollectionServiceTest {
         Assert.assertNotNull(receiverField.get(service));
         Assert.assertFalse(service.isAuthenticating());
         Assert.assertEquals(0, service.timeSpentGathering());
-        Field detectorsField = AbstractCollectionService.class.getDeclaredField("detectors");
-        detectorsField.setAccessible(true);
-        ConcurrentLinkedQueue<AbstractDetector> detectors = (ConcurrentLinkedQueue<AbstractDetector>)detectorsField.get(service);
-        Assert.assertEquals(0, detectors.size());
     }
 
     @Test
@@ -81,36 +76,11 @@ public class DataCollectionServiceTest {
             }
         };
         RuntimeEnvironment.application.registerReceiver(receiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
-        Field detectorsField = AbstractCollectionService.class.getDeclaredField("detectors");
-        detectorsField.setAccessible(true);
         serviceController = Robolectric.buildService(DataCollectionService.class);
         Assert.assertFalse(receivedIntent);
-        DataCollectionService service = serviceController.create().get();
-        Assert.assertEquals(0, ((ConcurrentLinkedQueue<AbstractDetector>)detectorsField.get(service)).size());
-        Assert.assertFalse(receivedIntent);
-        service = serviceController.create().startCommand(0, 0).get();
+        DataCollectionService service = serviceController.create().startCommand(0, 0).get();
         // Confirm that it does not retrieve detectors to gather from since it is destroyed when missing kurtId
-        Assert.assertEquals(0, ((ConcurrentLinkedQueue<AbstractDetector>)detectorsField.get(service)).size());
         Assert.assertTrue(receivedIntent);
-        RuntimeEnvironment.application.unregisterReceiver(receiver);
-    }
-
-    @Test
-    public void testGetDetectorsWhenKurtIdIsFound() throws Exception {
-        BroadcastReceiver receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                receivedIntent = true;
-            }
-        };
-        RuntimeEnvironment.application.registerReceiver(receiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
-        Field detectorsField = AbstractCollectionService.class.getDeclaredField("detectors");
-        detectorsField.setAccessible(true);
-        // TODO: Need to find out how to deal with tests failing to get detectors because of robolectric and emulator conditions
-
-//        DataCollectionService service = serviceController.create().startCommand(0, 0).get();
-//        Assert.assertEquals(0, ((ConcurrentLinkedQueue<AbstractDetector>)detectorsField.get(service)).size());
-        Assert.assertFalse(receivedIntent);
         RuntimeEnvironment.application.unregisterReceiver(receiver);
     }
 

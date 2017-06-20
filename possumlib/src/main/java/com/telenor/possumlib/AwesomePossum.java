@@ -126,7 +126,8 @@ public final class AwesomePossum {
      * Starts a verification of whether Awesome Possum should be terminated and unauthorized.
      * Should the gathering be done or the AP project be done, the started service will send
      * an intent with information that it should be terminated
-     * @param context a valid android context
+     *
+     * @param context        a valid android context
      * @param identityPoolId the identity pool id it will use
      */
     private static void requestVerification(@NonNull Context context, @NonNull String identityPoolId) {
@@ -144,18 +145,35 @@ public final class AwesomePossum {
         AwesomePossum.lastAuthenticated = authenticationDate;
     }
 
+
     /**
      * Starts an attempt to authenticate
      *
-     * @param context a valid android context
+     * @param context         a valid android context
+     * @param encryptedKurtId the users encrypted kurtId
      * @return true if it starts an attempt, false if too little time has passed
      */
-    public static boolean authenticate(@NonNull Context context) {
+    public static boolean authenticate(@NonNull Context context, @NonNull String encryptedKurtId) {
+        return authenticate(context, encryptedKurtId, false);
+    }
+
+    /**
+     * Starts an attempt to authenticate with the possibility to enforce it
+     *
+     * @param context         a valid android context
+     * @param encryptedKurtId the users encrypted kurtId
+     * @param forceAttempt    should it attempt to authenticate no matter what, let this be true
+     * @return true if it starts an attempt, false if too little time has passed or it is already running
+     */
+    public static boolean authenticate(@NonNull Context context, @NonNull String encryptedKurtId, boolean forceAttempt) {
         // TODO: Should this be a separate method or should it be part of the "listen" method?
-        if (lastAuthenticated == null || lastAuthenticated.plusMinutes(2).isBeforeNow()) {
-            setAuthenticationDate(DateTime.now());
+        if (forceAttempt || (lastAuthenticated == null || lastAuthenticated.plusMinutes(2).isBeforeNow())) {
+            // TODO: Remember to set authenticationDate when attempt is made or it will never check for time of last attempt
+//            setAuthenticationDate(DateTime.now());
             Intent intent = new Intent(context, AuthenticationService.class);
-            context.sendBroadcast(intent);
+            intent.putExtra("url", "https://fmvc57fofc.execute-api.eu-central-1.amazonaws.com/beta/trustscore/calculate");
+            intent.putExtra("encryptedKurt", encryptedKurtId);
+            context.startService(intent);
             return true;
         } else return false;
     }
@@ -182,7 +200,7 @@ public final class AwesomePossum {
                 editor.apply();
                 break;
             default:
-                Log.d(tag, "Unhandled message:"+messageType);
+                Log.d(tag, "Unhandled message:" + messageType);
         }
         for (IPossumMessage listener : messageListeners) {
             listener.possumMessageReceived(messageType, intent.getStringExtra(Messaging.POSSUM_MESSAGE));
@@ -192,7 +210,7 @@ public final class AwesomePossum {
     /**
      * Starts to listen/gather data while app is running
      *
-     * @param encryptedKurt the encrypted kurt id
+     * @param encryptedKurt  the encrypted kurt id
      * @param identityPoolId the identity pool id it will verify with
      * @throws GatheringNotAuthorizedException If the user hasn't accepted the app, this exception is thrown
      */
@@ -257,6 +275,7 @@ public final class AwesomePossum {
      * @return true if you have something listening to authentication, false if not
      */
     public static boolean isAuthenticating() {
+        // TODO: Need to check for an existing running service!!
         return trustListeners.size() > 0;
     }
 
@@ -304,9 +323,9 @@ public final class AwesomePossum {
     }
 
     /**
-     * @param context           a valid android context
-     * @param encryptedKurt     the encrypted key identifying the user
-     * @param identityPoolId    the identity pool id it will use
+     * @param context        a valid android context
+     * @param encryptedKurt  the encrypted key identifying the user
+     * @param identityPoolId the identity pool id it will use
      * @return true if upload was started, false if no network to upload on or not initialized
      */
     public static boolean startUpload(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String identityPoolId) {
@@ -385,8 +404,8 @@ public final class AwesomePossum {
      * Fire this method to tell the system that the user has approved of using the AwesomePossum
      * library. Until it is done, no data will be collected
      *
-     * @param encryptedKurt the unique id reflecting the user who is authorized
-     * @param identityPoolId    the identity pool id you are using
+     * @param encryptedKurt  the unique id reflecting the user who is authorized
+     * @param identityPoolId the identity pool id you are using
      * @return true if authorized, false if not initialized yet
      */
     public static boolean authorizeGathering(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String identityPoolId) {

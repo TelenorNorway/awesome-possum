@@ -5,11 +5,10 @@ import android.support.annotation.NonNull;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractEventDrivenDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
-
-import org.joda.time.DateTime;
 
 /**
  * Used to detect touch movements on a given view
@@ -65,7 +64,14 @@ public class GestureDetector extends AbstractEventDrivenDetector implements View
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        sessionValues.add(DateTime.now().getMillis() + " " + event.getAction() + " " + event.getX() + " " + event.getY() + " " + event.getPressure() + " " + event.getSize());
+        JsonArray array = new JsonArray();
+        array.add(""+now());
+        array.add(""+event.getAction());
+        array.add(""+event.getX());
+        array.add(""+event.getY());
+        array.add(""+event.getPressure());
+        array.add(""+event.getSize());
+        sessionValues.add(array);
         if (!storeWithInterval()) {
             storeData();
         }

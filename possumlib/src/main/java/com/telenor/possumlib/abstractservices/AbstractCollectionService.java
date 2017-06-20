@@ -50,21 +50,27 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
             gatheringFunctionality.setDetectorsWithKurtId(this, encryptedKurt, isAuthenticating());
             gatheringFunctionality.startGathering();
             if (timeSpentGathering() > 0) {
-                terminationHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (isAuthenticating()) {
-                            try {
-                                restFunctionality.postData(url, encryptedKurt, gatheringFunctionality.detectors());
-                            } catch (MalformedURLException e) {
-                                Log.e(tag, "Failed to post data due to malformed url:",e);
+                if (url == null) {
+                    Log.e(tag, "Missing url on authentication");
+                    stopSelf();
+                } else {
+                    terminationHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (isAuthenticating()) {
+                                try {
+                                    restFunctionality = new RestFunctionality(AbstractCollectionService.this, url, encryptedKurt);
+                                    restFunctionality.execute(gatheringFunctionality.detectors());
+                                } catch (MalformedURLException e) {
+                                    Log.e(tag, "Failed to post data due to malformed url:",e);
+                                    stopSelf();
+                                }
+                            } else {
                                 stopSelf();
                             }
-                        } else {
-                            stopSelf();
                         }
-                    }
-                }, timeSpentGathering());
+                    }, timeSpentGathering());
+                }
             }
         }
         return super.onStartCommand(intent, flags, requestCode);
@@ -85,7 +91,6 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
     public void onCreate() {
         super.onCreate();
         gatheringFunctionality = new GatheringFunctionality();
-        restFunctionality = new RestFunctionality(this);
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -113,7 +118,7 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(tag, "Destroying Collector service:"+this);
+//        Log.d(tag, "Destroying Collector service:"+this);
         unregisterReceiver(receiver);
         gatheringFunctionality.stopGathering();
         receiver = null;
@@ -127,14 +132,16 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
     public abstract long timeSpentGathering();
 
     @Override
-    public void successfullyPushed() {
-        Log.i(tag, "Pushed data to rest service");
+    public void successfullyPushed(String message) {
+        Log.i(tag, "Pushed data to rest service:"+message);
+        // Data is not stored to file, so just let it die
         stopSelf();
     }
 
     @Override
     public void failedToPush(Exception exception) {
         Log.e(tag, "Failed to push to rest service:",exception);
+        // Data is not stored to file, so just let it die
         stopSelf();
     }
 }

@@ -56,8 +56,10 @@ public class Get {
 
     public static List<AbstractDetector> Detectors(@NonNull Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean isAuthenticating) {
         List<AbstractDetector> detectors = new ArrayList<>();
-        detectors.add(new MetaDataDetector(context, encryptedKurt, eventBus, isAuthenticating)); // Should always be first in line
-        detectors.add(new HardwareDetector(context, encryptedKurt, eventBus, isAuthenticating));
+        if (!isAuthenticating) {
+            detectors.add(new MetaDataDetector(context, encryptedKurt, eventBus, false)); // Should always be first in line
+            detectors.add(new HardwareDetector(context, encryptedKurt, eventBus, false));
+        }
         detectors.add(new Accelerometer(context, encryptedKurt, eventBus, isAuthenticating));
         detectors.add(new GyroScope(context, encryptedKurt, eventBus, isAuthenticating));
         detectors.add(new LocationDetector(context, encryptedKurt, eventBus, isAuthenticating));
@@ -65,8 +67,6 @@ public class Get {
         detectors.add(new NetworkDetector(context, encryptedKurt, eventBus, isAuthenticating));
         detectors.add(new AmbientSoundDetector(context, encryptedKurt, eventBus, isAuthenticating));
         detectors.add(new ImageDetector(context, encryptedKurt, eventBus, isAuthenticating));
-//        detectors.add(new TypingRecognitionDetector(context, encryptedKurt, eventBus, isAuthenticating)); // Not used atm
-//        detectors.add(new GestureDetector(context, encryptedKurt, eventBus, isAuthenticating)); // Not used atm
         return detectors;
     }
 }

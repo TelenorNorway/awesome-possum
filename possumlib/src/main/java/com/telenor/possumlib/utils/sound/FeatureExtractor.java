@@ -50,7 +50,7 @@ public class FeatureExtractor {
      */
     protected static FFT FFT;
     /**
-     * takes a speech signal and returns the Mel-Frequency Cepstral Coefficient (MFCC)<br>
+     * takes a speech signal and returns the Mel-Frequency Cepstral Coefficient (SoundFeatureExtractor)<br>
      * calls: fft<br>
      * called by: volume, train
      * @param inputSignal Speech Waveform (16 bit integer data)
@@ -65,7 +65,7 @@ public class FeatureExtractor {
         // Frame Blocking
         framing(outputSignal);
 
-        // Initializes the MFCC array
+        // Initializes the SoundFeatureExtractor array
         MFCC = new double[frames.length][numCepstra];
 
         // apply Hamming Window to ALL frames
@@ -91,7 +91,7 @@ public class FeatureExtractor {
             // Cepstral coefficients
             double cepc[] = cepCoefficients(f);
 
-            // Add resulting MFCC to array
+            // Add resulting SoundFeatureExtractor to array
             for (int i = 0; i < numCepstra; i++){
                 MFCC[k][i] = cepc[i];
             }
@@ -171,7 +171,7 @@ public class FeatureExtractor {
      * calls: none<br>
      * called by: featureExtraction
      * @param fbank Output of mel filtering
-     * @return Natural log of the output of mel filtering
+     * @return Natural longLog of the output of mel filtering
      */
     public static double[] nonLinearTransformation(double fbank[]){
         double f[] = new double[fbank.length];
@@ -190,7 +190,7 @@ public class FeatureExtractor {
      * calculates logarithm with base 10<br>
      * calls: none<br>
      * called by: featureExtraction
-     * @param value Number to take the log of
+     * @param value Number to take the longLog of
      * @return base 10 logarithm of the input values
      */
     protected static double log10(double value){
