@@ -2,6 +2,8 @@ package com.telenor.possumlib.utils.sound;
 
 import android.util.Log;
 
+import com.google.gson.JsonArray;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -118,6 +120,24 @@ public class SoundFeatureExtractor {
                 }
             }
         }
+    }
+
+    /**
+     * Returns a json array of json arrays (number of time windows, number of features). Casts all
+     * numbers to string to avoid rounding.
+     * @param feature_list List of features
+     * @return  json array of json arrays containing features
+     */
+    public static JsonArray writeFeaturesToJsonArray(List<double[]> feature_list) {
+        JsonArray feature_list_json = new JsonArray();
+        for (double [] features: feature_list) {
+            JsonArray features_array = new JsonArray();
+            for (int i=0; i<number_of_features; i++) {
+                features_array.add(Double.toString(features[i]));
+            }
+            feature_list_json.add(features_array);
+        }
+        return feature_list_json;
     }
 
     /**

@@ -16,7 +16,6 @@ import android.util.Log;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
-import com.telenor.possumlib.utils.sound.MFCC;
 import com.telenor.possumlib.utils.sound.SoundFeatureExtractor;
 
 import java.util.ArrayList;
@@ -151,7 +150,6 @@ public class AmbientSoundDetector extends AbstractDetector {
         public void run() {
             Log.i(tag, "Starting to read from stream");
             short[] buffer = new short[bufferSize];
-            short[] data = new short[2 * recordingSamples];
             int recordedSamples = 0;
             int readSize;
             while (isListening() && isRecording() && recordedSamples < recordingSamples) {
@@ -168,12 +166,11 @@ public class AmbientSoundDetector extends AbstractDetector {
 //                    recordedSamples += readSize; // old
                 }
             }
-            List<double[]> features = MFCC.getFeaturesFromRecording(data, recordedSamples,
-                    sampleRate(), windowSamples);
+            // Write sound features to json array and add to session values
+            sessionValues().add(SoundFeatureExtractor.writeFeaturesToJsonArray(features));
             stopRecording();
-            SoundFeatureExtractor.writeFeaturesToFile(features, storedData());
+            //SoundFeatureExtractor.writeFeaturesToFile(features, storedData());
             features.clear();
-//            MFCC.writeFeaturesToFile(features, storedData()); // old
         }
     }
 
