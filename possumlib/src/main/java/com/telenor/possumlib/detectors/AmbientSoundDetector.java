@@ -18,8 +18,6 @@ import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.sound.SoundFeatureExtractor;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,13 +29,10 @@ public class AmbientSoundDetector extends AbstractDetector {
     private AudioManager audioManager;
     private AudioRecord audioRecorder;
     private Handler audioHandler;
-    private SoundFeatureExtractor mfcc;
     private final int bufferSize;
-    private final int windowSamples;
     private final int recordingSamples;
     private boolean disabledMute;
     private boolean supportsUnprocessed;
-    private List<double[]> features = new ArrayList<>();
     private ExecutorService backgroundService = Executors.newSingleThreadExecutor();
 
     /**
@@ -50,11 +45,10 @@ public class AmbientSoundDetector extends AbstractDetector {
      */
     public AmbientSoundDetector(Context context, String identification, @NonNull PossumBus eventBus, boolean authenticating) {
         super(context, identification, eventBus, authenticating);
-        windowSamples = sampleRate() * windowSize() / 1000;
+//        int windowSamples = sampleRate() * windowSize() / 1000;
         recordingSamples = sampleRate() * ((int) listenInterval() / 1000);
         bufferSize = AudioTrack.getMinBufferSize(sampleRate(), AudioFormat.CHANNEL_OUT_MONO, audioEncoding());
-        mfcc = new SoundFeatureExtractor();
-        features = new ArrayList<>();
+//        SoundFeatureExtractor mfcc = new SoundFeatureExtractor();
         audioHandler = getAudioHandler();
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         audioRecorder = getAudioRecord();
@@ -148,29 +142,19 @@ public class AmbientSoundDetector extends AbstractDetector {
     private class RecordThread implements Runnable {
         @Override
         public void run() {
-            Log.i(tag, "Starting to read from stream");
+            Log.i(tag, "Starting to read from audio stream");
             short[] buffer = new short[bufferSize];
             int recordedSamples = 0;
             int readSize;
             while (isListening() && isRecording() && recordedSamples < recordingSamples) {
                 if ((readSize = audioRecorder.read(buffer, 0, bufferSize)) != AudioRecord.ERROR_INVALID_OPERATION) {
-                        // Calculate features
-//                        Log.d(tag, "Calculating features from "+readSize+" samples");
-//                        Log.d(tag, "Corresponding to "+(float)readSize/sampleRate()*1000+ " milliseconds");
-                        List<double []> buffer_features = SoundFeatureExtractor.getFeaturesFromSample(
-                                buffer, readSize, sampleRate());
-//                        Log.d(tag, "Got "+buffer_features.size()+" time windows from buffer");
-                        features.addAll(buffer_features);
-                        recordedSamples += readSize;
-//                    System.arraycopy(buffer, 0, data, recordedSamples, readSize); // old
-//                    recordedSamples += readSize; // old
+                    // Calculate features
+                    for (double[] window : SoundFeatureExtractor.getFeaturesFromSample(buffer, readSize, sampleRate())) {
+                        sessionValues().add(SoundFeatureExtractor.writeFeatureWindowToJsonArray(window));
+                    }
+                    recordedSamples += readSize;
                 }
             }
-            // Write sound features to json array and add to session values
-            sessionValues().add(SoundFeatureExtractor.writeFeaturesToJsonArray(features));
-            stopRecording();
-            //SoundFeatureExtractor.writeFeaturesToFile(features, storedData());
-            features.clear();
         }
     }
 
@@ -207,7 +191,7 @@ public class AmbientSoundDetector extends AbstractDetector {
      * @return the recording length in milliseconds
      */
     public long listenInterval() {
-        return 5000;
+        return 3000;
     }
 
     private void stopRecording() {
