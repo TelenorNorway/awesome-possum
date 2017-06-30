@@ -33,14 +33,15 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
     private TensorLoad tensorLoad;
     private Handler handler = new Handler(Looper.getMainLooper());
     private static final String fileName = "tensorflow_facerecognition.pb";
-    private static final String fullPath = "file:///android_asset/"+fileName;
+    private static final String fullPath = "file:///android_asset/" + fileName;
     public TensorFlowInferenceInterface tensorFlowInterface;
 
     /**
      * Constructor for Image detector
-     * @param context a valid android context
-     * @param uniqueUserId the unique user id
-     * @param eventBus an event bus for internal messages
+     *
+     * @param context        a valid android context
+     * @param uniqueUserId   the unique user id
+     * @param eventBus       an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
     public ImageDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
@@ -66,14 +67,8 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
 
     @Override
     public void stopListening() {
-        if (asyncFaceTask != null) {
-            asyncFaceTask.cancel(true);
-            asyncFaceTask = null;
-        }
-        if (tensorLoad != null) {
-            tensorLoad.cancel(true);
-            tensorLoad = null;
-        }
+        cancelFaceSnap();
+        cancelTensorLoad();
         requestedListening = false;
         super.stopListening();
     }
@@ -112,13 +107,9 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
     public boolean startListening() {
         boolean listen = super.startListening();
         requestedListening = true;
-        if (listen) {
-            if (asyncFaceTask != null) {
-                asyncFaceTask.cancel(true);
-                asyncFaceTask = null;
-                Log.d(tag, "Stopping eventual image capture running");
-            }
-            snapImage(getFaceTask());
+        if (listen && isAvailable()) {
+            cancelFaceSnap();
+            snapImages(getFaceTask());
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -127,6 +118,21 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
             }, listenInterval());
         }
         return listen;
+    }
+
+    private void cancelFaceSnap() {
+        if (asyncFaceTask != null) {
+            asyncFaceTask.cancel(true);
+            asyncFaceTask = null;
+            Log.d(tag, "Stopping eventual image capture running");
+        }
+    }
+
+    private void cancelTensorLoad() {
+        if (tensorLoad != null) {
+            tensorLoad.cancel(true);
+            tensorLoad = null;
+        }
     }
 
     private long listenInterval() {
@@ -144,7 +150,7 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
         return null;
     }
 
-    protected boolean snapImage(AsyncFaceTask asyncFaceTask) {
+    protected boolean snapImages(AsyncFaceTask asyncFaceTask) {
         if (asyncFaceTask != null) {
             try {
                 this.asyncFaceTask = asyncFaceTask;
@@ -159,9 +165,9 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
     public void storeFace(float[] weights) {
         totalFaces += 1;
         JsonArray array = new JsonArray();
-        array.add(""+now());
+        array.add("" + now());
         for (float weight : weights) {
-            array.add(""+weight);
+            array.add("" + weight);
         }
         sessionValues.add(array);
     }
@@ -182,6 +188,7 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
     private class TensorLoad extends AsyncTask<Void, Void, Boolean> {
         private ITensorLoadComplete listener;
         private Context context;
+
         TensorLoad(Context context, ITensorLoadComplete listener) {
             this.context = context;
             this.listener = listener;

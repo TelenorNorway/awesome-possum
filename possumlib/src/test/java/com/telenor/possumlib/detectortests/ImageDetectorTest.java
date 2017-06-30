@@ -148,7 +148,7 @@ public class ImageDetectorTest {
                 return mockedTensorFlow;
             }
         };
-        Method snapMethod = ImageDetector.class.getDeclaredMethod("snapImage", AsyncFaceTask.class);
+        Method snapMethod = ImageDetector.class.getDeclaredMethod("snapImages", AsyncFaceTask.class);
         snapMethod.setAccessible(true);
         Assert.assertTrue((boolean) snapMethod.invoke(imageDetector, mockedAsyncFaceTask));
         verify(mockedAsyncFaceTask).execute();
@@ -162,7 +162,7 @@ public class ImageDetectorTest {
                 return mockedTensorFlow;
             }
         };
-        Method snapMethod = ImageDetector.class.getDeclaredMethod("snapImage", AsyncFaceTask.class);
+        Method snapMethod = ImageDetector.class.getDeclaredMethod("snapImages", AsyncFaceTask.class);
         snapMethod.setAccessible(true);
         when(mockedAsyncFaceTask.execute()).thenThrow(new RuntimeException("test"));
         Assert.assertFalse((boolean) snapMethod.invoke(imageDetector, mockedAsyncFaceTask));
@@ -225,7 +225,7 @@ public class ImageDetectorTest {
 //                return mockedTensorFlow;
 //            }
 //            @Override
-//            protected boolean snapImage(AsyncFaceTask asyncFaceTask) {
+//            protected boolean snapImages(AsyncFaceTask asyncFaceTask) {
 //                return true;
 //            }
 //        };

@@ -120,7 +120,7 @@ public class AsyncFaceTask extends AsyncTask<Void, Void, Void> implements Camera
                         // Get ImageDetector instance from AwesomePossum
                         // Scan image using dlib and return list of detected faces
                         List<Bitmap> faces = detectFaces(image);
-                        Log.i(tag, faces.size() + " valid faces returned");
+                        Log.d(tag, faces.size() + " valid faces returned");
                         image.recycle();
                         // Convert faces to int arrays
                         int rgbArray[][][];
