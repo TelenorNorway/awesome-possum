@@ -38,12 +38,7 @@
             android:value="@integer/google_play_services_version" />
 
         <service
-            android:name=".services.DataCollectionService"
-            android:exported="false"
-            android:process=":possum" />
-
-        <service
-            android:name=".services.AuthenticationService"
+            android:name=".services.CollectionService"
             android:exported="false"/>
 
         <service
@@ -57,7 +52,7 @@
             android:process=":possumVerification" />
 
         <service
-            android:name=".services.SendKurtService"
+            android:name=".services.SendUserIdService"
             android:exported="false"
             android:process=":possum" />
         <service

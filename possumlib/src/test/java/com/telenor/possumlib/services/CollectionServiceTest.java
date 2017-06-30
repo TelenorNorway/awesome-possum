@@ -9,7 +9,6 @@ import android.content.IntentFilter;
 import com.telenor.possumlib.JodaInit;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
-import com.telenor.possumlib.abstractservices.AbstractCollectionService;
 import com.telenor.possumlib.constants.Messaging;
 
 import org.junit.After;
@@ -27,8 +26,8 @@ import org.robolectric.util.ServiceController;
 import java.lang.reflect.Field;
 
 @RunWith(PossumTestRunner.class)
-public class DataCollectionServiceTest {
-    private ServiceController<DataCollectionService> serviceController;
+public class CollectionServiceTest {
+    private ServiceController<CollectionService> serviceController;
     @Mock
     private AbstractDetector mockedDetector1;
     @Mock
@@ -47,8 +46,8 @@ public class DataCollectionServiceTest {
         ShadowApplication.getInstance().grantPermissions(Manifest.permission.CAMERA);
         ShadowApplication.getInstance().grantPermissions(Manifest.permission.RECORD_AUDIO);
         Intent intent = new Intent();
-        intent.putExtra("encryptedKurt", "testId");
-        serviceController = Robolectric.buildService(DataCollectionService.class, intent);
+        intent.putExtra("uniqueUserId", "testId");
+        serviceController = Robolectric.buildService(CollectionService.class, intent);
     }
 
     @After
@@ -58,13 +57,11 @@ public class DataCollectionServiceTest {
 
     @Test
     public void testDefaults() throws Exception {
-        Field receiverField = AbstractCollectionService.class.getDeclaredField("receiver");
+        Field receiverField = CollectionService.class.getDeclaredField("receiver");
         receiverField.setAccessible(true);
         Assert.assertNull(receiverField.get(serviceController.get()));
-        DataCollectionService service = serviceController.create().get();
+        CollectionService service = serviceController.create().get();
         Assert.assertNotNull(receiverField.get(service));
-        Assert.assertFalse(service.isAuthenticating());
-        Assert.assertEquals(0, service.timeSpentGathering());
     }
 
     @Test
@@ -76,10 +73,10 @@ public class DataCollectionServiceTest {
             }
         };
         RuntimeEnvironment.application.registerReceiver(receiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
-        serviceController = Robolectric.buildService(DataCollectionService.class);
+        serviceController = Robolectric.buildService(CollectionService.class);
         Assert.assertFalse(receivedIntent);
-        DataCollectionService service = serviceController.create().startCommand(0, 0).get();
-        // Confirm that it does not retrieve detectors to gather from since it is destroyed when missing kurtId
+        CollectionService service = serviceController.create().startCommand(0, 0).get();
+        // Confirm that it does not retrieve detectors to gather from since it is destroyed when missing user id
         Assert.assertTrue(receivedIntent);
         RuntimeEnvironment.application.unregisterReceiver(receiver);
     }
@@ -87,15 +84,15 @@ public class DataCollectionServiceTest {
 //    @Test
 //    public void testStartWithAllButImageDetectors() throws Exception {
 //        Intent intent = new Intent();
-//        intent.putExtra("encryptedKurt", "fakeKurt");
+//        intent.putExtra("uniqueUserId", "fakeKurt");
 //        intent.putExtra("secretHash", "fakeSecret");
-//        Field detectorsField = AbstractCollectionService.class.getDeclaredField("detectors");
+//        Field detectorsField = CollectionService.class.getDeclaredField("detectors");
 //        detectorsField.setAccessible(true);
 //        ConcurrentLinkedQueue detectors = (ConcurrentLinkedQueue)detectorsField.get(serviceController.create().get());
 //        Assert.assertTrue(detectors.isEmpty());
 //        ShadowSensorManager shadowSensorManager = new ShadowSensorManager();
 //        shadowSensorManager.addSensor(Sensor.TYPE_ACCELEROMETER, shadowSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
-//        AbstractCollectionService service = serviceController.create().withIntent(intent).startCommand(0, 0).get();
+//        CollectionService service = serviceController.create().withIntent(intent).startCommand(0, 0).get();
 //        detectors = (ConcurrentLinkedQueue)detectorsField.get(service);
 //        Assert.assertEquals(11, detectors.size());
 //
@@ -122,25 +119,25 @@ public class DataCollectionServiceTest {
 //        Assert.assertEquals(8, startedDetectors);
 //        // Accelerometer and GyroScope not started due to missing SensorManager
 //
-//        Method clearDetectorsMethod = AbstractCollectionService.class.getDeclaredMethod("clearAllDetectors");
+//        Method clearDetectorsMethod = CollectionService.class.getDeclaredMethod("clearAllDetectors");
 //        clearDetectorsMethod.setAccessible(true);
 //        clearDetectorsMethod.invoke(service);
 //    }
 
 //    @Test
 //    public void testStartServiceOnOnTaskRemoved() throws Exception {
-//        AbstractCollectionService sensorService = serviceController.attach().create().get();
+//        CollectionService sensorService = serviceController.attach().create().get();
 //        ShadowService shadowService = new ShadowService();
 //        Assert.assertNull(shadowService.peekNextStartedService());
 //        sensorService.onTaskRemoved(null);
 //        Intent intent = shadowService.getNextStartedService();
-//        Assert.assertEquals(AbstractCollectionService.class.getName(), intent.getComponent().getClassName());
+//        Assert.assertEquals(CollectionService.class.getName(), intent.getComponent().getClassName());
 //    }
 
 //    @Test
 //    public void testOnCreateInitializesProperly() throws Exception {
-//        AbstractCollectionService sensorService = serviceController.attach().create().get();
-//        Field notificationField = AbstractCollectionService.class.getDeclaredField("notificationManager");
+//        CollectionService sensorService = serviceController.attach().create().get();
+//        Field notificationField = CollectionService.class.getDeclaredField("notificationManager");
 //        notificationField.setAccessible(true);
 //        NotificationManager notificationManager = (NotificationManager) notificationField.get(sensorService);
 //        Assert.assertNotNull(notificationManager);
@@ -162,7 +159,7 @@ public class DataCollectionServiceTest {
 ////        Field subField = EventBus.class.getDeclaredField("subscribersPerTopic");
 ////        subField.setAccessible(true);
 ////        serviceController.attach().create();
-////        AbstractCollectionService sensorService = serviceController.get();
+////        CollectionService sensorService = serviceController.get();
 ////        Assert.assertTrue(((HashMap<String, Set<EventSubscriber>>) subField.get(EventBus.getInstance())).get(Constants.IS_GATHERING).contains(sensorService));
 ////        serviceController.destroy();
 ////        Assert.assertFalse(((HashMap<String, Set<EventSubscriber>>) subField.get(EventBus.getInstance())).get(Constants.IS_GATHERING).contains(sensorService));
@@ -172,7 +169,7 @@ public class DataCollectionServiceTest {
 //    @Test
 //    public void testOnDestroyUnregistersFromAll() throws Exception {
 ////        serviceController.attach().create().startCommand(0, 0);
-////        AbstractCollectionService service = serviceController.get();
+////        CollectionService service = serviceController.get();
 ////        Field subscribers = EventBus.class.getDeclaredField("subscribersPerTopic");
 ////        subscribers.setAccessible(true);
 ////        HashMap<String, Set<EventSubscriber>> subscriberMap = (HashMap<String, Set<EventSubscriber>>)subscribers.get(EventBus.getInstance());
@@ -207,8 +204,8 @@ public class DataCollectionServiceTest {
 //
 //    @Test
 //    public void testStartListening() throws Exception {
-//        AbstractCollectionService sensorService = serviceController.attach().create().get();
-//        Method startMethod = AbstractCollectionService.class.getDeclaredMethod("startListen");
+//        CollectionService sensorService = serviceController.attach().create().get();
+//        Method startMethod = CollectionService.class.getDeclaredMethod("startListen");
 //        startMethod.setAccessible(true);
 //        startMethod.invoke(sensorService);
 //        verify(mockedDetector1).startListening();
@@ -217,12 +214,12 @@ public class DataCollectionServiceTest {
 //
 //    @Test
 //    public void testStopListening() throws Exception {
-//        AbstractCollectionService sensorService = serviceController.attach().create().get();
-//        Method startMethod = AbstractCollectionService.class.getDeclaredMethod("startListen");
+//        CollectionService sensorService = serviceController.attach().create().get();
+//        Method startMethod = CollectionService.class.getDeclaredMethod("startListen");
 //        startMethod.setAccessible(true);
 //        startMethod.invoke(sensorService);
 //
-//        Method stopMethod = AbstractCollectionService.class.getDeclaredMethod("stopListen");
+//        Method stopMethod = CollectionService.class.getDeclaredMethod("stopListen");
 //        stopMethod.setAccessible(true);
 //        // TODO: Implement a way for stop not terminating the runnables twice (once in the foreach, and once in DetectorTimer.clearAll()
 //        stopMethod.invoke(sensorService);
@@ -233,19 +230,19 @@ public class DataCollectionServiceTest {
 //
 //    @Test
 //    public void testClickOnResumeNotificationRestartsListening() throws Exception {
-////        AbstractCollectionService service = serviceController.attach().create().get();
+////        CollectionService service = serviceController.attach().create().get();
 //
 //    }
 //
 //    @Test
 //    public void testNoGodDamnAidlBindingStuff() throws Exception {
-//        AbstractCollectionService sensorService = serviceController.attach().create().get();
+//        CollectionService sensorService = serviceController.attach().create().get();
 //        Assert.assertNull(sensorService.onBind(null));
 //    }
 //
 //    @Test
 //    public void testStartupCommandWhenRequestingRestart() throws Exception {
-//        AwesomePossum.authorizeGathering(RuntimeEnvironment.application, "fakeEncryptedKurt");
+//        AwesomePossum.authorizeGathering(RuntimeEnvironment.application, "fakeUniqueUserId");
 ////        AwesomePossum.setGathering(RuntimeEnvironment.application, false);
 ////        Assert.assertFalse(AwesomePossum.isGathering());
 ////        serviceController.attach().create().startCommand(0, ReqCodes.BACKGROUND_SERVICE);
@@ -254,7 +251,7 @@ public class DataCollectionServiceTest {
 //
 //    @Test
 //    public void testFillerMethodsForCoverage() throws Exception {
-////        AbstractCollectionService service = serviceController.attach().create().get();
+////        CollectionService service = serviceController.attach().create().get();
 ////        ShadowLog.setupLogging();
 ////        Assert.assertEquals(0, ShadowLog.getLogs().size());
 ////        service.listChanged();

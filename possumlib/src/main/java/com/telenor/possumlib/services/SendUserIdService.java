@@ -18,15 +18,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Handles sending the encrypted kurt to the service, storing it
+ * Handles sending the unique user id to the service, storing it
  */
-final public class SendKurtService extends AbstractAmazonUploadService {
-    private static final String tag = SendKurtService.class.getName();
-    private String encryptedKurt;
+final public class SendUserIdService extends AbstractAmazonUploadService {
+    private static final String tag = SendUserIdService.class.getName();
+    private String uniqueUserId;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        encryptedKurt = intent.getStringExtra("encryptedKurt");
+        uniqueUserId = intent.getStringExtra("uniqueUserId");
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -40,12 +40,12 @@ final public class SendKurtService extends AbstractAmazonUploadService {
         List<File> list = new ArrayList<>();
         JsonObject object = new JsonObject();
         object.addProperty("time", DateTime.now().getMillis());
-        object.addProperty("encryptedKurt", encryptedKurt);
-        File tempFile = FileUtil.toUploadFile(this, "consent/"+encryptedKurt);
+        object.addProperty("uniqueUserId", uniqueUserId);
+        File tempFile = FileUtil.toUploadFile(this, "consent/"+ uniqueUserId);
         String errorMsg;
         if (tempFile.exists()) {
             if (!tempFile.delete()) {
-                errorMsg = "Failed to delete old kurt file, panic!!";
+                errorMsg = "Failed to delete old user id file, panic!!";
                 Log.e(tag, errorMsg);
                 Send.messageIntent(this, Messaging.VERIFICATION_FAILED, errorMsg);
                 return list;
@@ -53,13 +53,13 @@ final public class SendKurtService extends AbstractAmazonUploadService {
         }
         try {
             if (!tempFile.createNewFile()) {
-                errorMsg = "Failed to create kurtFile, panic!!";
+                errorMsg = "Failed to create user id File, panic!!";
                 Log.e(tag, errorMsg);
                 Send.messageIntent(this, Messaging.VERIFICATION_FAILED, errorMsg);
                 return list;
             }
         } catch (IOException e) {
-            errorMsg = "Failed to create kurtFile, panic!!:"+e.toString();
+            errorMsg = "Failed to create user id File, panic!!:"+e.toString();
             Log.e(tag, errorMsg);
             Send.messageIntent(this, Messaging.VERIFICATION_FAILED, errorMsg);
             return list;
@@ -69,7 +69,7 @@ final public class SendKurtService extends AbstractAmazonUploadService {
             fos = new FileOutputStream(tempFile);
             fos.write(object.toString().getBytes());
             list.add(tempFile);
-            Log.d(tag, "Successfully wrote and added kurtFile to list, returning it");
+            Log.d(tag, "Successfully wrote and added user id File to list, returning it");
         } catch (Exception e) {
             errorMsg = "Failed to write to file:"+e.toString();
             Log.e(tag, errorMsg);

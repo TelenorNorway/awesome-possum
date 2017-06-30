@@ -90,7 +90,7 @@ public class AwesomePossumTest {
     @Test
     public void testListenBeforeAuthorized() throws Exception {
         try {
-            AwesomePossum.startListening(mockedContext, "encryptedKurt", "poolId");
+            AwesomePossum.startListening(mockedContext, "uniqueUserId", "poolId");
             verify(mockedContext, never()).startService(any(Intent.class));
             Assert.fail("Should not have reached this space");
         } catch (GatheringNotAuthorizedException ignore) {
@@ -105,7 +105,7 @@ public class AwesomePossumTest {
         verify(mockedContext, never()).startService(any(Intent.class));
         Assert.assertTrue(AwesomePossum.authorizeGathering(mockedContext, "fakeKurt", "fakeBucketKey"));
         verify(mockedContext, times(1)).startService(any(Intent.class));
-        AwesomePossum.startListening(mockedContext, "encryptedKurt", "poolId");
+        AwesomePossum.startListening(mockedContext, "uniqueUserId", "poolId");
         // Three times because once with VerificationService and once with DataCollection
         verify(mockedContext, times(3)).startService(any(Intent.class));
     }

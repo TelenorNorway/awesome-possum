@@ -63,8 +63,7 @@ public class AbstractAndroidRegularDetectorTest {
     private ShadowSensorManager shadow;
     private SensorManager sensorManager;
 
-    private long guaranteedListen = 4000;
-    private long restartInterval = 4000;
+    private long authenticationListenInterval = 4000;
     private int requestCode = 12345;
     private int counter;
     private File fakeFile;
@@ -160,8 +159,8 @@ public class AbstractAndroidRegularDetectorTest {
     private AbstractAndroidRegularDetector getDetector(Context context, PossumBus eventBus) {
         return new AbstractAndroidRegularDetector(context, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
             @Override
-            public long guaranteedListenInterval() {
-                return guaranteedListen;
+            public long authenticationListenInterval() {
+                return authenticationListenInterval;
             }
 
             @Override
@@ -208,13 +207,13 @@ public class AbstractAndroidRegularDetectorTest {
         Assert.assertEquals(0, storedField.getInt(androidRegularSensor));
         Assert.assertTrue(androidRegularSensor.startListening());
         Assert.assertTrue(androidRegularSensor.isListening());
-        androidRegularSensor.sessionValues().add("addedFakeEvent");
+//        androidRegularSensor.sessionValues().add("addedFakeEvent");
         androidRegularSensor.onSensorChanged(event);
         Assert.assertEquals(1, storedField.getInt(androidRegularSensor));
-        androidRegularSensor.sessionValues().add("addedFakeEvent");
+//        androidRegularSensor.sessionValues().add("addedFakeEvent");
         androidRegularSensor.onSensorChanged(event);
         Assert.assertEquals(2, storedField.getInt(androidRegularSensor));
-        androidRegularSensor.sessionValues().add("addedFakeEvent");
+//        androidRegularSensor.sessionValues().add("addedFakeEvent");
         androidRegularSensor.onSensorChanged(event);
         Assert.assertEquals(0, storedField.getInt(androidRegularSensor));
     }

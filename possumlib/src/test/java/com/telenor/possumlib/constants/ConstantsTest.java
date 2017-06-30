@@ -11,9 +11,9 @@ import org.junit.runner.RunWith;
 public class ConstantsTest {
     @Test
     public void testConstantsValues() throws Exception {
-        Assert.assertEquals("encryptedKurt", Constants.ENCRYPTED_KURT);
+        Assert.assertEquals("uniqueUserId", Constants.UNIQUE_USER_ID);
         Assert.assertEquals("AwesomePossumPrefs", Constants.SHARED_PREFERENCES);
-        Assert.assertEquals("tempEncryptedKurt", Constants.ENCRYPTED_TEMP_KURT);
+        Assert.assertEquals("tempUniqueUserId", Constants.TEMP_UNIQUE_USER_ID);
         Assert.assertEquals("isLearning", Constants.IS_LEARNING);
         Assert.assertEquals("startTime", Constants.START_TIME);
     }

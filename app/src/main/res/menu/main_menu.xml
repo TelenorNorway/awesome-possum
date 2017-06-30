@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/define_id"
+        android:title="@string/set_my_id" />
+    <item
+        android:id="@+id/listening"
+        android:title="@string/listenOn" />
+    <item
+        android:id="@+id/upload"
+        android:title="@string/upload" />
+    <item
+        android:id="@+id/resetData"
+        android:title="@string/reset_my_data" />
+</menu>

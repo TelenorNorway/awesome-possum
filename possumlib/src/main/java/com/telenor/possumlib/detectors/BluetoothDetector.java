@@ -22,9 +22,6 @@ import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 /***
  * Uses bluetooth to find paired devices or even regularly discovered devices to both confirm is on correct device but also that person is in relative location to usually found devices.
  */
@@ -37,7 +34,6 @@ public class BluetoothDetector extends AbstractDetector {
     private boolean isBLE = false;
     private boolean isRegistered;
     private long lastStart;
-    private Timer timer;
 
     private static final String tag = BluetoothDetector.class.getName();
 
@@ -45,12 +41,12 @@ public class BluetoothDetector extends AbstractDetector {
      * Constructor for a Bluetooth Detector
      *
      * @param context a valid android context
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public BluetoothDetector(final Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, encryptedKurt, eventBus, authenticating);
+    public BluetoothDetector(final Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, uniqueUserId, eventBus, authenticating);
         // TODO: Confirm coarse/fine location and bluetooth admin for this
         BluetoothManager bluetoothManager;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -176,13 +172,6 @@ public class BluetoothDetector extends AbstractDetector {
         super.terminate();
     }
 
-    private void reCreateTimer() {
-        if (timer != null) {
-            timer.cancel();
-            timer.purge();
-        }
-        timer = new Timer();
-    }
     /**
      * Minimum interval set to 15 minutes, so it doesn't spam scan too often
      * Note: Was 1 minute, set to 15 minutes - hopefully not too long
@@ -193,15 +182,6 @@ public class BluetoothDetector extends AbstractDetector {
         return 900000;
     }
 
-    /**
-     * How long it will scan for
-     * @return the value in milliseconds, atm 12 seconds
-     */
-    public long detectInterval() {
-        return 12000;
-    }
-
-
     @Override
     public boolean startListening() {
         boolean listen = super.startListening();
@@ -211,12 +191,16 @@ public class BluetoothDetector extends AbstractDetector {
         return listen;
     }
 
+    @Override
+    public long authenticationListenInterval() {
+        return 12000;
+    }
+
     private void scanForBluetooth() {
         long nowStamp = now();
         long diff = nowStamp - lastStart;
         if (diff >= minimumInterval()) {
             Log.d(tag, "Starting bluetooth scan");
-            reCreateTimer();
             if (isBLEDevice() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 // Start BLE scan
                 BluetoothLeScanner scanner = bluetoothAdapter.getBluetoothLeScanner();
@@ -233,12 +217,6 @@ public class BluetoothDetector extends AbstractDetector {
                     lastStart = nowStamp;
                 }
             }
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    stopScan();
-                }
-            }, detectInterval());
         }
     }
 
@@ -247,14 +225,20 @@ public class BluetoothDetector extends AbstractDetector {
     }
 
     private void stopScan() {
-        Log.d(tag, "Stopping bluetooth scan");
         if (isBLEDevice() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             BluetoothLeScanner scanner = bluetoothAdapter.getBluetoothLeScanner();
             if (scanner != null) scanner.stopScan(callback);
         } else if (bluetoothAdapter.isDiscovering()) {
             bluetoothAdapter.cancelDiscovery();
         }
-        storeData();
+    }
+
+    @Override
+    public void stopListening() {
+        if (isListening()) {
+            stopScan();
+        }
+        super.stopListening();
     }
 
     @Override

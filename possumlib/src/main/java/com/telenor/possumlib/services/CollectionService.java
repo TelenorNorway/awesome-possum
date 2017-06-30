@@ -1,4 +1,4 @@
-package com.telenor.possumlib.abstractservices;
+package com.telenor.possumlib.services;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,9 +8,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.telenor.possumlib.abstractdetectors.AbstractDetector;
+import com.telenor.possumlib.abstractservices.AbstractBasicService;
 import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.functionality.GatheringFunctionality;
 import com.telenor.possumlib.functionality.RestFunctionality;
+import com.telenor.possumlib.interfaces.IPollComplete;
 import com.telenor.possumlib.interfaces.IRestListener;
 import com.telenor.possumlib.utils.Send;
 
@@ -19,14 +24,15 @@ import java.net.MalformedURLException;
 /***
  * Service that handles all actions pertaining to collecting the data from the sensors.
  */
-public abstract class AbstractCollectionService extends AbstractBasicService implements IRestListener {
+public class CollectionService extends AbstractBasicService implements IRestListener, IPollComplete {
     protected GatheringFunctionality gatheringFunctionality;
     private BroadcastReceiver receiver;
-    private RestFunctionality restFunctionality;
-    private String encryptedKurt;
-    private Handler terminationHandler = new Handler(Looper.getMainLooper());
+    private String uniqueUserId;
+    private boolean isAuthenticating;
     private String url;
-    private static final String tag = AbstractCollectionService.class.getName();
+    private String apiKey;
+    private Handler authHandler = new Handler(Looper.getMainLooper());
+    private static final String tag = CollectionService.class.getName();
 
     /**
      * onStartCommand - ensuring that the service is NOT sticky, initializing the detectors and
@@ -40,47 +46,32 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
     @Override
     public int onStartCommand(Intent intent, int flags, int requestCode) {
         // Ensures all detectors are terminated and cleared before adding new ones
-        encryptedKurt = intent.getStringExtra("encryptedKurt");
+        uniqueUserId = intent.getStringExtra("uniqueUserId");
         url = intent.getStringExtra("url");
-        if (encryptedKurt == null) {
-            Log.e(tag, "Missing needed value in intent. EncryptedKurt is null. Terminating service..");
-            Send.messageIntent(this, Messaging.COLLECTION_FAILED, "Missing kurtId in service");
+        apiKey = intent.getStringExtra("apiKey");
+        isAuthenticating = intent.getBooleanExtra("authenticating", false);
+        if (uniqueUserId == null) {
+            Log.e(tag, "Missing needed value in intent. Unique user id is null. Terminating service..");
+            Send.messageIntent(this, Messaging.COLLECTION_FAILED, "Missing unique user id in service");
             stopSelf();
         } else {
-            gatheringFunctionality.setDetectorsWithKurtId(this, encryptedKurt, isAuthenticating());
+            gatheringFunctionality.setDetectorsWithId(this, uniqueUserId, isAuthenticating, this);
+            if (gatheringFunctionality.isGathering()) {
+                gatheringFunctionality.stopGathering();
+                gatheringFunctionality.clearData();
+            }
             gatheringFunctionality.startGathering();
-            if (timeSpentGathering() > 0) {
-                if (url == null) {
-                    Log.e(tag, "Missing url on authentication");
-                    stopSelf();
-                } else {
-                    terminationHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (isAuthenticating()) {
-                                try {
-                                    restFunctionality = new RestFunctionality(AbstractCollectionService.this, url, encryptedKurt);
-                                    restFunctionality.execute(gatheringFunctionality.detectors());
-                                } catch (MalformedURLException e) {
-                                    Log.e(tag, "Failed to post data due to malformed url:",e);
-                                    stopSelf();
-                                }
-                            } else {
-                                stopSelf();
-                            }
-                        }
-                    }, timeSpentGathering());
-                }
+            if (isAuthenticating) {
+                authHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        stopSelf();
+                    }
+                }, authTime());
             }
         }
         return super.onStartCommand(intent, flags, requestCode);
     }
-
-    /**
-     * Defines whether the service is authenticating or data gathering
-     * @return true if authenticating, false if gathering
-     */
-    protected abstract boolean isAuthenticating();
 
     /**
      * onCreate - starts up all relevant sensors and setting service as a foreground service
@@ -101,6 +92,10 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
         registerReceiver(receiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
     }
 
+    private int authTime() {
+        return 5000;
+    }
+
     private void handleIntent(String action) {
         if (action == null) return;
         switch (action) {
@@ -109,6 +104,9 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
                 break;
             default:
         }
+    }
+
+    public void pollComplete(AbstractDetector detector) {
     }
 
     /**
@@ -122,25 +120,36 @@ public abstract class AbstractCollectionService extends AbstractBasicService imp
         unregisterReceiver(receiver);
         gatheringFunctionality.stopGathering();
         receiver = null;
+        try {
+            if (isAuthenticating) {
+                RestFunctionality restFunctionality = new RestFunctionality(CollectionService.this, url, uniqueUserId, apiKey);
+                restFunctionality.execute(gatheringFunctionality.detectors());
+            }
+        } catch (MalformedURLException e) {
+            Log.e(tag, "Failed to post data due to malformed url:", e);
+        }
     }
-
-    /**
-     * The time spent gathering data before it either stops itself or uses the data for an
-     * authentication attempt. If time spent is 0, it equals waiting until terminated
-     * @return the time in milliseconds
-     */
-    public abstract long timeSpentGathering();
 
     @Override
     public void successfullyPushed(String message) {
-        Log.i(tag, "Pushed data to rest service:"+message);
+        JsonParser parser = new JsonParser();
+        Log.i(tag, "Pushed data to rest service:" + message);
+        JsonObject object = (JsonObject) parser.parse(message);
+        if (object.get("errorMessage") != null) {
+            Log.d(tag, "Failed to access:" + object);
+            return;
+        }
+        Intent intent = new Intent(Messaging.POSSUM_TRUST);
+        intent.putExtra("message", object.toString());
+        sendBroadcast(intent);
+        Log.d(tag, "Sent broadcast");
         // Data is not stored to file, so just let it die
         stopSelf();
     }
 
     @Override
     public void failedToPush(Exception exception) {
-        Log.e(tag, "Failed to push to rest service:",exception);
+        Log.e(tag, "Failed to push to rest service:", exception);
         // Data is not stored to file, so just let it die
         stopSelf();
     }

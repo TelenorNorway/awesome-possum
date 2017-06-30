@@ -41,7 +41,7 @@ public class AsyncFaceTask extends AsyncTask<Void, Void, Void> implements Camera
 
     private PossumBus eventBus = new PossumBus();
     private static final int maxRepeat = 20;
-    private static final String tag = AsyncFaceTask.class.getName();
+    private static final String tag = ImageDetector.class.getName();
     private static final int BMP_WIDTH = 96;
     private static final int BMP_HEIGHT = 96;
     private byte[] data;

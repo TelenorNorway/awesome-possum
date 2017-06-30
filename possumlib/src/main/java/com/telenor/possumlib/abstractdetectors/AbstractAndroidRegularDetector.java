@@ -22,12 +22,12 @@ public abstract class AbstractAndroidRegularDetector extends AbstractAndroidDete
      * Constructor for regular android sensor detectors
      * @param context    Any android context
      * @param sensorType The Sensor.Type you wish to use for this sensor
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    protected AbstractAndroidRegularDetector(Context context, int sensorType, String encryptedKurt, PossumBus eventBus, boolean authenticating) {
-        super(context, sensorType, encryptedKurt, eventBus, authenticating);
+    protected AbstractAndroidRegularDetector(Context context, int sensorType, String uniqueUserId, PossumBus eventBus, boolean authenticating) {
+        super(context, sensorType, uniqueUserId, eventBus, authenticating);
         if (sensor != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" "+ detectorName() + " FIFO SIZE " + sensor.getFifoMaxEventCount() + " " + sensor.getFifoReservedEventCount()));
@@ -71,8 +71,8 @@ public abstract class AbstractAndroidRegularDetector extends AbstractAndroidDete
      */
     protected long timestamp(SensorEvent event) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            return DateTime.now().getMillis() + ((event.timestamp - SystemClock.elapsedRealtimeNanos()) / 1000000L);
-        } else return DateTime.now().getMillis() + ((event.timestamp - SystemClock.elapsedRealtime()*1000) /1000000L);
+            return super.now() + ((event.timestamp - SystemClock.elapsedRealtimeNanos()) / 1000000L);
+        } else return super.now() + ((event.timestamp - SystemClock.elapsedRealtime()*1000) /1000000L);
     }
 
     /**

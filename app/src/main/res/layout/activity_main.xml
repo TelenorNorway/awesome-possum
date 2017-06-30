@@ -1,76 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-    <LinearLayout
+    <android.support.design.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:orientation="vertical"
-        android:layout_alignParentTop="true"
-        android:layout_margin="20dp"
-        android:layout_height="wrap_content">
-        <LinearLayout
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
+        tools:context="com.telenor.awesomepossum.MainActivity">
+
+        <android.support.design.widget.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="2">
-            <Button
-                style="?android:buttonBarButtonStyle"
-                android:layout_width="0dp"
-                android:id="@+id/learnButton"
-                android:layout_weight="1"
-                android:enabled="false"
-                android:onClick="toggleLearning"
-                android:text="@string/learningOn"
-                android:layout_height="wrap_content" />
-            <Button
-                style="?android:buttonBarButtonStyle"
-                android:layout_width="0dp"
-                android:id="@+id/authenticateButton"
-                android:layout_weight="1"
-                android:onClick="toggleAuth"
-                android:text="@string/authOn"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-        <TextView
+            android:theme="@style/AppTheme.AppBarOverlay">
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize" />
+        </android.support.design.widget.AppBarLayout>
+
+        <FrameLayout
+            android:id="@+id/mainFragment"
             android:layout_width="match_parent"
-            android:text="@string/myKurtId"
-            android:layout_height="wrap_content" />
-        <EditText
-            android:id="@+id/uniqueKurt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text" />
-    </LinearLayout>
-
-    <!--<com.github.mikephil.charting.charts.BarChart-->
-        <!--android:id="@+id/barChart"-->
-        <!--android:layout_centerInParent="true"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content" />-->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:orientation="horizontal"
-        android:weightSum="2">
-
-        <Button
-            android:id="@+id/listenButton"
-            style="?android:buttonBarButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:onClick="toggleListen"
-            android:text="@string/listenOn" />
-
-        <Button
-            android:id="@+id/uploadButton"
-            style="?android:buttonBarButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:onClick="upload"
-            android:text="@string/upload" />
-    </LinearLayout>
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+    </android.support.design.widget.CoordinatorLayout>
 </RelativeLayout>

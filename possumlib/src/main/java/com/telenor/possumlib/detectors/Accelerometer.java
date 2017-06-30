@@ -19,17 +19,12 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
      * Constructor for Accelerometer
      *
      * @param context        Any android context
-     * @param encryptedKurt  the encrypted kurt id
+     * @param uniqueUserId  the unique user id
      * @param eventBus       an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public Accelerometer(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, Sensor.TYPE_ACCELEROMETER, encryptedKurt, eventBus, authenticating);
-    }
-
-    @Override
-    public long guaranteedListenInterval() {
-        return 1680000; //28*60*1000;
+    public Accelerometer(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, Sensor.TYPE_ACCELEROMETER, uniqueUserId, eventBus, authenticating);
     }
 
     @Override
@@ -52,6 +47,11 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
     @Override
     public String requiredPermission() {
         return null;
+    }
+
+    @Override
+    public long authenticationListenInterval() {
+        return 0;
     }
 
     @Override

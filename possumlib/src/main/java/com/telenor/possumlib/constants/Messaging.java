@@ -16,4 +16,10 @@ public class Messaging {
     public static final String VERIFICATION_SUCCESS = "VerificationSuccess";
     public static final String COLLECTION_FAILED = "CollectionFailed";
     public static final String POSSUM_TERMINATE = "PossumTerminate";
+
+    // Status messages
+    public static final String ANALYSING = "Analysing";
+    public static final String SENDING_RESULT = "SendingResult";
+    public static final String READY_TO_AUTH = "ReadyForAuth";
+    public static final String MISSING_VALID_ID = "MissingValidId";
 }

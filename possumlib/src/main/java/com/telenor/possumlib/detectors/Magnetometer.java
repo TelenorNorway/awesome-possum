@@ -20,12 +20,12 @@ public class Magnetometer extends AbstractZippingAndroidDetector implements Sens
      * Constructor for the Magnetometer
      *
      * @param context    Any android context
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public Magnetometer(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, Sensor.TYPE_MAGNETIC_FIELD, encryptedKurt, eventBus, authenticating);
+    public Magnetometer(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, Sensor.TYPE_MAGNETIC_FIELD, uniqueUserId, eventBus, authenticating);
     }
 
     @Override
@@ -34,8 +34,8 @@ public class Magnetometer extends AbstractZippingAndroidDetector implements Sens
     }
 
     @Override
-    public long guaranteedListenInterval() {
-        return 1680000; //28*60*1000;
+    public long authenticationListenInterval() {
+        return 3000;
     }
 
     @Override

@@ -59,7 +59,6 @@ public class AccelerometerTest extends GeneralSensorTest {
 
     @Test
     public void testDefaults() throws Exception {
-        Assert.assertEquals(1680000, accelerometer.guaranteedListenInterval());
         Method reqCodeMethod = Accelerometer.class.getDeclaredMethod("detectorRequestCode");
         reqCodeMethod.setAccessible(true);
         Assert.assertEquals(ReqCodes.ACCELEROMETER, reqCodeMethod.invoke(accelerometer));

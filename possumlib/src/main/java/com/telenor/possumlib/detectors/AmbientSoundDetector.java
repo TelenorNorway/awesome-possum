@@ -39,14 +39,14 @@ public class AmbientSoundDetector extends AbstractDetector {
      * Constructor for an ambient sound detector
      *
      * @param context        a valid android context
-     * @param identification the encrypted kurt
+     * @param uniqueUserId the unique user id
      * @param eventBus       the event bus used for sending messages to and from
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public AmbientSoundDetector(Context context, String identification, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, identification, eventBus, authenticating);
+    public AmbientSoundDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, uniqueUserId, eventBus, authenticating);
 //        int windowSamples = sampleRate() * windowSize() / 1000;
-        recordingSamples = sampleRate() * ((int) listenInterval() / 1000);
+        recordingSamples = sampleRate() * ((int) authenticationListenInterval() / 1000);
         bufferSize = AudioTrack.getMinBufferSize(sampleRate(), AudioFormat.CHANNEL_OUT_MONO, audioEncoding());
 //        SoundFeatureExtractor mfcc = new SoundFeatureExtractor();
         audioHandler = getAudioHandler();
@@ -133,7 +133,7 @@ public class AmbientSoundDetector extends AbstractDetector {
                 public void run() {
                     stopListening();
                 }
-            }, listenInterval());
+            }, authenticationListenInterval());
             backgroundService.submit(new RecordThread());
         }
         return started;
@@ -185,15 +185,6 @@ public class AmbientSoundDetector extends AbstractDetector {
         return 64;
     }
 
-    /**
-     * The present recording length
-     *
-     * @return the recording length in milliseconds
-     */
-    public long listenInterval() {
-        return 3000;
-    }
-
     private void stopRecording() {
         if (audioRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
             Log.d(tag, "Stopping recording of ambient sound");
@@ -203,7 +194,7 @@ public class AmbientSoundDetector extends AbstractDetector {
 
     @Override
     public void stopListening() {
-        Log.i(tag, "Something fired the stopListening method of the ambient sound...");
+        super.stopListening();
         if (disabledMute) {
             // Since I disabled mute to record, here I re-enable mute
             audioManager.setMicrophoneMute(true);
@@ -212,5 +203,10 @@ public class AmbientSoundDetector extends AbstractDetector {
         if (isRecording() && audioRecorder != null) {
             stopRecording();
         }
+    }
+
+    @Override
+    public long authenticationListenInterval() {
+        return 3000;
     }
 }

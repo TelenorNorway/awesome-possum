@@ -67,7 +67,6 @@ public class GyroScopeTest extends GeneralSensorTest {
 
     @Test
     public void testDefaults() throws Exception {
-        Assert.assertEquals(1680000, gyroScope.guaranteedListenInterval());
         Method reqCodeMethod = GyroScope.class.getDeclaredMethod("detectorRequestCode");
         reqCodeMethod.setAccessible(true);
         Assert.assertEquals(ReqCodes.GYROSCOPE, reqCodeMethod.invoke(gyroScope));

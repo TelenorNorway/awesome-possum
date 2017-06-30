@@ -87,6 +87,11 @@ public class AbstractEventDrivenDetectorTest {
             }
 
             @Override
+            public long authenticationListenInterval() {
+                return 0;
+            }
+
+            @Override
             public File storedData() {
                 return fakeFile;
             }

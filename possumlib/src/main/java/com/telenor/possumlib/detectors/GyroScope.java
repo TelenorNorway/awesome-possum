@@ -20,12 +20,12 @@ public class GyroScope extends AbstractZippingAndroidDetector {
      * Constructor for the gyroscope
      *
      * @param context    Any android context
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public GyroScope(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, Sensor.TYPE_GYROSCOPE, encryptedKurt, eventBus, authenticating);
+    public GyroScope(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, Sensor.TYPE_GYROSCOPE, uniqueUserId, eventBus, authenticating);
     }
 
     @Override
@@ -34,8 +34,8 @@ public class GyroScope extends AbstractZippingAndroidDetector {
     }
 
     @Override
-    public long guaranteedListenInterval() {
-        return 1680000; //28*60*1000;
+    public long authenticationListenInterval() {
+        return 3000;
     }
 
     @Override

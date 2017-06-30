@@ -13,12 +13,12 @@ public abstract class AbstractEternalEventDetector extends AbstractEventDrivenDe
      * Constructor for AbstractEternalEventDetector
      *
      * @param context a valid android context
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public AbstractEternalEventDetector(Context context, String encryptedKurt, PossumBus eventBus, boolean authenticating) {
-        super(context, encryptedKurt, eventBus, authenticating);
+    public AbstractEternalEventDetector(Context context, String uniqueUserId, PossumBus eventBus, boolean authenticating) {
+        super(context, uniqueUserId, eventBus, authenticating);
         super.startListening();
     }
 

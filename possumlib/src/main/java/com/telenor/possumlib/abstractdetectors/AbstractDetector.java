@@ -2,6 +2,8 @@ package com.telenor.possumlib.abstractdetectors;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -11,6 +13,7 @@ import com.google.gson.JsonObject;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
 import com.telenor.possumlib.changeevents.PossumEvent;
+import com.telenor.possumlib.interfaces.IPollComplete;
 import com.telenor.possumlib.interfaces.IPossumEventListener;
 import com.telenor.possumlib.interfaces.ISensorStatusUpdate;
 import com.telenor.possumlib.models.PossumBus;
@@ -38,7 +41,9 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     private Context context;
     private final PossumBus eventBus;
     public static final int MINIMUM_SAMPLES = 500;
-    private final String encryptedKurt;
+    private final String uniqueUserId;
+    private IPollComplete pollListener;
+    protected Handler authenticationHandler = new Handler(Looper.getMainLooper());
     private final boolean isAuthenticating;
     int storedValues;
 
@@ -49,13 +54,13 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * Constructor for the most basic of all detector abstractions
      *
      * @param context        a valid android context
-     * @param encryptedKurt  the encrypted kurt id
+     * @param uniqueUserId  the unique user id
      * @param eventBus       an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    protected AbstractDetector(Context context, @NonNull String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
+    protected AbstractDetector(Context context, @NonNull String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
         if (context == null) throw new RuntimeException("Missing context on detector:" + this);
-        this.encryptedKurt = encryptedKurt;
+        this.uniqueUserId = uniqueUserId;
         this.context = context;
         this.eventBus = eventBus;
         isAuthenticating = authenticating;
@@ -129,6 +134,14 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
             // Removed isAvailable from listening, it should start to startListening if it detects that it
             // can startListening regardless of whether it is actually available there and then
             isListening = true;
+            if (isAuthenticating) {
+                authenticationHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        stopListening();
+                    }
+                }, authenticationListenInterval());
+            }
         } else {
             if (!isEnabled()) {
                 eventBus.post(new MetaDataChangeEvent(now() + " DETECTOR OFFLINE (" + detectorName() + ") DISABLED"));
@@ -148,8 +161,17 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
         if (sessionValues.size() > 0 && isValidSet()) {
             storeData();
         }
+        if (pollListener != null && isAuthenticating) {
+            pollListener.pollComplete(this);
+        }
         isListening = false;
     }
+
+    /**
+     * The max time a detector can spend on authentication
+     * @return the time in milliseconds
+     */
+    public abstract long authenticationListenInterval();
 
     protected long uploadFilesSize() {
         long filesSize = 0;
@@ -214,7 +236,8 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     public JsonObject toJson() {
         JsonObject object = new JsonObject();
         object.addProperty("type", detectorType());
-        object.addProperty("encryptedKurt", encryptedKurt);
+        object.addProperty("name", detectorName());
+        object.addProperty("uniqueUserId", uniqueUserId);
         object.addProperty("isAuthenticating", isAuthenticating);
         object.addProperty("isAvailable", isAvailable());
         object.addProperty("isEnabled", isEnabled());
@@ -366,7 +389,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     }
 
     protected String bucketKey() {
-        return "possumlibdata/" + AwesomePossum.versionName() + "/" + detectorName() + "/" + encryptedKurt + "/" + timestamp() + ".zip";
+        return "possumlibdata/" + AwesomePossum.versionName() + "/" + detectorName() + "/" + uniqueUserId + "/" + timestamp() + ".zip";
     }
 
     protected boolean stageForUpload(File file) {
@@ -415,5 +438,13 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      */
     public void eventReceived(PossumEvent object) {
 
+    }
+
+    public void setPollListener(IPollComplete listener) {
+        this.pollListener = listener;
+    }
+
+    public void clearData() {
+        sessionValues.clear();
     }
 }

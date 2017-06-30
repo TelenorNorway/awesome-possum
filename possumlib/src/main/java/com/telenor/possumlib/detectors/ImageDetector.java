@@ -3,6 +3,7 @@ package com.telenor.possumlib.detectors;
 import android.Manifest;
 import android.content.Context;
 import android.hardware.Camera;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,19 +15,22 @@ import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.asynctasks.AsyncFaceTask;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.interfaces.ITensorLoadComplete;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.tensorflow.TensorFlowInferenceInterface;
 
-import org.joda.time.DateTime;
+import java.io.IOException;
 
 /***
  * Uses camera to determine familiar places, face and face identity.
  */
-public class ImageDetector extends AbstractDetector {
+public class ImageDetector extends AbstractDetector implements ITensorLoadComplete {
     private static final String tag = ImageDetector.class.getName();
     private boolean modelLoaded = false;
+    private boolean requestedListening = false;
     private int totalFaces;
     private AsyncFaceTask asyncFaceTask;
+    private TensorLoad tensorLoad;
     private Handler handler = new Handler(Looper.getMainLooper());
     private static final String fileName = "tensorflow_facerecognition.pb";
     private static final String fullPath = "file:///android_asset/"+fileName;
@@ -35,47 +39,20 @@ public class ImageDetector extends AbstractDetector {
     /**
      * Constructor for Image detector
      * @param context a valid android context
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public ImageDetector(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, encryptedKurt, eventBus, authenticating);
+    public ImageDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, uniqueUserId, eventBus, authenticating);
         totalFaces = 0;
         // Load tensorFlow interface
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            this.tensorFlowInterface = getTensorFlowInterface();
             try {
                 if (!modelLoaded) {
                     // Confirm file is found in assets before attempting to use it
-
-                    String[] paths = context.getAssets().list("");
-                    if (paths.length == 0) {
-                        Log.w(tag, "No tensorFlow file found - no assets, ignoring image detector");
-                        return;
-                    } else {
-                        boolean tensorFlowIsFound = false;
-                        for (String file : paths) {
-                            if (file.equals(fileName)) tensorFlowIsFound = true;
-                        }
-                        if (!tensorFlowIsFound) {
-                            Log.w(tag, "No tensorFlow file is found in assets, ignoring image detector");
-                            return;
-                        }
-                    }
-                    Log.d(tag, "Starting initialize of TensorFlow");
-                    if (tensorFlowInterface.initialize(context)) {
-                        final int status = tensorFlowInterface.initializeTensorFlow(context.getAssets(),
-                                fullPath);
-                        if (status != 0) {
-                            Log.e(tag, "TF init status: " + status);
-                            return;
-                        }
-                        modelLoaded = true;
-                        Log.d(tag, "Model loaded");
-                    } else {
-                        Log.w(tag, "Failed to initialize TensorFlow");
-                    }
+                    tensorLoad = new TensorLoad(context, this);
+                    tensorLoad.execute();
                 }
             } catch (Exception e) {
                 Log.e(tag, "Failed to initialize TensorFlow:", e);
@@ -93,7 +70,17 @@ public class ImageDetector extends AbstractDetector {
             asyncFaceTask.cancel(true);
             asyncFaceTask = null;
         }
+        if (tensorLoad != null) {
+            tensorLoad.cancel(true);
+            tensorLoad = null;
+        }
+        requestedListening = false;
         super.stopListening();
+    }
+
+    @Override
+    public long authenticationListenInterval() {
+        return 50000;
     }
 
     @Override
@@ -124,6 +111,7 @@ public class ImageDetector extends AbstractDetector {
     @Override
     public boolean startListening() {
         boolean listen = super.startListening();
+        requestedListening = true;
         if (listen) {
             if (asyncFaceTask != null) {
                 asyncFaceTask.cancel(true);
@@ -150,7 +138,7 @@ public class ImageDetector extends AbstractDetector {
             return new AsyncFaceTask(context(), this,
                     Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT));
         } catch (Exception e) {
-            eventBus().post(new MetaDataChangeEvent(DateTime.now().getMillis()+" Camera was busy when taking picture"));
+            eventBus().post(new MetaDataChangeEvent("Camera was busy when taking picture"));
             Log.e(tag, "Could not open camera, aborting");
         }
         return null;
@@ -176,6 +164,76 @@ public class ImageDetector extends AbstractDetector {
             array.add(""+weight);
         }
         sessionValues.add(array);
+    }
+
+    @Override
+    public void tensorFlowLoaded() {
+        modelLoaded = true;
+        if (requestedListening) {
+            startListening();
+        }
+    }
+
+    @Override
+    public void tensorFlowFailedLoad() {
+        modelLoaded = false;
+    }
+
+    private class TensorLoad extends AsyncTask<Void, Void, Boolean> {
+        private ITensorLoadComplete listener;
+        private Context context;
+        TensorLoad(Context context, ITensorLoadComplete listener) {
+            this.context = context;
+            this.listener = listener;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            String[] paths;
+            try {
+                paths = context.getAssets().list("");
+            } catch (IOException e) {
+                return false;
+            }
+            if (paths.length == 0) {
+                Log.w(tag, "No tensorFlow file found - no assets, ignoring image detector");
+                return false;
+            } else {
+                boolean tensorFlowIsFound = false;
+                for (String file : paths) {
+                    if (file.equals(fileName)) tensorFlowIsFound = true;
+                }
+                if (!tensorFlowIsFound) {
+                    Log.w(tag, "No tensorFlow file is found in assets, ignoring image detector");
+                    return false;
+                }
+            }
+            Log.d(tag, "Starting initialize of TensorFlow");
+            try {
+                tensorFlowInterface = getTensorFlowInterface();
+                if (tensorFlowInterface.initialize(context)) {
+                    final int status = tensorFlowInterface.initializeTensorFlow(context.getAssets(),
+                            fullPath);
+                    if (status != 0) {
+                        Log.e(tag, "TF init status: " + status);
+                        return false;
+                    }
+                    Log.d(tag, "Model loaded");
+                    return true;
+                } else {
+                    Log.w(tag, "Failed to initialize TensorFlow");
+                    return false;
+                }
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            if (result) listener.tensorFlowLoaded();
+            else listener.tensorFlowFailedLoad();
+        }
     }
 
     public void resetTotalFaces() {

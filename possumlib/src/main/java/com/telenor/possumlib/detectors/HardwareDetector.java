@@ -19,12 +19,12 @@ public class HardwareDetector extends AbstractDetector {
      * Constructor for the Hardware Detector
      *
      * @param context        a valid android context
-     * @param identification the encrypted kurt
+     * @param uniqueUserId the unique user id
      * @param eventBus       the event bus used for sending messages to and from
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public HardwareDetector(Context context, String identification, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, identification, eventBus, authenticating);
+    public HardwareDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, uniqueUserId, eventBus, authenticating);
         findHardwareSpecs();
     }
 
@@ -36,6 +36,11 @@ public class HardwareDetector extends AbstractDetector {
     @Override
     public String requiredPermission() {
         return null;
+    }
+
+    @Override
+    public long authenticationListenInterval() {
+        return 1000;
     }
 
     @Override

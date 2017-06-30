@@ -86,7 +86,6 @@ public class AmbientSoundDetectorTest {
         Assert.assertEquals("AmbientSound", ambientSoundDetector.detectorName());
         Assert.assertTrue(ambientSoundDetector.isEnabled());
         Assert.assertEquals(DetectorType.Audio, ambientSoundDetector.detectorType());
-        Assert.assertEquals(3000, ambientSoundDetector.listenInterval());
         Assert.assertEquals(48000, ambientSoundDetector.sampleRate());
         Assert.assertEquals(AudioFormat.ENCODING_PCM_16BIT, ambientSoundDetector.audioEncoding());
         Assert.assertEquals(64, ambientSoundDetector.windowSize());

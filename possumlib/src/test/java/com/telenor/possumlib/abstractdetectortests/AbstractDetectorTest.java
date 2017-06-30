@@ -82,6 +82,11 @@ public class AbstractDetectorTest {
             }
 
             @Override
+            public long authenticationListenInterval() {
+                return 0;
+            }
+
+            @Override
             public int detectorType() {
                 return DetectorType.Accelerometer;
             }
@@ -126,7 +131,7 @@ public class AbstractDetectorTest {
         AbstractDetector detector2 = getDetector(RuntimeEnvironment.application, eventBus, "Accelerometer");
         Assert.assertEquals(0, detector1.sessionValues().size());
         Assert.assertEquals(0, detector2.sessionValues().size());
-        detector1.sessionValues().add("test");
+//        detector1.sessionValues().add("test");
         Assert.assertEquals(1, detector1.sessionValues().size());
         Assert.assertEquals(0, detector2.sessionValues().size());
     }
@@ -166,8 +171,8 @@ public class AbstractDetectorTest {
     @Test
     public void testStopListeningStoresValidSet() throws Exception {
         abstractDetector.startListening();
-        abstractDetector.sessionValues().add("test");
-        abstractDetector.sessionValues().add("test2");
+//        abstractDetector.sessionValues().add("test");
+//        abstractDetector.sessionValues().add("test2");
         abstractDetector.stopListening();
         // TODO: Fake file does not work well with storeLines() method. Either mock it up better, or find another way
     }
@@ -214,7 +219,7 @@ public class AbstractDetectorTest {
         FileWriter writer = new FileWriter(fakedStoredData);
         for (int i = 0; i < 100; i++) {
             writer.append("test\r\n");
-            abstractDetector.sessionValues().add("test");
+//            abstractDetector.sessionValues().add("test");
         }
         writer.close();
         Assert.assertEquals(600, fakedStoredData.length());

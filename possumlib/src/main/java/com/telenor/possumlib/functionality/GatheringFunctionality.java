@@ -6,38 +6,45 @@ import android.support.annotation.VisibleForTesting;
 
 import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
+import com.telenor.possumlib.interfaces.IPollComplete;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.Get;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Handles the start and stop of collecting data from the detectors
  */
 public class GatheringFunctionality {
     private PossumBus eventBus;
-    private ConcurrentLinkedQueue<AbstractDetector> detectors = new ConcurrentLinkedQueue<>();
+    private boolean isGathering;
+    private List<AbstractDetector> detectors = new ArrayList<>();
 
     public GatheringFunctionality() {
         eventBus = new PossumBus();
     }
-    public void setDetectorsWithKurtId(@NonNull Context context, @NonNull String encryptedKurt, boolean authenticating) {
+
+    public void setDetectorsWithId(@NonNull Context context, @NonNull String uniqueUserId, boolean authenticating, IPollComplete listener) {
         stopGathering();
         detectors.clear();
         eventBus.clearAll();
-        addDetectors(context, encryptedKurt, authenticating);
+        addDetectors(context, uniqueUserId, authenticating);
+        for (AbstractDetector detector : detectors) {
+            detector.setPollListener(listener);
+        }
     }
 
     @VisibleForTesting
-    protected void addDetectors(@NonNull Context context, @NonNull String encryptedKurt, boolean authenticating) {
-        detectors.addAll(Get.Detectors(context, encryptedKurt, eventBus, authenticating));
+    protected void addDetectors(@NonNull Context context, @NonNull String uniqueUserId, boolean authenticating) {
+        detectors.addAll(Get.Detectors(context, uniqueUserId, eventBus, authenticating));
     }
 
     public void startGathering() {
         for (AbstractDetector detector : detectors) {
             detector.startListening();
         }
+        isGathering = true;
     }
 
     public void stopGathering() {
@@ -45,6 +52,7 @@ public class GatheringFunctionality {
             detector.terminate();
             detector.prepareUpload();
         }
+        isGathering = false;
     }
 
     public JsonArray detectorsAsJson() {
@@ -55,7 +63,17 @@ public class GatheringFunctionality {
         return detectorObjects;
     }
 
-    public Queue<AbstractDetector> detectors() {
+    public List<AbstractDetector> detectors() {
         return detectors;
+    }
+
+    public boolean isGathering() {
+        return isGathering;
+    }
+
+    public void clearData() {
+        for (AbstractDetector detector : detectors) {
+            detector.clearData();
+        }
     }
 }

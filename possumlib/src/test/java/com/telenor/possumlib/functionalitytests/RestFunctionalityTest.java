@@ -15,15 +15,17 @@ public class RestFunctionalityTest {
     private RestFunctionality restFunctionality;
     private IRestListener listener;
     private String url;
-    private String kurtId;
+    private String fakeApiKey;
+    private String uniqueUserId;
 
     @Before
     public void setUp() throws Exception {
         url = "http://fakeAssUrl.com";
-        kurtId = "myFakeKurt";
+        uniqueUserId = "myFakeUserId";
+        fakeApiKey = "fakeAsHell";
         listener = new IRestListener() {
             @Override
-            public void successfullyPushed() {
+            public void successfullyPushed(String message) {
 
             }
 
@@ -32,7 +34,7 @@ public class RestFunctionalityTest {
 
             }
         };
-        restFunctionality = new RestFunctionality(listener, url, kurtId);
+        restFunctionality = new RestFunctionality(listener, url, uniqueUserId, fakeApiKey);
     }
 
     @After

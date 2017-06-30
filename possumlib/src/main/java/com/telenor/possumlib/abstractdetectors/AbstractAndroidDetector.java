@@ -23,12 +23,12 @@ public abstract class AbstractAndroidDetector extends AbstractDetector {
      *
      * @param context    Any android context
      * @param sensorType The Sensor.Type you wish to use for this sensor
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    protected AbstractAndroidDetector(Context context, int sensorType, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, encryptedKurt, eventBus, authenticating);
+    protected AbstractAndroidDetector(Context context, int sensorType, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, uniqueUserId, eventBus, authenticating);
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager == null) {
             isEnabled = false;
@@ -37,8 +37,6 @@ public abstract class AbstractAndroidDetector extends AbstractDetector {
         sensor = sensorManager.getDefaultSensor(sensorType);
         isEnabled = sensor != null;
     }
-
-    public abstract long guaranteedListenInterval();
 
     /**
      * The request code for the pending intent. Need to be unique for each detector

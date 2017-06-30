@@ -18,18 +18,18 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.telenor.possumlib.asynctasks.ResetDataAsync;
 import com.telenor.possumlib.constants.Constants;
+import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
 import com.telenor.possumlib.interfaces.IPossumMessage;
 import com.telenor.possumlib.interfaces.IPossumTrust;
-import com.telenor.possumlib.services.AuthenticationService;
-import com.telenor.possumlib.services.DataCollectionService;
+import com.telenor.possumlib.services.CollectionService;
 import com.telenor.possumlib.services.DataUploadService;
-import com.telenor.possumlib.services.SendKurtService;
+import com.telenor.possumlib.services.SendUserIdService;
 import com.telenor.possumlib.services.VerificationService;
 import com.telenor.possumlib.utils.Has;
 
@@ -68,6 +68,7 @@ public final class AwesomePossum {
     private static Queue<IPossumMessage> messageListeners = new ConcurrentLinkedQueue<>();
     private static SharedPreferences preferences;
     private static boolean isListening;
+    private static JsonObject latestTrustScore;
     private static DateTime lastAuthenticated;
 
     /**
@@ -98,7 +99,7 @@ public final class AwesomePossum {
         };
         context.registerReceiver(trustReceiver, new IntentFilter(Messaging.POSSUM_TRUST));
         context.registerReceiver(serviceMessageReceiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
-
+        Log.i(tag, "TrustReceiver registered");
         // In case of first time start, set installation time
         long startTime = preferences.getLong(Constants.START_TIME, 0);
         if (startTime == 0) {
@@ -108,17 +109,42 @@ public final class AwesomePossum {
     }
 
     private static void handleTrustIntent(Intent intent) {
-        String detectorsString = intent.getStringExtra("detectors");
-        if (detectorsString == null) return;
-        JsonArray detectors = (JsonArray) parser.parse(detectorsString);
-        int combinedTrustScore = intent.getIntExtra("totalTrustScore", 0);
-        for (JsonElement detectorEl : detectors) {
-            JsonObject detectorTrust = detectorEl.getAsJsonObject();
-            int detectorType = detectorTrust.get("detectorType").getAsInt();
-            int newTrustScore = intent.getIntExtra("trustScore", 0);
-            for (IPossumTrust listener : trustListeners) {
-                listener.changeInTrust(detectorType, newTrustScore, combinedTrustScore);
-            }
+        String messsage = intent.getStringExtra("message");
+        JsonObject object = (JsonObject)parser.parse(messsage);
+        latestTrustScore = new JsonObject();
+        latestTrustScore.add("trustScore", object.get("trustscore").getAsJsonObject());
+        JsonObject sensors = object.get("sensors").getAsJsonObject();
+        latestTrustScore.add("accelerometer", sensors.get("accelerometer").getAsJsonObject());
+        latestTrustScore.add("gyroscope", sensors.get("gyroscope").getAsJsonObject());
+        latestTrustScore.add("sound", sensors.get("sound").getAsJsonObject());
+        latestTrustScore.add("network", sensors.get("network").getAsJsonObject());
+        latestTrustScore.add("bluetooth", sensors.get("bluetooth").getAsJsonObject());
+        latestTrustScore.add("position", sensors.get("position").getAsJsonObject());
+        latestTrustScore.add("image", sensors.get("image").getAsJsonObject());
+        notifyTrustChange(DetectorType.Accelerometer, latestTrustScore("accelerometer"), latestStatus("accelerometer"));
+        notifyTrustChange(DetectorType.Gyroscope, latestTrustScore("gyroscope"), latestStatus("gyroscope"));
+        notifyTrustChange(DetectorType.Audio, latestTrustScore("sound"), latestStatus("sound"));
+        notifyTrustChange(DetectorType.Wifi, latestTrustScore("network"), latestStatus("network"));
+        notifyTrustChange(DetectorType.Bluetooth, latestTrustScore("bluetooth"), latestStatus("bluetooth"));
+        notifyTrustChange(DetectorType.Position, latestTrustScore("position"), latestStatus("position"));
+        notifyTrustChange(DetectorType.Image, latestTrustScore("image"), latestStatus("image"));
+
+        for (IPossumTrust listener: trustListeners) {
+            listener.changeInCombinedTrust(latestTrustScore("trustScore"), latestStatus("trustScore"));
+        }
+        lastAuthenticated = DateTime.now();
+    }
+
+    public static String latestStatus(@NonNull String detector) {
+        return latestTrustScore.get(detector).getAsJsonObject().get("status").getAsString();
+    }
+    public static float latestTrustScore(@NonNull String detector) {
+        return latestTrustScore.get(detector).getAsJsonObject().get("score").getAsFloat();
+    }
+
+    private static void notifyTrustChange(int type, float newValue, String status) {
+        for (IPossumTrust listener : trustListeners) {
+            listener.changeInDetectorTrust(type, newValue, status);
         }
     }
 
@@ -137,45 +163,45 @@ public final class AwesomePossum {
     }
 
     /**
-     * Sets the last authentication attempt time
-     *
-     * @param authenticationDate a datetime for the last attempted authentication
-     */
-    private static void setAuthenticationDate(@NonNull DateTime authenticationDate) {
-        AwesomePossum.lastAuthenticated = authenticationDate;
-    }
-
-
-    /**
      * Starts an attempt to authenticate
      *
-     * @param context         a valid android context
-     * @param encryptedKurtId the users encrypted kurtId
+     * @param context  a valid android context
+     * @param uniqueId the users unique Id
+     * @param url     the absolute url it will communicate with
+     * @param apiKey     the key used to send to the rest api
      * @return true if it starts an attempt, false if too little time has passed
      */
-    public static boolean authenticate(@NonNull Context context, @NonNull String encryptedKurtId) {
-        return authenticate(context, encryptedKurtId, false);
+    public static boolean authenticate(@NonNull Context context, @NonNull String uniqueId, @NonNull String url, @NonNull String apiKey) {
+        return authenticate(context, uniqueId, url, apiKey, false);
     }
 
     /**
      * Starts an attempt to authenticate with the possibility to enforce it
      *
-     * @param context         a valid android context
-     * @param encryptedKurtId the users encrypted kurtId
-     * @param forceAttempt    should it attempt to authenticate no matter what, let this be true
-     * @return true if it starts an attempt, false if too little time has passed or it is already running
+     * @param context      a valid android context
+     * @param uniqueUserId     the users unique identifier
+     * @param url     the absolute url it will communicate with
+     * @param apiKey     the key used to send to the rest api
+     * @param forceAttempt should it attempt to authenticate no matter what, let this be true
+     * @return true if it starts an attempt, false if too little time has passed
+     * or it is already running
      */
-    public static boolean authenticate(@NonNull Context context, @NonNull String encryptedKurtId, boolean forceAttempt) {
+    public static boolean authenticate(@NonNull Context context, @NonNull String uniqueUserId, @NonNull String url, @NonNull String apiKey, boolean forceAttempt) {
+        init(context);
         // TODO: Should this be a separate method or should it be part of the "listen" method?
         if (forceAttempt || (lastAuthenticated == null || lastAuthenticated.plusMinutes(2).isBeforeNow())) {
-            // TODO: Remember to set authenticationDate when attempt is made or it will never check for time of last attempt
-//            setAuthenticationDate(DateTime.now());
-            Intent intent = new Intent(context, AuthenticationService.class);
-            intent.putExtra("url", "https://fmvc57fofc.execute-api.eu-central-1.amazonaws.com/beta/trustscore/calculate");
-            intent.putExtra("encryptedKurt", encryptedKurtId);
+            Intent intent = new Intent(context, CollectionService.class);
+            intent.putExtra("url", url);
+            intent.putExtra("uniqueUserId", uniqueUserId);
+            intent.putExtra("authenticating", true);
+            intent.putExtra("apiKey", apiKey);
             context.startService(intent);
             return true;
         } else return false;
+    }
+
+    public static void resetMyData(@NonNull String uniqueUserId, @NonNull String url, @NonNull String apiKey, @NonNull JsonArray detectors) {
+        new ResetDataAsync(uniqueUserId, apiKey, detectors).execute(url);
     }
 
     private static void handleServiceIntent(@NonNull Context context, @NonNull Intent intent) {
@@ -186,17 +212,17 @@ public final class AwesomePossum {
         switch (messageType) {
             case Messaging.VERIFICATION_SUCCESS:
                 // Successfully uploaded authentication
-                String tempKurt = preferences.getString(Constants.ENCRYPTED_TEMP_KURT, null);
+                String tempKurt = preferences.getString(Constants.TEMP_UNIQUE_USER_ID, null);
                 editor = preferences.edit();
-                editor.putString(Constants.ENCRYPTED_KURT, tempKurt);
-                editor.putString(Constants.ENCRYPTED_TEMP_KURT, null);
+                editor.putString(Constants.UNIQUE_USER_ID, tempKurt);
+                editor.putString(Constants.TEMP_UNIQUE_USER_ID, null);
                 editor.apply();
                 break;
             case Messaging.POSSUM_TERMINATE:
                 Log.d(tag, "Found that the AwesomePossum should be terminated. Initialize shutdown procedure");
                 editor = preferences.edit();
-                editor.putString(Constants.ENCRYPTED_KURT, null);
-                editor.putString(Constants.ENCRYPTED_TEMP_KURT, null);
+                editor.putString(Constants.UNIQUE_USER_ID, null);
+                editor.putString(Constants.TEMP_UNIQUE_USER_ID, null);
                 editor.apply();
                 break;
             default:
@@ -210,17 +236,17 @@ public final class AwesomePossum {
     /**
      * Starts to listen/gather data while app is running
      *
-     * @param encryptedKurt  the encrypted kurt id
+     * @param uniqueUserId  the unique user id
      * @param identityPoolId the identity pool id it will verify with
      * @throws GatheringNotAuthorizedException If the user hasn't accepted the app, this exception is thrown
      */
-    public static void startListening(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String identityPoolId) throws GatheringNotAuthorizedException {
+    public static void startListening(@NonNull Context context, @NonNull String uniqueUserId, @NonNull String identityPoolId) throws GatheringNotAuthorizedException {
         init(context);
         if (isAuthorized(context)) {
             requestVerification(context, identityPoolId);
-            Intent intent = new Intent(context, DataCollectionService.class);
+            Intent intent = new Intent(context, CollectionService.class);
             intent.putExtra("isLearning", false);
-            intent.putExtra("encryptedKurt", encryptedKurt);
+            intent.putExtra("uniqueUserId", uniqueUserId);
             context.startService(intent);
             isListening = true;
         } else throw new GatheringNotAuthorizedException();
@@ -286,7 +312,7 @@ public final class AwesomePossum {
      * @param context a valid android context
      */
     public static void stopListening(@NonNull Context context) {
-        context.stopService(new Intent(context, DataCollectionService.class));
+        context.stopService(new Intent(context, CollectionService.class));
         isListening = false;
         if (initComplete) {
             context = context.getApplicationContext(); // Important since context needs to be equal
@@ -294,7 +320,7 @@ public final class AwesomePossum {
             context.unregisterReceiver(trustReceiver);
         }
         initComplete = false;
-        trustListeners.clear();
+//        trustListeners.clear(); // TODO: This should be done manually, not implicitly
     }
 
     /**
@@ -324,14 +350,14 @@ public final class AwesomePossum {
 
     /**
      * @param context        a valid android context
-     * @param encryptedKurt  the encrypted key identifying the user
+     * @param uniqueUserId  the unique user id
      * @param identityPoolId the identity pool id it will use
      * @return true if upload was started, false if no network to upload on or not initialized
      */
-    public static boolean startUpload(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String identityPoolId) {
+    public static boolean startUpload(@NonNull Context context, @NonNull String uniqueUserId, @NonNull String identityPoolId) {
         if (preferences == null) return false;
         Intent intent = new Intent(context, DataUploadService.class);
-        intent.putExtra("encryptedKurt", encryptedKurt);
+        intent.putExtra("uniqueUserId", uniqueUserId);
         intent.putExtra("identityPoolId", identityPoolId);
         boolean startedUpload;
         if (Has.network(context)) {
@@ -404,18 +430,18 @@ public final class AwesomePossum {
      * Fire this method to tell the system that the user has approved of using the AwesomePossum
      * library. Until it is done, no data will be collected
      *
-     * @param encryptedKurt  the unique id reflecting the user who is authorized
+     * @param uniqueUserId  the unique id reflecting the user who is authorized
      * @param identityPoolId the identity pool id you are using
      * @return true if authorized, false if not initialized yet
      */
-    public static boolean authorizeGathering(@NonNull Context context, @NonNull String encryptedKurt, @NonNull String identityPoolId) {
+    public static boolean authorizeGathering(@NonNull Context context, @NonNull String uniqueUserId, @NonNull String identityPoolId) {
         init(context);
-        String previouslyStoredKurt = preferences.getString(Constants.ENCRYPTED_KURT, null);
-        if (previouslyStoredKurt == null || !encryptedKurt.equals(previouslyStoredKurt)) {
-            preferences.edit().putString(Constants.ENCRYPTED_TEMP_KURT, encryptedKurt).apply();
+        String previouslyStoredKurt = preferences.getString(Constants.UNIQUE_USER_ID, null);
+        if (previouslyStoredKurt == null || !uniqueUserId.equals(previouslyStoredKurt)) {
+            preferences.edit().putString(Constants.TEMP_UNIQUE_USER_ID, uniqueUserId).apply();
             if (Has.network(context)) {
-                Intent intent = new Intent(context, SendKurtService.class);
-                intent.putExtra("encryptedKurt", encryptedKurt);
+                Intent intent = new Intent(context, SendUserIdService.class);
+                intent.putExtra("uniqueUserId", uniqueUserId);
                 intent.putExtra("identityPoolId", identityPoolId);
                 context.startService(intent);
             }
@@ -430,7 +456,7 @@ public final class AwesomePossum {
      */
     public static boolean isAuthorized(@NonNull Context context) {
         init(context);
-        return (preferences.getString(Constants.ENCRYPTED_KURT, null) != null || preferences.getString(Constants.ENCRYPTED_TEMP_KURT, null) != null);
+        return (preferences.getString(Constants.UNIQUE_USER_ID, null) != null || preferences.getString(Constants.TEMP_UNIQUE_USER_ID, null) != null);
     }
 
     /**
@@ -439,8 +465,8 @@ public final class AwesomePossum {
      * AwesomePossum.requestNeededPermissions(Activity) to
      *
      * @param activity      an android activity
-     * @param encryptedKurt the user id the dialog will authorize
-     * @param bucket        the bucket the encrypted kurt will be uploaded to
+     * @param uniqueUserId the user id the dialog will authorize
+     * @param bucket        the bucket the unique user id will be uploaded to
      * @param title         the title of the dialog
      * @param message       the message of the dialog
      * @param ok            the ok button text of the dialog
@@ -448,7 +474,7 @@ public final class AwesomePossum {
      * @return a dialog that can be show()'ed
      */
     public static Dialog getAuthorizeDialog(@NonNull final Activity activity,
-                                            @NonNull final String encryptedKurt,
+                                            @NonNull final String uniqueUserId,
                                             @NonNull final String bucket,
                                             String title,
                                             String message,
@@ -461,7 +487,7 @@ public final class AwesomePossum {
         builder.setPositiveButton(ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                authorizeGathering(activity, encryptedKurt, bucket);
+                authorizeGathering(activity, uniqueUserId, bucket);
                 requestNeededPermissions(activity);
                 dialog.dismiss();
             }
@@ -494,5 +520,28 @@ public final class AwesomePossum {
      */
     public static boolean hasMissingPermissions(@NonNull Context context) {
         return missingPermissions(context).size() > 0;
+    }
+
+    /**
+     * Yields a jsonObject containing all the latest trustScores received along with a timestamp
+     *
+     * @return
+     */
+    public static JsonObject latestTrustScore() {
+        if (latestTrustScore == null) {
+            latestTrustScore = new JsonObject();
+            JsonObject emptyObject = new JsonObject();
+            emptyObject.addProperty("status", "OK");
+            emptyObject.addProperty("score", 0);
+            latestTrustScore.add("trustScore", emptyObject);
+            latestTrustScore.add("accelerometer", emptyObject);
+            latestTrustScore.add("gyroscope", emptyObject);
+            latestTrustScore.add("sound", emptyObject);
+            latestTrustScore.add("network", emptyObject);
+            latestTrustScore.add("bluetooth", emptyObject);
+            latestTrustScore.add("position", emptyObject);
+            latestTrustScore.add("image", emptyObject);
+        }
+        return latestTrustScore;
     }
 }

@@ -19,14 +19,14 @@ import java.util.List;
  * is done in an asyncTask from the service since a service runs on main thread per se.
  */
 public class DataUploadService extends AbstractAmazonUploadService {
-    private String encryptedKurt;
+    private String uniqueUserId;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        encryptedKurt = intent.getStringExtra("encryptedKurt");
-        if (encryptedKurt == null) {
-            Send.messageIntent(this, Messaging.UPLOAD_FAILED, "Missing kurtId");
-            Log.e(tag, "Missing kurtId on upload start");
+        uniqueUserId = intent.getStringExtra("uniqueUserId");
+        if (uniqueUserId == null) {
+            Send.messageIntent(this, Messaging.UPLOAD_FAILED, "Missing unique user id");
+            Log.e(tag, "Missing unique user id on upload start");
             stopSelf();
         }
         return super.onStartCommand(intent, flags, startId);
@@ -40,7 +40,7 @@ public class DataUploadService extends AbstractAmazonUploadService {
     @Override
     public List<File> filesDesiredForUpload() {
         PossumBus possumBus = new PossumBus();
-        for (AbstractDetector detector : Get.Detectors(this, encryptedKurt, possumBus, false)) {
+        for (AbstractDetector detector : Get.Detectors(this, uniqueUserId, possumBus, false)) {
             detector.prepareUpload();
             detector.terminate();
         }

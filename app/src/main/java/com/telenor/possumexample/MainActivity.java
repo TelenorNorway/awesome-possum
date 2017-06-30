@@ -2,134 +2,110 @@ package com.telenor.possumexample;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
-import android.text.Editable;
-import android.text.TextWatcher;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
+import android.view.Menu;
+import android.view.MenuItem;
 
+import com.google.gson.JsonArray;
+import com.telenor.possumexample.dialogs.DefineIdDialog;
+import com.telenor.possumexample.fragments.MainFragment;
 import com.telenor.possumlib.AwesomePossum;
+import com.telenor.possumlib.asynctasks.ResetDataAsync;
 import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
-import com.telenor.possumlib.interfaces.IPossumTrust;
 
-/**
- * Placeholder activity that uses the library
- */
-public class MainActivity extends AppCompatActivity implements IPossumTrust {
+public class MainActivity extends AppCompatActivity {
     private static final String tag = MainActivity.class.getName();
-    private EditText uniqueKurt;
-    //private BarChart barChart;
-//    private Button learnButton;
-    private Button authenticateButton;
-    private Button listenButton;
-    private Button uploadButton;
     private SharedPreferences preferences;
+
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         setContentView(R.layout.activity_main);
-        //barChart = (BarChart)findViewById(R.id.barChart);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         preferences = getSharedPreferences("dummyPrefs", MODE_PRIVATE);
-//        learnButton = (Button)findViewById(R.id.learnButton);
-        authenticateButton = (Button)findViewById(R.id.authenticateButton);
-        listenButton = (Button)findViewById(R.id.listenButton);
-        uploadButton = (Button)findViewById(R.id.uploadButton);
-        uniqueKurt = (EditText)findViewById(R.id.uniqueKurt);
-        uniqueKurt.setText(myKurt());
-        uniqueKurt.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                updatePreferences();
-            }
-        });
+        showFragment(MainFragment.class);
     }
 
-    private String myKurt() {
-        return preferences.getString("storedKurt", "myKurtId");
+    private void showFragment(Class<? extends Fragment> fragmentClass) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        try {
+            transaction.replace(R.id.mainFragment, fragmentClass.newInstance());
+        } catch (Exception e) {
+            Log.e(tag, "Failed to instantiate Fragment:", e);
+        }
+        transaction.commitAllowingStateLoss();
     }
 
-    private void updatePreferences() {
-        String suggestedKurt = uniqueKurt.getText().toString();
-        preferences.edit().putString("storedKurt", suggestedKurt).apply();
-        boolean isEnabled = myKurt().length() > 0;
-        listenButton.setEnabled(isEnabled);
-        uploadButton.setEnabled(isEnabled);
-        authenticateButton.setEnabled(isEnabled);
+    public SharedPreferences preferences() {
+        return preferences;
     }
 
-    public void toggleListen(View view) {
-        if (AwesomePossum.isListening()) {
-            AwesomePossum.stopListening(this);
-            ((Button)view).setText(R.string.listenOn);
-        } else {
-            try {
-                if (AwesomePossum.isAuthorized(this) && AwesomePossum.hasMissingPermissions(this)) {
-                    Log.i(tag, "Has missing permissions and/or is not authorized");
-                    AwesomePossum.requestNeededPermissions(this);
-                } else {
-                    Log.i(tag, "Starting to listen");
-                    AwesomePossum.startListening(this, myKurt(), getString(R.string.identityPoolId));
-                    ((Button)view).setText(R.string.listenOff);
+    public String myId() {
+        return preferences.getString("storedId", "");
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    public void defineIdDialog(MenuItem item) {
+        DefineIdDialog dialog = new DefineIdDialog();
+        dialog.show(getSupportFragmentManager(), DefineIdDialog.class.getName());
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem menuItem) {
+        switch (menuItem.getItemId()) {
+            case R.id.define_id:
+                defineIdDialog(menuItem);
+                break;
+            case R.id.listening:
+                if (validId(myId())) {
+                    try {
+                        AwesomePossum.startListening(this, myId(), getString(R.string.identityPoolId));
+                        invalidateOptionsMenu();
+                    } catch (GatheringNotAuthorizedException e) {
+                        AwesomePossum.authorizeGathering(this, myId(), getString(R.string.identityPoolId));
+                    }
                 }
-            } catch (GatheringNotAuthorizedException e) {
-                AwesomePossum.getAuthorizeDialog(this, myKurt(), getString(R.string.identityPoolId), "Join the Awesome Possum Project", "By clicking ok you accept that you are 18 years of age and that you allow Telenor to gather anonymous data about your phone", "Ok", "Cancel").show();
-            }
+                break;
+            case R.id.upload:
+                if (validId(myId())) {
+                    AwesomePossum.startUpload(this, myId(), getString(R.string.identityPoolId));
+                }
+                break;
+            case R.id.resetData:
+                if (validId(myId())) {
+                    JsonArray detectors = new JsonArray();
+                    detectors.add("all");
+                    ResetDataAsync async = new ResetDataAsync(myId(), getString(R.string.apiKey), detectors);
+                    async.execute(getString(R.string.resetUrl));
+//                    ResetDataDialog dialog = new ResetDataDialog(this, myId(), getString(R.string.resetUrl), getString(R.string.apiKey));
+//                    dialog.show();
+                }
+                break;
         }
-        Log.i(tag, "Clicked toggleListening - listening status now:"+AwesomePossum.isListening());
+        return true;
     }
 
-    public void toggleLearning(View view) {
-        AwesomePossum.setLearning(this, !AwesomePossum.isLearning());
-        if (AwesomePossum.isLearning()) {
-            ((Button)view).setText(R.string.learningOff);
-        } else {
-            ((Button)view).setText(R.string.learningOn);
-        }
-    }
-
-    public void toggleAuth(View view) {
-        if (!AwesomePossum.isAuthenticating()) {
-            AwesomePossum.addTrustListener(this);
-            AwesomePossum.authenticate(this, myKurt(), true);
-            authenticateButton.setText(R.string.authOff);
-            authenticateButton.setEnabled(false);
-        }
-    }
-
-    public void upload(View view) {
-        AwesomePossum.startUpload(this, myKurt(), getString(R.string.identityPoolId));
+    public boolean validId(String uniqueId) {
+        return uniqueId != null && uniqueId.length() > 2;
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-    }
-
-    @Override
-    public void changeInTrust(int detectorType, float newTrustScore, float combinedTrustScore) {
-        Log.i(tag, "Trust change:"+detectorType+", "+newTrustScore+", "+combinedTrustScore);
-        authenticateButton.setText(R.string.authOn);
-        authenticateButton.setEnabled(myKurt().length() > 0);
-        AwesomePossum.removeTrustListener(this);
-    }
-
-    @Override
-    public void failedToAscertainTrust(Exception exception) {
-        Log.e(tag, "Failed to ascertain trust:",exception);
-        authenticateButton.setText(R.string.authOn);
-        authenticateButton.setEnabled(myKurt().length() > 0);
-        AwesomePossum.removeTrustListener(this);
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem listeningItem = menu.findItem(R.id.listening);
+        if (listeningItem != null) {
+            listeningItem.setTitle(AwesomePossum.isListening() ? getString(R.string.listenOff) : getString(R.string.listenOn));
+        }
+        return super.onPrepareOptionsMenu(menu);
     }
 }

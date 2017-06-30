@@ -58,13 +58,13 @@ public class GatheringFunctionalityTest {
                 methodCalled = true;
             }
             @Override
-            public void addDetectors(@NonNull Context context, @NonNull String encryptedKurt, boolean isAuthenticating) {
+            public void addDetectors(@NonNull Context context, @NonNull String uniqueUserId, boolean isAuthenticating) {
                 detectorsAdded = true;
             }
         };
         Assert.assertFalse(methodCalled);
         Assert.assertFalse(detectorsAdded);
-        gatheringFunctionality.setDetectorsWithKurtId(RuntimeEnvironment.application, "kurtId", false);
+        gatheringFunctionality.setDetectorsWithId(RuntimeEnvironment.application, "uniqueUserId", false, null);
         Assert.assertTrue(methodCalled);
         Assert.assertTrue(detectorsAdded);
     }

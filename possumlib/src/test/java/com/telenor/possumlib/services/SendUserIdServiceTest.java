@@ -11,12 +11,12 @@ import org.robolectric.Robolectric;
 import org.robolectric.util.ServiceController;
 
 @RunWith(PossumTestRunner.class)
-public class SendKurtServiceTest {
-    private ServiceController<SendKurtService> serviceController;
+public class SendUserIdServiceTest {
+    private ServiceController<SendUserIdService> serviceController;
 
     @Before
     public void setUp() throws Exception {
-        serviceController = Robolectric.buildService(SendKurtService.class).attach();
+        serviceController = Robolectric.buildService(SendUserIdService.class).attach();
     }
 
     @After

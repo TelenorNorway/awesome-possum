@@ -28,12 +28,12 @@ public abstract class AbstractZippingAndroidDetector extends AbstractAndroidRegu
      *
      * @param context    Any android context
      * @param sensorType The Sensor.Type you wish to use for this sensor
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    protected AbstractZippingAndroidDetector(Context context, int sensorType, String encryptedKurt, PossumBus eventBus, boolean authenticating) {
-        super(context, sensorType, encryptedKurt, eventBus, authenticating);
+    protected AbstractZippingAndroidDetector(Context context, int sensorType, String uniqueUserId, PossumBus eventBus, boolean authenticating) {
+        super(context, sensorType, uniqueUserId, eventBus, authenticating);
     }
 
     @Override

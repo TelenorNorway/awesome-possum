@@ -18,12 +18,12 @@ public class TypingRecognitionDetector extends AbstractEventDrivenDetector {
      * Constructor for the TypingRecognitionDetector
      *
      * @param context a valid android context
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public TypingRecognitionDetector(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, encryptedKurt, eventBus, authenticating);
+    public TypingRecognitionDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, uniqueUserId, eventBus, authenticating);
     }
 
     @Override
@@ -54,6 +54,11 @@ public class TypingRecognitionDetector extends AbstractEventDrivenDetector {
     @Override
     public String requiredPermission() {
         return null;
+    }
+
+    @Override
+    public long authenticationListenInterval() {
+        return 12000;
     }
 
     @Override

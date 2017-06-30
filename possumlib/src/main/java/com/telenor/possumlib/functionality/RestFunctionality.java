@@ -16,39 +16,41 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Queue;
+import java.util.List;
 
 /**
  * Handles communication with server, posting to it
  */
-public class RestFunctionality extends AsyncTask<Queue, Void, Exception> {
+public class RestFunctionality extends AsyncTask<List, Void, Exception> {
     private static final String tag = RestFunctionality.class.getName();
     private URL url;
-    private String encryptedKurt;
+    private String uniqueUserId;
     private String successMessage;
+    private String apiKey;
     private IRestListener listener;
 
-    public RestFunctionality(IRestListener listener, @NonNull String url, @NonNull String encryptedKurt) throws MalformedURLException {
+    public RestFunctionality(IRestListener listener, @NonNull String url, @NonNull String uniqueUserId, @NonNull String apiKey) throws MalformedURLException {
         this.listener = listener;
         this.url = new URL(url);
-        this.encryptedKurt = encryptedKurt;
+        this.uniqueUserId = uniqueUserId;
+        this.apiKey = apiKey;
     }
 
     @Override
-    protected Exception doInBackground(Queue... params) {
+    protected Exception doInBackground(List... params) {
         OutputStream os = null;
         InputStream is = null;
         Exception exception = null;
         JsonObject object = new JsonObject();
-        object.addProperty("connectId", encryptedKurt);
-        Queue<AbstractDetector> detectors = (Queue<AbstractDetector>) params[0];
+        object.addProperty("connectId", uniqueUserId);
+        List<AbstractDetector> detectors = (List<AbstractDetector>) params[0];
         for (AbstractDetector detector : detectors) {
             object.add(detector.detectorName(), detector.jsonData());
         }
         try {
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setRequestProperty("x-api-key", apiKey);
             urlConnection.setRequestMethod("POST");
-            longLog("Data sending:"+object.toString());
             byte[] data = object.toString().getBytes();
             urlConnection.setFixedLengthStreamingMode(data.length);
             urlConnection.connect();

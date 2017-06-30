@@ -33,6 +33,11 @@ public class AbstractEternalEventDetectorTest {
             }
 
             @Override
+            public long authenticationListenInterval() {
+                return 0;
+            }
+
+            @Override
             public int detectorType() {
                 return DetectorType.MetaData;
             }

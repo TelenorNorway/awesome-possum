@@ -92,6 +92,11 @@ public class AbstractDetectorReceiverTest {
             }
 
             @Override
+            public long authenticationListenInterval() {
+                return 0;
+            }
+
+            @Override
             public boolean isEnabled() {
                 return isEnabled;
             }
@@ -173,7 +178,7 @@ public class AbstractDetectorReceiverTest {
         }
         Assert.assertTrue(abstractDetectorReceiver.isListening());
         Assert.assertEquals(0, abstractDetectorReceiver.sessionValues().size());
-        abstractDetectorReceiver.sessionValues().add("test");
+//        abstractDetectorReceiver.sessionValues().add("test");
         Assert.assertEquals(1, abstractDetectorReceiver.sessionValues().size());
         abstractDetectorReceiver.stopListening();
         verify(mockedContext).unregisterReceiver(any(BroadcastReceiver.class));
@@ -208,7 +213,7 @@ public class AbstractDetectorReceiverTest {
         }
         Assert.assertTrue(abstractDetectorReceiver.isListening());
         Assert.assertEquals(0, abstractDetectorReceiver.sessionValues().size());
-        abstractDetectorReceiver.sessionValues().add("test");
+//        abstractDetectorReceiver.sessionValues().add("test");
         Assert.assertEquals(1, abstractDetectorReceiver.sessionValues().size());
         abstractDetectorReceiver.terminate();
         verify(mockedContext).unregisterReceiver(any(BroadcastReceiver.class));
@@ -228,7 +233,7 @@ public class AbstractDetectorReceiverTest {
             writer = new FileWriter(fakeFile);
             for (int i = 0; i < 100; i++) {
                 writer.append("test\r\n");
-                abstractDetectorReceiver.sessionValues().add("test");
+//                abstractDetectorReceiver.sessionValues().add("test");
             }
         } finally {
             if (writer != null) {

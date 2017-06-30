@@ -9,5 +9,13 @@
     <string name="authOff">Authenticating…</string>
     <string name="listenOn">Listen On</string>
     <string name="listenOff">Listen Off</string>
-    <string name="myKurtId">My kurt id</string>
+    <string name="myId">My Unique id</string>
+    <string name="error_too_short_id">Too short id</string>
+    <string name="all_ok">Go for auth</string>
+    <string name="set_my_id">Set My Id</string>
+    <string name="ok">Ok</string>
+    <string name="reset_my_data">Reset My Data</string>
+    <string name="training">Training</string>
+    <string name="analysing">Analysing…</string>
+    <string name="sending_result">Sending result to server</string>
 </resources>

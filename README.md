@@ -12,13 +12,13 @@ To use this library, here is a short list of the commands you need:
 
 Gather data:
 
-     AwesomePossum.startListening(Context, kurtId);
+     AwesomePossum.startListening(Context, String uniqueUserId);
      
 Request authorization:
      
      AwesomePossum.getAuthorizeDialog(ActivityContext,
-                                      String encryptedKurt,
-                                      String amazonBucket,
+                                      String uniqueUserId,
+                                      String amazonIdentityPoolId,
                                       String Title, 
                                       String Message,
                                       String OkText,
@@ -27,8 +27,8 @@ Request authorization:
 Manually authorize user:
 
      AwesomePossum.authorizeGathering(Context,
-                                      String encryptedKurt,
-                                      String amazonBucket);
+                                      String uniqueUserId,
+                                      String amazonIdentityPoolId);
 
 Manually request needed permissions from user:
 
@@ -41,8 +41,8 @@ Stop listening for data:
 Start upload of data:
 
      AwesomePossum.startUpload(Context,
-                               String encryptedKurt,
-                               String AmazonBucketKey);
+                               String uniqueUserId,
+                               String amazonIdentityPoolId);
 
 Remember to authorize before starting to listen, or it will throw a NotAuthorizedException.
 This can be done either with the getAuthorizeDialog method that does all for you, or by manually

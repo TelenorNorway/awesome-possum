@@ -24,12 +24,12 @@ public abstract class AbstractDetectorReceiver extends AbstractDetector implemen
      * intents, either internal or external
      * @param context a valid android context
      * @param intentFilterList the intentFilter you want to limit the receiver to
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    protected AbstractDetectorReceiver(@NonNull Context context, @NonNull List<? extends String> intentFilterList, String encryptedKurt, PossumBus eventBus, boolean authenticating) {
-        super(context, encryptedKurt, eventBus, authenticating);
+    protected AbstractDetectorReceiver(@NonNull Context context, @NonNull List<? extends String> intentFilterList, String uniqueUserId, PossumBus eventBus, boolean authenticating) {
+        super(context, uniqueUserId, eventBus, authenticating);
         for (Object filter : intentFilterList) {
             intentFilter.addAction((String)filter);
         }

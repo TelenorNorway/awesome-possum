@@ -54,19 +54,19 @@ public class Get {
         return supported;
     }
 
-    public static List<AbstractDetector> Detectors(@NonNull Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean isAuthenticating) {
+    public static List<AbstractDetector> Detectors(@NonNull Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean isAuthenticating) {
         List<AbstractDetector> detectors = new ArrayList<>();
         if (!isAuthenticating) {
-            detectors.add(new MetaDataDetector(context, encryptedKurt, eventBus, false)); // Should always be first in line
-            detectors.add(new HardwareDetector(context, encryptedKurt, eventBus, false));
+            detectors.add(new MetaDataDetector(context, uniqueUserId, eventBus, false)); // Should always be first in line
+            detectors.add(new HardwareDetector(context, uniqueUserId, eventBus, false));
         }
-        detectors.add(new Accelerometer(context, encryptedKurt, eventBus, isAuthenticating));
-        detectors.add(new GyroScope(context, encryptedKurt, eventBus, isAuthenticating));
-        detectors.add(new LocationDetector(context, encryptedKurt, eventBus, isAuthenticating));
-        detectors.add(new BluetoothDetector(context, encryptedKurt, eventBus, isAuthenticating));
-        detectors.add(new NetworkDetector(context, encryptedKurt, eventBus, isAuthenticating));
-        detectors.add(new AmbientSoundDetector(context, encryptedKurt, eventBus, isAuthenticating));
-        detectors.add(new ImageDetector(context, encryptedKurt, eventBus, isAuthenticating));
+        detectors.add(new Accelerometer(context, uniqueUserId, eventBus, isAuthenticating));
+        detectors.add(new GyroScope(context, uniqueUserId, eventBus, isAuthenticating));
+        detectors.add(new LocationDetector(context, uniqueUserId, eventBus, isAuthenticating));
+        detectors.add(new BluetoothDetector(context, uniqueUserId, eventBus, isAuthenticating));
+        detectors.add(new NetworkDetector(context, uniqueUserId, eventBus, isAuthenticating));
+        detectors.add(new AmbientSoundDetector(context, uniqueUserId, eventBus, isAuthenticating));
+        detectors.add(new ImageDetector(context, uniqueUserId, eventBus, isAuthenticating));
         return detectors;
     }
 }

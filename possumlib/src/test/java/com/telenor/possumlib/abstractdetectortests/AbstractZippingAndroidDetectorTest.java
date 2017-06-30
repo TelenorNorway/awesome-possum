@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
 public class AbstractZippingAndroidDetectorTest {
     private AbstractZippingAndroidDetector androidSensor;
     private boolean wakeLockActivated;
-    private long guaranteedListenInterval = 1000;
+    private long authenticationListenInterval = 1000;
     private long sizeOfUpload;
     private File fakeFile;
     @Mock
@@ -75,11 +75,6 @@ public class AbstractZippingAndroidDetectorTest {
         when(mockedSensorManager.getDefaultSensor(anyInt())).thenReturn(mockedSensor);
         androidSensor = new AbstractZippingAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
             @Override
-            public long guaranteedListenInterval() {
-                return guaranteedListenInterval;
-            }
-
-            @Override
             protected int detectorRequestCode() {
                 return 13371337;
             }
@@ -110,6 +105,11 @@ public class AbstractZippingAndroidDetectorTest {
             }
 
             @Override
+            public long authenticationListenInterval() {
+                return authenticationListenInterval;
+            }
+
+            @Override
             public long uploadFilesSize() {
                 return sizeOfUpload;
             }
@@ -129,7 +129,6 @@ public class AbstractZippingAndroidDetectorTest {
     @Test
     public void testDefaults() throws Exception {
         Assert.assertEquals(DetectorType.Accelerometer, androidSensor.detectorType());
-        Assert.assertEquals(1000, androidSensor.guaranteedListenInterval());
         Assert.assertFalse(wakeLockActivated);
     }
 
@@ -177,9 +176,9 @@ public class AbstractZippingAndroidDetectorTest {
         Assert.assertEquals(100, androidSensor.fileSize());
         sizeOfUpload = 200;
         Assert.assertEquals(200, androidSensor.fileSize());
-        for (int i = 0; i < 10; i++) {
-            androidSensor.sessionValues().add("Test" + i);
-        }
+//        for (int i = 0; i < 10; i++) {
+//            androidSensor.sessionValues().add("Test" + i);
+//        }
         androidSensor.storeData();
         Assert.assertEquals(200, androidSensor.fileSize());
     }
@@ -188,9 +187,9 @@ public class AbstractZippingAndroidDetectorTest {
     public void testFileSizeAndStoreDataDoesChangeWhenListening() throws Exception {
         Assert.assertEquals(100, androidSensor.fileSize());
         Assert.assertTrue(androidSensor.startListening());
-        for (int i = 0; i < 10; i++) {
-            androidSensor.sessionValues().add("Test" + i);
-        }
+//        for (int i = 0; i < 10; i++) {
+//            androidSensor.sessionValues().add("Test" + i);
+//        }
         Assert.assertEquals(10, androidSensor.sessionValues().size());
         sizeOfUpload = 200;
         androidSensor.storeData();

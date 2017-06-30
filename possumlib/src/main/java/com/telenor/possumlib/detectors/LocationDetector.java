@@ -21,8 +21,6 @@ import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
 
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /***
  * Uses gps with network to retrieve a position regularly
@@ -35,18 +33,17 @@ public class LocationDetector extends AbstractDetector implements LocationListen
     private boolean isRegistered;
     private float maxSpeed;
     private List<String> providers;
-    private Timer timer;
 
     /**
      * Constructor for the location detector
      *
      * @param context a valid android context
-     * @param encryptedKurt the encrypted kurt id
+     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public LocationDetector(Context context, String encryptedKurt, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, encryptedKurt, eventBus, authenticating);
+    public LocationDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+        super(context, uniqueUserId, eventBus, authenticating);
         locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         if (locationManager == null) {
             Log.d(tag, "No positioning available");
@@ -171,30 +168,12 @@ public class LocationDetector extends AbstractDetector implements LocationListen
             } else {
                 canScan = true;
             }
-            if (canScan) {
-                boolean scanStarted = false;
-                if (isProviderAvailable(LocationManager.GPS_PROVIDER) && isPermitted()) {
+            if (canScan && isPermitted()) {
+                if (isProviderAvailable(LocationManager.GPS_PROVIDER)) {
                     locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, this, Looper.getMainLooper());
-                    scanStarted = true;
                 }
-                if (isProviderAvailable(LocationManager.NETWORK_PROVIDER) && isPermitted()) {
+                if (isProviderAvailable(LocationManager.NETWORK_PROVIDER)) {
                     locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, this, Looper.getMainLooper());
-                    scanStarted = true;
-                }
-                if (scanStarted) {
-                    if (timer != null) {
-                        timer.cancel();
-                        timer.purge();
-                    }
-                    timer = new Timer();
-                    timer.schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            cancelScan();
-                        }
-                    }, scanTimeout());
-                } else {
-                    Log.w(tag, "Cannot scan for position, missing provider for scan");
                 }
             }
         } else {
@@ -222,10 +201,6 @@ public class LocationDetector extends AbstractDetector implements LocationListen
         return null;
     }
 
-    private long scanTimeout() {
-        return 60000; // 1,0 minute scan timeout
-    }
-
     @Override
     public boolean startListening() {
         boolean listen = super.startListening();
@@ -233,6 +208,11 @@ public class LocationDetector extends AbstractDetector implements LocationListen
             performScan();
         }
         return listen;
+    }
+
+    @Override
+    public long authenticationListenInterval() {
+        return 60000;
     }
 
     @Override
@@ -250,6 +230,12 @@ public class LocationDetector extends AbstractDetector implements LocationListen
             maxSpeed = speed;
         }
         storeData();
+    }
+
+    @Override
+    public void stopListening() {
+        super.stopListening();
+        cancelScan();
     }
 
     @Override

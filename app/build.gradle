@@ -28,6 +28,9 @@ android {
     buildTypes {
         debug {
             resValue "string", "identityPoolId", properties["identityPoolId"] // Setting the S3 identityPoolId from local.properties
+            resValue "string", "authenticateUrl", properties["authenticateUrl"]
+            resValue "string", "resetUrl", properties["resetUrl"]
+            resValue "string", "apiKey", properties["apiKey"]
             debuggable true
             useProguard false
             jniDebuggable true
@@ -35,6 +38,9 @@ android {
         }
         release {
             resValue "string", "identityPoolId", properties["identityPoolId"] // Setting the S3 identityPoolId from local.properties
+            resValue "string", "authenticateUrl", properties["authenticateUrl"]
+            resValue "string", "resetUrl", properties["resetUrl"]
+            resValue "string", "apiKey", properties["apiKey"]
             debuggable false
             testCoverageEnabled false
             minifyEnabled true
@@ -55,6 +61,7 @@ dependencies {
     })
 //    compile 'com.telenor.connect:connect-android-sdk:0.7.0' // Causes dex overflow :O
     compile 'com.android.support:appcompat-v7:25.3.1'
-    //compile 'com.github.PhilJay:MPAndroidChart:v3.0.2'
+    compile 'com.android.support:design:25.3.1'
+    compile 'com.github.PhilJay:MPAndroidChart:v3.0.2'
     compile project(':possumlib')
 }
