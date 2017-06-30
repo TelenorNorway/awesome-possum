@@ -83,13 +83,12 @@ public class IndividualSensorTrustFragment extends Fragment implements IPossumTr
         TextView textView = textViewForType(detectorType);
         switch (status) {
             case "TRAINING":
-                textView.setText(String.format(Locale.US, "%s: Unlearned", detectorNameFromType(detectorType)));
                 textView.setTextColor(Color.parseColor("#FF6600"));
                 break;
             default:
-                textView.setText(String.format(Locale.US, "%s: %.0f%%", detectorNameFromType(detectorType), newTrustScore * 100));
                 textView.setTextColor(Color.BLACK);
         }
+        textView.setText(String.format(Locale.US, "%s: %.0f%%", detectorNameFromType(detectorType), newTrustScore * 100));
     }
 
     private TextView textViewForType(int type) {
