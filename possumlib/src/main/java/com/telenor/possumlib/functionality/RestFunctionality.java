@@ -43,7 +43,7 @@ public class RestFunctionality extends AsyncTask<JsonObject, Void, Exception> {
             urlConnection.setRequestProperty("x-api-key", apiKey);
             urlConnection.setRequestMethod("POST");
             byte[] data = object.toString().getBytes();
-            longLog(object.toString());
+//            longLog(object.toString());
             urlConnection.setFixedLengthStreamingMode(data.length);
             urlConnection.connect();
 
