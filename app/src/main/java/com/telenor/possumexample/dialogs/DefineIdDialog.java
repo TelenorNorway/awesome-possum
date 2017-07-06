@@ -11,6 +11,8 @@ import android.widget.EditText;
 
 import com.telenor.possumexample.MainActivity;
 import com.telenor.possumexample.R;
+import com.telenor.possumlib.constants.Messaging;
+import com.telenor.possumlib.utils.Send;
 
 public class DefineIdDialog extends AppCompatDialogFragment {
     private EditText uniqueId;
@@ -44,8 +46,14 @@ public class DefineIdDialog extends AppCompatDialogFragment {
 
     }
 
+
     private void updatePreferences() {
         String suggestedId = uniqueId.getText().toString();
         ((MainActivity)getActivity()).preferences().edit().putString("storedId", suggestedId).apply();
+        if (!((MainActivity)getActivity()).validId(suggestedId)) {
+            Send.messageIntent(getContext(), Messaging.MISSING_VALID_ID, null);
+        } else {
+            Send.messageIntent(getContext(), Messaging.READY_TO_AUTH, null);
+        }
     }
 }

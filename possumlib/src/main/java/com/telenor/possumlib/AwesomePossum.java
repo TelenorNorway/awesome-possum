@@ -227,6 +227,7 @@ public final class AwesomePossum {
             default:
                 Log.d(tag, "Unhandled message:" + messageType);
         }
+        Log.i(tag, "Sending data:"+messageListeners.size());
         for (IPossumMessage listener : messageListeners) {
             listener.possumMessageReceived(messageType, intent.getStringExtra(Messaging.POSSUM_MESSAGE));
         }
@@ -281,7 +282,8 @@ public final class AwesomePossum {
      *
      * @param listener listener for changes to trustScore
      */
-    public static void addTrustListener(@NonNull IPossumTrust listener) {
+    public static void addTrustListener(@NonNull Context context, @NonNull IPossumTrust listener) {
+        init(context);
         trustListeners.add(listener);
     }
 
@@ -327,7 +329,8 @@ public final class AwesomePossum {
      *
      * @param messageListener a listener you want to add
      */
-    public static void addMessageListener(IPossumMessage messageListener) {
+    public static void addMessageListener(@NonNull Context context, IPossumMessage messageListener) {
+        init(context);
         messageListeners.add(messageListener);
     }
 

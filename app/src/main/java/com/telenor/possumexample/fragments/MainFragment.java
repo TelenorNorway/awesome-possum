@@ -36,9 +36,9 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
     @Override
     public void onViewCreated(View view, Bundle bundle) {
         super.onViewCreated(view, bundle);
-        AwesomePossum.addTrustListener(MainFragment.this);
+        AwesomePossum.addTrustListener(getContext(), this);
         status = (TextView) view.findViewById(R.id.status);
-        AwesomePossum.addMessageListener(this);
+        AwesomePossum.addMessageListener(getContext(), this);
         trustButton = (TrustButton) view.findViewById(R.id.trustWheel);
         trustButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -64,6 +64,11 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
         tabLayout.setupWithViewPager(viewPager);
         viewPager.setCurrentItem(1);
         updateStatus();
+        if (!((MainActivity)getActivity()).validId(myId())) {
+            Send.messageIntent(getContext(), Messaging.MISSING_VALID_ID, null);
+        } else {
+            Send.messageIntent(getContext(), Messaging.READY_TO_AUTH, null);
+        }
     }
 
     @Override
@@ -75,15 +80,11 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
 
     private boolean updateStatus() {
         if (!((MainActivity) getActivity()).validId(myId())) {
-            sendQuickIntent(Messaging.MISSING_VALID_ID);
+            Send.messageIntent(getActivity(), Messaging.MISSING_VALID_ID, null);
             return false;
         }
-        sendQuickIntent(Messaging.READY_TO_AUTH);
+        Send.messageIntent(getContext(), Messaging.READY_TO_AUTH, null);
         return true;
-    }
-
-    private void sendQuickIntent(String message) {
-        Send.messageIntent(getContext(), Messaging.POSSUM_MESSAGE, message);
     }
 
     private String myId() {
@@ -135,6 +136,12 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                         status.setText(R.string.error_too_short_id);
                         status.setTextColor(Color.RED);
                         trustButton.setEnabled(false);
+                        break;
+                    case Messaging.AUTH_STOP:
+                        status.setText(R.string.stopped_auth);
+                        status.setTextColor(Color.BLACK);
+                        trustButton.setEnabled(true);
+                        trustButton.stopAuthenticate();
                         break;
                     case Messaging.AUTH_DONE:
                         Log.i(tag, "Sending data: Received auth");

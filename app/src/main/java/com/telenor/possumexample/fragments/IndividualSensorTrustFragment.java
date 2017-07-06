@@ -48,7 +48,7 @@ public class IndividualSensorTrustFragment extends Fragment implements IPossumTr
     @Override
     public void onResume() {
         super.onResume();
-        AwesomePossum.addTrustListener(this);
+        AwesomePossum.addTrustListener(getContext(), this);
         updateSensors(AwesomePossum.latestTrustScore());
     }
 

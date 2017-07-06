@@ -11,6 +11,8 @@ import android.widget.TextView;
 
 import com.telenor.possumexample.R;
 import com.telenor.possumlib.AwesomePossum;
+import com.telenor.possumlib.constants.Messaging;
+import com.telenor.possumlib.utils.Send;
 
 import java.util.Locale;
 
@@ -113,14 +115,18 @@ public class TrustButton extends RelativeLayout {
         authenticating = true;
         authHandler.removeCallbacks(authRunnable);
         authHandler.postDelayed(authRunnable, authInterval());
+        Send.messageIntent(getContext(), Messaging.ANALYSING, null);
     }
 
     public void stopAuthenticate() {
-        AwesomePossum.stopListening(getContext());
-        timePassedInMillis = 0;
-        trustWheel.setProgress(0);
-        authHandler.removeCallbacks(authRunnable);
-        authenticating = false;
+        if (authenticating) {
+            AwesomePossum.stopListening(getContext());
+            timePassedInMillis = 0;
+            trustWheel.setProgress(0);
+            authHandler.removeCallbacks(authRunnable);
+            authenticating = false;
+            Send.messageIntent(getContext(), Messaging.AUTH_STOP, null);
+        }
     }
 
     public boolean isAuthenticating() {

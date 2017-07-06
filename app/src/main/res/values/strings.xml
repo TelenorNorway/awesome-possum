@@ -19,4 +19,5 @@
     <string name="analysing">Analysing…</string>
     <string name="sending_result">Sending result to server</string>
     <string name="verification_success">Verified authenticatin id</string>
+    <string name="stopped_auth">Stopped authenticating</string>
 </resources>

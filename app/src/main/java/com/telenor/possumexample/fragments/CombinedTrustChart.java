@@ -58,7 +58,7 @@ public class CombinedTrustChart extends Fragment implements IPossumTrust {
         lineChart.getAxisRight().setDrawAxisLine(false);
         lineChart.setNoDataText("No trustScores yet");
 
-        AwesomePossum.addTrustListener(this);
+        AwesomePossum.addTrustListener(getContext(), this);
     }
 
     @Override
