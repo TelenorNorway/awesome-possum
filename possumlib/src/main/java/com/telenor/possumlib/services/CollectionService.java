@@ -61,7 +61,6 @@ public class CollectionService extends AbstractBasicService implements IRestList
                 gatheringFunctionality.stopGathering();
 //                gatheringFunctionality.clearData();
             }
-            Log.i(tag, "Accelerometer: start command service");
             gatheringFunctionality.startGathering();
             if (isAuthenticating) {
                 authHandler.postDelayed(new Runnable() {
@@ -131,10 +130,9 @@ public class CollectionService extends AbstractBasicService implements IRestList
                     object.add(detector.detectorName(), jsonData);
                     detector.clearData();
                 }
-                Log.i(tag, "Sending data: size:"+object.toString().getBytes().length);
                 RestFunctionality restFunctionality = new RestFunctionality(this, url, apiKey);
                 restFunctionality.execute(object);
-                Send.messageIntent(this, Messaging.AUTH_DONE, "Meh");
+                Send.messageIntent(this, Messaging.AUTH_DONE, null);
             }
         } catch (MalformedURLException e) {
             Log.e(tag, "Failed to post data due to malformed url:", e);

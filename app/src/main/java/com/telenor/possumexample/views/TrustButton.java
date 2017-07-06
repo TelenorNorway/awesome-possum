@@ -109,7 +109,7 @@ public class TrustButton extends RelativeLayout {
 
     public void authenticate(String id) {
         setRunnableWithId(id);
-        AwesomePossum.authenticate(getContext(), id, getContext().getString(R.string.authenticateUrl), getContext().getString(R.string.apiKey));
+        AwesomePossum.authenticate(getContext(), id, getContext().getString(R.string.authenticateUrl), getContext().getString(R.string.apiKey), true);
         timePassedInMillis = 0;
         trustWheel.setProgress(0);
         authenticating = true;

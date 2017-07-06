@@ -144,7 +144,6 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                         trustButton.stopAuthenticate();
                         break;
                     case Messaging.AUTH_DONE:
-                        Log.i(tag, "Sending data: Received auth");
                         if (trustButton.isAuthenticating()) {
                             trustButton.authenticate(myId());
                         }
