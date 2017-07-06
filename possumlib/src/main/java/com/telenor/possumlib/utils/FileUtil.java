@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Queue;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -178,7 +177,7 @@ public class FileUtil {
      * @param file  detectors stored file
      * @param lines lines to store in the file
      */
-    public static void storeLines(@NonNull File file, final Queue<JsonArray> lines) {
+    public static void storeLines(@NonNull File file, final List<JsonArray> lines) {
         try {
             FileWriter writer = new FileWriter(file, true);
             for (JsonArray array : lines) {

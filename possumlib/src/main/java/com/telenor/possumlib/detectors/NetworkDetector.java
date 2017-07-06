@@ -17,6 +17,7 @@ import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.Has;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 /***
@@ -53,6 +54,11 @@ public class NetworkDetector extends AbstractDetector implements IOnReceive {
     }
 
     @Override
+    protected List<JsonArray> createInternalList() {
+        return new CopyOnWriteArrayList<>();
+    }
+
+    @Override
     public boolean isEnabled() {
         return wifiManager != null;
     }
@@ -62,7 +68,7 @@ public class NetworkDetector extends AbstractDetector implements IOnReceive {
         boolean listen = super.startListening();
         if (listen) {
             if (!isRegistered) {
-                context().registerReceiver(receiver, intentFilter);
+                context().getApplicationContext().registerReceiver(receiver, intentFilter);
                 isRegistered = true;
             }
             performScan();
@@ -74,14 +80,9 @@ public class NetworkDetector extends AbstractDetector implements IOnReceive {
     public void stopListening() {
         super.stopListening();
         if (isRegistered) {
-            context().unregisterReceiver(receiver);
+            context().getApplicationContext().unregisterReceiver(receiver);
             isRegistered = false;
         }
-    }
-
-    @Override
-    public long authenticationListenInterval() {
-        return 30000;
     }
 
     private void performScan() {

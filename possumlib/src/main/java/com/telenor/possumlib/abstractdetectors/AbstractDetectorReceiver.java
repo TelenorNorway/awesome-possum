@@ -45,7 +45,7 @@ public abstract class AbstractDetectorReceiver extends AbstractDetector implemen
     public boolean startListening() {
         boolean listen = super.startListening();
         if (listen && !registered) {
-            context().registerReceiver(receiver, intentFilter);
+            context().getApplicationContext().registerReceiver(receiver, intentFilter);
             registered = true;
         }
         return listen;
@@ -55,7 +55,7 @@ public abstract class AbstractDetectorReceiver extends AbstractDetector implemen
     public void stopListening() {
         super.stopListening();
         if (registered) {
-            context().unregisterReceiver(receiver);
+            context().getApplicationContext().unregisterReceiver(receiver);
             registered = false;
         }
     }

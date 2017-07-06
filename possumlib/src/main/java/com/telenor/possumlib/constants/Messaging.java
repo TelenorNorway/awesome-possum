@@ -22,4 +22,5 @@ public class Messaging {
     public static final String SENDING_RESULT = "SendingResult";
     public static final String READY_TO_AUTH = "ReadyForAuth";
     public static final String MISSING_VALID_ID = "MissingValidId";
+    public static final String AUTH_DONE = "authDone";
 }

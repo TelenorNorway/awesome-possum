@@ -39,11 +39,6 @@ public class HardwareDetector extends AbstractDetector {
     }
 
     @Override
-    public long authenticationListenInterval() {
-        return 1000;
-    }
-
-    @Override
     public int detectorType() {
         return DetectorType.Hardware;
     }

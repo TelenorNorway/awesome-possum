@@ -72,11 +72,6 @@ public class AbstractEventDrivenDetectorTest {
             }
 
             @Override
-            public boolean isValidSet() {
-                return true;
-            }
-
-            @Override
             public boolean isAvailable() {
                 return true;
             }
@@ -84,11 +79,6 @@ public class AbstractEventDrivenDetectorTest {
             @Override
             public String requiredPermission() {
                 return null;
-            }
-
-            @Override
-            public long authenticationListenInterval() {
-                return 0;
             }
 
             @Override
@@ -155,7 +145,7 @@ public class AbstractEventDrivenDetectorTest {
             eventBus.post(new TestChangeEvent("message"));
         }
         Assert.assertEquals(AbstractEventDrivenDetector.MINIMUM_SAMPLES, abstractEventDrivenDetector.sessionValues().size());
-        Assert.assertEquals("message", abstractEventDrivenDetector.sessionValues().peek());
+        Assert.assertEquals("message", abstractEventDrivenDetector.sessionValues().get(abstractEventDrivenDetector.sessionValues().size()-1));
         eventBus.post(new TestChangeEvent("message"));
         Assert.assertEquals(0, abstractEventDrivenDetector.sessionValues().size());
 

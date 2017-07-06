@@ -105,11 +105,6 @@ public class AbstractZippingAndroidDetectorTest {
             }
 
             @Override
-            public long authenticationListenInterval() {
-                return authenticationListenInterval;
-            }
-
-            @Override
             public long uploadFilesSize() {
                 return sizeOfUpload;
             }

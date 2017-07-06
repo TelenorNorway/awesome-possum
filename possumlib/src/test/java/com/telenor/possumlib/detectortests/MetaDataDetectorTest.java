@@ -85,7 +85,6 @@ public class MetaDataDetectorTest {
     @Test
     public void testDefaultValues() throws Exception {
         Assert.assertTrue(metaDataDetector.isEnabled());
-        Assert.assertTrue(metaDataDetector.isValidSet());
         Assert.assertTrue(metaDataDetector.isAvailable());
         Assert.assertEquals(DetectorType.MetaData, metaDataDetector.detectorType());
         Assert.assertEquals("MetaData", metaDataDetector.detectorName());

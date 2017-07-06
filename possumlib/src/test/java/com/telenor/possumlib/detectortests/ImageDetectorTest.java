@@ -95,7 +95,6 @@ public class ImageDetectorTest {
         Assert.assertEquals(1, numberOfCameras);
         Assert.assertTrue(imageDetector.isEnabled());
         Assert.assertEquals(DetectorType.Image, imageDetector.detectorType());
-        Assert.assertTrue(imageDetector.isValidSet());
     }
 
     @Test

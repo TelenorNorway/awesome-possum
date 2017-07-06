@@ -44,18 +44,8 @@ public class SatelliteDetector extends AbstractEventDrivenDetector {
     }
 
     @Override
-    public boolean isValidSet() {
-        return true;
-    }
-
-    @Override
     public String requiredPermission() {
         return Manifest.permission.ACCESS_FINE_LOCATION;
-    }
-
-    @Override
-    public long authenticationListenInterval() {
-        return 60000;
     }
 
     @Override

@@ -14,10 +14,12 @@ import com.telenor.possumexample.R;
 
 public class DefineIdDialog extends AppCompatDialogFragment {
     private EditText uniqueId;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
         return inflater.inflate(R.layout.dialog_define_id, parent, false);
     }
+
     @Override
     public void onViewCreated(View view, Bundle bundle) {
         super.onViewCreated(view, bundle);

@@ -34,11 +34,6 @@ public class GyroScope extends AbstractZippingAndroidDetector {
     }
 
     @Override
-    public long authenticationListenInterval() {
-        return 3000;
-    }
-
-    @Override
     protected int detectorRequestCode() {
         return ReqCodes.GYROSCOPE;
     }

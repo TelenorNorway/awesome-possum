@@ -92,11 +92,6 @@ public class AbstractDetectorReceiverTest {
             }
 
             @Override
-            public long authenticationListenInterval() {
-                return 0;
-            }
-
-            @Override
             public boolean isEnabled() {
                 return isEnabled;
             }

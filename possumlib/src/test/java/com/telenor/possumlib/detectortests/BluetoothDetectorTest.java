@@ -96,7 +96,6 @@ public class BluetoothDetectorTest {
     public void testDefaults() throws Exception {
         Assert.assertEquals(DetectorType.Bluetooth, bluetoothDetector.detectorType());
         Assert.assertEquals(900000, bluetoothDetector.minimumInterval());
-        Assert.assertTrue(bluetoothDetector.isValidSet());
         Assert.assertEquals("Bluetooth", bluetoothDetector.detectorName());
         Method storeWithIntervalMethod = BluetoothDetector.class.getDeclaredMethod("storeWithInterval");
         storeWithIntervalMethod.setAccessible(true);

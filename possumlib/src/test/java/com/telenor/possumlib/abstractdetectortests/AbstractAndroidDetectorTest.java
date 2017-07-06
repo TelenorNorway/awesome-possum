@@ -101,11 +101,6 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
             }
 
             @Override
-            public long authenticationListenInterval() {
-                return 0;
-            }
-
-            @Override
             protected long uploadFilesSize() {
                 return storageInUpload;
             }
@@ -134,7 +129,6 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
     @Test
     public void testDefaults() throws Exception {
         Assert.assertTrue(abstractAndroidDetector.isAvailable());
-        Assert.assertTrue(abstractAndroidDetector.isValidSet());
     }
 
     @Test
@@ -164,11 +158,6 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
             @Override
             public String requiredPermission() {
                 return null;
-            }
-
-            @Override
-            public long authenticationListenInterval() {
-                return 0;
             }
 
             @Override

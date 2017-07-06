@@ -46,6 +46,7 @@ public class TrustWheel extends View {
         if (score < 0 || score > 100) {
             throw new IllegalArgumentException("Invalid trustScore, must be within 0 and 100. Was " + score + ".");
         }
+        animate().start();
         if (score < 20) {
             circleInnerPaint.setColor(Color.RED);
         } else if (score < 40) {
@@ -244,5 +245,9 @@ public class TrustWheel extends View {
         trianglePath.lineTo(triX+triangleSize()*(float)Math.cos(lowerRads), triY+triangleSize()*(float)Math.sin(lowerRads));
         trianglePath.close();
         canvas.drawPath(trianglePath, trianglePaint);
+    }
+
+    public float trustScore() {
+        return trustScore;
     }
 }

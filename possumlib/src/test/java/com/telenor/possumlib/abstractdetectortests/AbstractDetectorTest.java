@@ -82,11 +82,6 @@ public class AbstractDetectorTest {
             }
 
             @Override
-            public long authenticationListenInterval() {
-                return 0;
-            }
-
-            @Override
             public int detectorType() {
                 return DetectorType.Accelerometer;
             }

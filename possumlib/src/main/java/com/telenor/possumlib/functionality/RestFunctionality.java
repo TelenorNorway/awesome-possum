@@ -5,7 +5,6 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.gson.JsonObject;
-import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.interfaces.IRestListener;
 
 import java.io.BufferedReader;
@@ -16,42 +15,35 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 
 /**
  * Handles communication with server, posting to it
  */
-public class RestFunctionality extends AsyncTask<List, Void, Exception> {
+public class RestFunctionality extends AsyncTask<JsonObject, Void, Exception> {
     private static final String tag = RestFunctionality.class.getName();
     private URL url;
-    private String uniqueUserId;
     private String successMessage;
     private String apiKey;
     private IRestListener listener;
 
-    public RestFunctionality(IRestListener listener, @NonNull String url, @NonNull String uniqueUserId, @NonNull String apiKey) throws MalformedURLException {
+    public RestFunctionality(IRestListener listener, @NonNull String url, @NonNull String apiKey) throws MalformedURLException {
         this.listener = listener;
         this.url = new URL(url);
-        this.uniqueUserId = uniqueUserId;
         this.apiKey = apiKey;
     }
 
     @Override
-    protected Exception doInBackground(List... params) {
+    protected Exception doInBackground(JsonObject... params) {
         OutputStream os = null;
         InputStream is = null;
         Exception exception = null;
-        JsonObject object = new JsonObject();
-        object.addProperty("connectId", uniqueUserId);
-        List<AbstractDetector> detectors = (List<AbstractDetector>) params[0];
-        for (AbstractDetector detector : detectors) {
-            object.add(detector.detectorName(), detector.jsonData());
-        }
+        JsonObject object = params[0];
         try {
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestProperty("x-api-key", apiKey);
             urlConnection.setRequestMethod("POST");
             byte[] data = object.toString().getBytes();
+            longLog(object.toString());
             urlConnection.setFixedLengthStreamingMode(data.length);
             urlConnection.connect();
 
@@ -94,6 +86,7 @@ public class RestFunctionality extends AsyncTask<List, Void, Exception> {
     }
 
     public void longLog(String message) {
+        Log.i(tag, "Here it comes:");
         // Split by line, then ensure each line can fit into Log's maximum length.
         for (int i = 0, length = message.length(); i < length; i++) {
             int newline = message.indexOf('\n', i);

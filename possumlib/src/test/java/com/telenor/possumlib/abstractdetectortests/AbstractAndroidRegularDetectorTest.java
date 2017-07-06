@@ -63,7 +63,6 @@ public class AbstractAndroidRegularDetectorTest {
     private ShadowSensorManager shadow;
     private SensorManager sensorManager;
 
-    private long authenticationListenInterval = 4000;
     private int requestCode = 12345;
     private int counter;
     private File fakeFile;
@@ -158,11 +157,6 @@ public class AbstractAndroidRegularDetectorTest {
 
     private AbstractAndroidRegularDetector getDetector(Context context, PossumBus eventBus) {
         return new AbstractAndroidRegularDetector(context, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
-            @Override
-            public long authenticationListenInterval() {
-                return authenticationListenInterval;
-            }
-
             @Override
             protected int detectorRequestCode() {
                 return requestCode;

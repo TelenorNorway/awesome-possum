@@ -32,11 +32,6 @@ public class TypingRecognitionDetector extends AbstractEventDrivenDetector {
     }
 
     @Override
-    public boolean isValidSet() {
-        return true;
-    }
-
-    @Override
     public int detectorType() {
         return DetectorType.Keyboard;
     }
@@ -54,11 +49,6 @@ public class TypingRecognitionDetector extends AbstractEventDrivenDetector {
     @Override
     public String requiredPermission() {
         return null;
-    }
-
-    @Override
-    public long authenticationListenInterval() {
-        return 12000;
     }
 
     @Override

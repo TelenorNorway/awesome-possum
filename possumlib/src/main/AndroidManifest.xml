@@ -39,6 +39,7 @@
 
         <service
             android:name=".services.CollectionService"
+            android:process=":possum"
             android:exported="false"/>
 
         <service

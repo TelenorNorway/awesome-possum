@@ -34,11 +34,6 @@ public class Magnetometer extends AbstractZippingAndroidDetector implements Sens
     }
 
     @Override
-    public long authenticationListenInterval() {
-        return 3000;
-    }
-
-    @Override
     protected int detectorRequestCode() {
         return ReqCodes.MAGNETOMETER;
     }

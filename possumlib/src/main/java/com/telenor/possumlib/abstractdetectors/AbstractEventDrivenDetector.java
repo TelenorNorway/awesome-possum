@@ -6,6 +6,9 @@ import com.google.gson.JsonArray;
 import com.telenor.possumlib.changeevents.PossumEvent;
 import com.telenor.possumlib.models.PossumBus;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * Abstract reactive detector, meant to fire only upon a given criteria fulfilled.
  * F.ex. a camera background service that fires when learning decides upon a certain movement
@@ -22,6 +25,11 @@ public abstract class AbstractEventDrivenDetector extends AbstractDetector {
      */
     public AbstractEventDrivenDetector(Context context, String uniqueUserId, PossumBus eventBus, boolean authenticating) {
         super(context, uniqueUserId, eventBus, authenticating);
+    }
+
+    @Override
+    protected List<JsonArray> createInternalList() {
+        return new CopyOnWriteArrayList<>();
     }
 
     @Override

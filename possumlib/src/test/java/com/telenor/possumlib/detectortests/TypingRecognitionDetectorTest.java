@@ -44,7 +44,6 @@ public class TypingRecognitionDetectorTest {
         Assert.assertEquals(0, typingRecognitionDetector.storedData().length());
         Assert.assertTrue(typingRecognitionDetector.isEnabled());
         Assert.assertTrue(typingRecognitionDetector.isAvailable());
-        Assert.assertTrue(typingRecognitionDetector.isValidSet());
         Assert.assertEquals(DetectorType.Keyboard, typingRecognitionDetector.detectorType());
         Assert.assertEquals("Keyboard", typingRecognitionDetector.detectorName());
     }

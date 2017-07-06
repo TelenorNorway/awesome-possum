@@ -96,6 +96,7 @@ public abstract class AbstractZippingAndroidDetector extends AbstractAndroidRegu
      */
     @Override
     protected void storeData(@NonNull File file) {
+        if (isAuthenticating) return;
         for (JsonArray value : sessionValues) {
             try {
                 if (outerStream != null) {
@@ -106,7 +107,7 @@ public abstract class AbstractZippingAndroidDetector extends AbstractAndroidRegu
                 Log.e(tag, "FailedToWrite:", e);
             }
         }
-        sessionValues.clear();
+        clearData();
     }
 
     private ZipOutputStream createZipStream(OutputStream innerStream) throws IOException {

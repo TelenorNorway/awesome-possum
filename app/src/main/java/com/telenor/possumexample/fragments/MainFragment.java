@@ -1,6 +1,5 @@
 package com.telenor.possumexample.fragments;
 
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
@@ -22,6 +21,7 @@ import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.interfaces.IPossumMessage;
 import com.telenor.possumlib.interfaces.IPossumTrust;
 import com.telenor.possumlib.utils.Do;
+import com.telenor.possumlib.utils.Send;
 
 public class MainFragment extends Fragment implements IPossumTrust, IPossumMessage {
     private TrustButton trustButton;
@@ -40,11 +40,22 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
         status = (TextView) view.findViewById(R.id.status);
         AwesomePossum.addMessageListener(this);
         trustButton = (TrustButton) view.findViewById(R.id.trustWheel);
-        trustButton.setRunnableWithId(myId());
         trustButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                trustButton.toggleAuthenticating(myId());
+                if (((MainActivity)getActivity()).validId(myId())) {
+                    if (AwesomePossum.isAuthorized(getActivity(), myId())) {
+                        if (trustButton.isAuthenticating()) {
+                            trustButton.stopAuthenticate();
+                        } else {
+                            trustButton.authenticate(myId());
+                        }
+                    } else {
+                        AwesomePossum.getAuthorizeDialog(getActivity(), myId(), getString(R.string.identityPoolId), "Authorize AwesomePossum", "We need permission from you", "Granted", "Denied").show();
+                    }
+                } else {
+                    ((MainActivity)getActivity()).showInvalidIdDialog();
+                }
             }
         });
         ViewPager viewPager = (ViewPager) view.findViewById(R.id.viewPager);
@@ -72,9 +83,7 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
     }
 
     private void sendQuickIntent(String message) {
-        Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
-        intent.putExtra("message", message);
-        getContext().sendBroadcast(intent);
+        Send.messageIntent(getContext(), Messaging.POSSUM_MESSAGE, message);
     }
 
     private String myId() {
@@ -127,6 +136,12 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                         status.setTextColor(Color.RED);
                         trustButton.setEnabled(false);
                         break;
+                    case Messaging.AUTH_DONE:
+                        Log.i(tag, "Sending data: Received auth");
+                        if (trustButton.isAuthenticating()) {
+                            trustButton.authenticate(myId());
+                        }
+                        break;
                     case Messaging.READY_TO_AUTH:
                         status.setText(R.string.all_ok);
                         status.setTextColor(Color.BLACK);
@@ -137,11 +152,16 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                         status.setTextColor(Color.BLACK);
                         trustButton.setEnabled(true);
                         break;
+                    case Messaging.VERIFICATION_SUCCESS:
+                        status.setText(getContext().getString(R.string.verification_success));
+                        status.setTextColor(Color.BLACK);
+                        trustButton.setEnabled(true);
+                        break;
                     default:
                         status.setText(message);
                         status.setTextColor(Color.RED);
                         trustButton.setEnabled(false);
-                        Log.e(tag, "Unhandled possum message:"+msgType+":"+message);
+                        Log.e(tag, "Sending data: Unhandled possum message:"+msgType+":"+message);
                 }
             }
         });

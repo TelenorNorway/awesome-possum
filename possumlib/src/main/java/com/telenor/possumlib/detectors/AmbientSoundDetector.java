@@ -205,7 +205,6 @@ public class AmbientSoundDetector extends AbstractDetector {
         }
     }
 
-    @Override
     public long authenticationListenInterval() {
         return 3000;
     }

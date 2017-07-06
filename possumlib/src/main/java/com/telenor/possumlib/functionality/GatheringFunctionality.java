@@ -6,6 +6,7 @@ import android.support.annotation.VisibleForTesting;
 
 import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
+import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.interfaces.IPollComplete;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.Get;
@@ -21,11 +22,13 @@ public class GatheringFunctionality {
     private boolean isGathering;
     private List<AbstractDetector> detectors = new ArrayList<>();
 
+    private static final String tag = GatheringFunctionality.class.getName();
+
     public GatheringFunctionality() {
         eventBus = new PossumBus();
     }
 
-    public void setDetectorsWithId(@NonNull Context context, @NonNull String uniqueUserId, boolean authenticating, IPollComplete listener) {
+    public void setDetectorsWithId(final @NonNull Context context, final @NonNull String uniqueUserId, final boolean authenticating, final IPollComplete listener) {
         stopGathering();
         detectors.clear();
         eventBus.clearAll();
@@ -41,18 +44,22 @@ public class GatheringFunctionality {
     }
 
     public void startGathering() {
-        for (AbstractDetector detector : detectors) {
-            detector.startListening();
+        if (!isGathering) {
+            for (AbstractDetector detector : detectors) {
+                detector.startListening();
+            }
+            isGathering = true;
         }
-        isGathering = true;
     }
 
     public void stopGathering() {
-        for (AbstractDetector detector : detectors) {
-            detector.terminate();
-            detector.prepareUpload();
+        if (isGathering) {
+            for (AbstractDetector detector : detectors) {
+                detector.terminate();
+                detector.prepareUpload();
+            }
+            isGathering = false;
         }
-        isGathering = false;
     }
 
     public JsonArray detectorsAsJson() {
@@ -62,6 +69,12 @@ public class GatheringFunctionality {
         }
         return detectorObjects;
     }
+    public AbstractDetector acc() {
+        for (AbstractDetector detector : detectors) {
+            if (detector.detectorType() == DetectorType.Accelerometer) return detector;
+        }
+        return null;
+    }
 
     public List<AbstractDetector> detectors() {
         return detectors;
@@ -69,11 +82,5 @@ public class GatheringFunctionality {
 
     public boolean isGathering() {
         return isGathering;
-    }
-
-    public void clearData() {
-        for (AbstractDetector detector : detectors) {
-            detector.clearData();
-        }
     }
 }

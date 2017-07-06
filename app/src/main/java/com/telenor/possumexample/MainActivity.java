@@ -1,9 +1,11 @@
 package com.telenor.possumexample;
 
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -16,6 +18,8 @@ import com.telenor.possumexample.fragments.MainFragment;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.asynctasks.ResetDataAsync;
 import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
+
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private static final String tag = MainActivity.class.getName();
@@ -73,8 +77,10 @@ public class MainActivity extends AppCompatActivity {
                         AwesomePossum.startListening(this, myId(), getString(R.string.identityPoolId));
                         invalidateOptionsMenu();
                     } catch (GatheringNotAuthorizedException e) {
-                        AwesomePossum.authorizeGathering(this, myId(), getString(R.string.identityPoolId));
+                        AwesomePossum.getAuthorizeDialog(this, myId(), getString(R.string.identityPoolId), "Authorize AwesomePossum", "We need permission from you", "Granted", "Denied").show();
                     }
+                } else {
+                    showInvalidIdDialog();
                 }
                 break;
             case R.id.upload:
@@ -84,16 +90,43 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.resetData:
                 if (validId(myId())) {
-                    JsonArray detectors = new JsonArray();
-                    detectors.add("all");
-                    ResetDataAsync async = new ResetDataAsync(myId(), getString(R.string.apiKey), detectors);
-                    async.execute(getString(R.string.resetUrl));
-//                    ResetDataDialog dialog = new ResetDataDialog(this, myId(), getString(R.string.resetUrl), getString(R.string.apiKey));
-//                    dialog.show();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Sletting av data");
+                    builder.setMessage(String.format(Locale.US, "Vil du slette all data relatert til id '%s' ?", myId()));
+                    builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            JsonArray detectors = new JsonArray();
+                            detectors.add("all");
+                            ResetDataAsync async = new ResetDataAsync(myId(), getString(R.string.apiKey), detectors);
+                            async.execute(getString(R.string.resetUrl));
+                            dialog.dismiss();
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+                    builder.create().show();
                 }
                 break;
         }
         return true;
+    }
+
+    public void showInvalidIdDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Invalid id");
+        builder.setMessage("Need a valid id to proceed");
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
     }
 
     public boolean validId(String uniqueId) {

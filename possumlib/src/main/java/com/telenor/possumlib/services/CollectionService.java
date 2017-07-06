@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
@@ -27,10 +28,10 @@ import java.net.MalformedURLException;
 public class CollectionService extends AbstractBasicService implements IRestListener, IPollComplete {
     protected GatheringFunctionality gatheringFunctionality;
     private BroadcastReceiver receiver;
-    private String uniqueUserId;
-    private boolean isAuthenticating;
-    private String url;
-    private String apiKey;
+    private static String uniqueUserId;
+    private static boolean isAuthenticating;
+    private static String url;
+    private static String apiKey;
     private Handler authHandler = new Handler(Looper.getMainLooper());
     private static final String tag = CollectionService.class.getName();
 
@@ -58,8 +59,9 @@ public class CollectionService extends AbstractBasicService implements IRestList
             gatheringFunctionality.setDetectorsWithId(this, uniqueUserId, isAuthenticating, this);
             if (gatheringFunctionality.isGathering()) {
                 gatheringFunctionality.stopGathering();
-                gatheringFunctionality.clearData();
+//                gatheringFunctionality.clearData();
             }
+            Log.i(tag, "Accelerometer: start command service");
             gatheringFunctionality.startGathering();
             if (isAuthenticating) {
                 authHandler.postDelayed(new Runnable() {
@@ -89,7 +91,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
                 handleIntent(intent.getStringExtra(Messaging.POSSUM_MESSAGE_TYPE));
             }
         };
-        registerReceiver(receiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
+        getApplicationContext().registerReceiver(receiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
     }
 
     private int authTime() {
@@ -117,13 +119,22 @@ public class CollectionService extends AbstractBasicService implements IRestList
     public void onDestroy() {
         super.onDestroy();
 //        Log.d(tag, "Destroying Collector service:"+this);
-        unregisterReceiver(receiver);
+        getApplicationContext().unregisterReceiver(receiver);
         gatheringFunctionality.stopGathering();
         receiver = null;
         try {
             if (isAuthenticating) {
-                RestFunctionality restFunctionality = new RestFunctionality(CollectionService.this, url, uniqueUserId, apiKey);
-                restFunctionality.execute(gatheringFunctionality.detectors());
+                JsonObject object = new JsonObject();
+                object.addProperty("connectId", uniqueUserId);
+                for (AbstractDetector detector : gatheringFunctionality.detectors()) {
+                    JsonArray jsonData = detector.jsonData();
+                    object.add(detector.detectorName(), jsonData);
+                    detector.clearData();
+                }
+                Log.i(tag, "Sending data: size:"+object.toString().getBytes().length);
+                RestFunctionality restFunctionality = new RestFunctionality(this, url, apiKey);
+                restFunctionality.execute(object);
+                Send.messageIntent(this, Messaging.AUTH_DONE, "Meh");
             }
         } catch (MalformedURLException e) {
             Log.e(tag, "Failed to post data due to malformed url:", e);

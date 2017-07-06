@@ -134,7 +134,6 @@ public class LocationDetectorTest {
 
     @Test
     public void testDefaultValues() throws Exception {
-        Assert.assertTrue(locationDetector.isValidSet());
         Assert.assertEquals("Position", locationDetector.detectorName());
         Assert.assertEquals(DetectorType.Position, locationDetector.detectorType());
     }

@@ -31,11 +31,6 @@ public class MetaDataDetector extends AbstractEternalEventDetector {
     }
 
     @Override
-    public long authenticationListenInterval() {
-        return 60000;
-    }
-
-    @Override
     public void eventReceived(PossumEvent object) {
         if (object instanceof MetaDataChangeEvent && isListening()) {
             super.eventReceived(object);

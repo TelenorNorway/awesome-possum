@@ -44,7 +44,6 @@ public class GestureDetectorTest {
     @Test
     public void testDefaults() throws Exception {
         Assert.assertTrue(gestureDetector.isEnabled());
-        Assert.assertTrue(gestureDetector.isValidSet());
         Assert.assertTrue(gestureDetector.isAvailable());
         Assert.assertEquals(DetectorType.Gesture, gestureDetector.detectorType());
         Assert.assertEquals("Gesture", gestureDetector.detectorName());

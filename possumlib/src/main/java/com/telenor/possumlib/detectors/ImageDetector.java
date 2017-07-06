@@ -74,11 +74,6 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
     }
 
     @Override
-    public long authenticationListenInterval() {
-        return 50000;
-    }
-
-    @Override
     public boolean isEnabled() {
         return Camera.getNumberOfCameras() > 0;
     }

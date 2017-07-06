@@ -22,6 +22,9 @@ import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /***
  * Uses bluetooth to find paired devices or even regularly discovered devices to both confirm is on correct device but also that person is in relative location to usually found devices.
  */
@@ -126,7 +129,7 @@ public class BluetoothDetector extends AbstractDetector {
         };
         intentFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
-        context().registerReceiver(receiver, intentFilter);
+        context().getApplicationContext().registerReceiver(receiver, intentFilter);
         isRegistered = true;
         isBLE = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && bluetoothAdapter.getBluetoothLeScanner() != null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -159,6 +162,11 @@ public class BluetoothDetector extends AbstractDetector {
     }
 
     @Override
+    protected List<JsonArray> createInternalList() {
+        return new CopyOnWriteArrayList<>();
+    }
+
+    @Override
     public boolean isEnabled() {
         return bluetoothAdapter != null;
     }
@@ -166,7 +174,7 @@ public class BluetoothDetector extends AbstractDetector {
     @Override
     public void terminate() {
         if (isRegistered) {
-            context().unregisterReceiver(receiver);
+            context().getApplicationContext().unregisterReceiver(receiver);
             isRegistered = false;
         }
         super.terminate();
@@ -189,11 +197,6 @@ public class BluetoothDetector extends AbstractDetector {
             scanForBluetooth();
         }
         return listen;
-    }
-
-    @Override
-    public long authenticationListenInterval() {
-        return 12000;
     }
 
     private void scanForBluetooth() {

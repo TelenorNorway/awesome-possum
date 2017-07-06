@@ -74,7 +74,6 @@ public class SatelliteDetectorTest {
 
     @Test
     public void testDefaults() throws Exception {
-        Assert.assertTrue(satelliteDetector.isValidSet());
         Assert.assertEquals(DetectorType.GpsStatus, satelliteDetector.detectorType());
         Assert.assertFalse(satelliteDetector.isEnabled());
         Assert.assertEquals("Satellites", satelliteDetector.detectorName());

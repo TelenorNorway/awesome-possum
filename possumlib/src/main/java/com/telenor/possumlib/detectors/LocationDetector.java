@@ -93,7 +93,7 @@ public class LocationDetector extends AbstractDetector implements LocationListen
                 }
             }
         };
-        context().registerReceiver(providerChangedReceiver, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
+        context().getApplicationContext().registerReceiver(providerChangedReceiver, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
         isRegistered = true;
         maxSpeed = 0.0f;
     }
@@ -138,7 +138,7 @@ public class LocationDetector extends AbstractDetector implements LocationListen
     @Override
     public void terminate() {
         if (isRegistered) {
-            context().unregisterReceiver(providerChangedReceiver);
+            context().getApplicationContext().unregisterReceiver(providerChangedReceiver);
             isRegistered = false;
         }
         cancelScan();
@@ -211,11 +211,6 @@ public class LocationDetector extends AbstractDetector implements LocationListen
     }
 
     @Override
-    public long authenticationListenInterval() {
-        return 60000;
-    }
-
-    @Override
     public void onLocationChanged(Location location) {
         JsonArray array = new JsonArray();
         array.add(""+location.getTime());
@@ -236,11 +231,6 @@ public class LocationDetector extends AbstractDetector implements LocationListen
     public void stopListening() {
         super.stopListening();
         cancelScan();
-    }
-
-    @Override
-    public boolean isValidSet() {
-        return true;
     }
 
     @Override

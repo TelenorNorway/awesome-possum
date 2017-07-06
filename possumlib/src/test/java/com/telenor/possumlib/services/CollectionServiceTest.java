@@ -111,7 +111,6 @@ public class CollectionServiceTest {
 ////                Assert.assertTrue(sensorList.size() > 0);
 ////                Assert.assertTrue(accelerometer.isAvailable());
 ////                Assert.assertTrue(accelerometer.isEnabled());
-////                Assert.assertTrue(accelerometer.isValidSet());
 ////                Assert.assertFalse(accelerometer.isListening());
 ////            }
 //            if (detector.isListening()) startedDetectors++;

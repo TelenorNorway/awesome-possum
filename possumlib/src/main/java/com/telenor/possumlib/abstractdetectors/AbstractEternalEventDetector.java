@@ -38,11 +38,6 @@ public abstract class AbstractEternalEventDetector extends AbstractEventDrivenDe
     }
 
     @Override
-    public boolean isValidSet() {
-        return true;
-    }
-
-    @Override
     public boolean isAvailable() {
         return true;
     }

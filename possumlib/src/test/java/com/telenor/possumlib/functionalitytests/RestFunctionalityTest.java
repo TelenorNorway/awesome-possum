@@ -1,6 +1,7 @@
 package com.telenor.possumlib.functionalitytests;
 
 import com.telenor.possumlib.PossumTestRunner;
+import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.functionality.RestFunctionality;
 import com.telenor.possumlib.interfaces.IRestListener;
 
@@ -10,6 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 @RunWith(PossumTestRunner.class)
 public class RestFunctionalityTest {
     private RestFunctionality restFunctionality;
@@ -17,6 +20,7 @@ public class RestFunctionalityTest {
     private String url;
     private String fakeApiKey;
     private String uniqueUserId;
+    private List<AbstractDetector> detectors;
 
     @Before
     public void setUp() throws Exception {
@@ -34,7 +38,7 @@ public class RestFunctionalityTest {
 
             }
         };
-        restFunctionality = new RestFunctionality(listener, url, uniqueUserId, fakeApiKey);
+        restFunctionality = new RestFunctionality(listener, detectors, url, uniqueUserId, fakeApiKey);
     }
 
     @After

@@ -33,11 +33,6 @@ public class GestureDetector extends AbstractEventDrivenDetector implements View
     }
 
     @Override
-    public boolean isValidSet() {
-        return true;
-    }
-
-    @Override
     public boolean isAvailable() {
         return true;
     }
@@ -45,11 +40,6 @@ public class GestureDetector extends AbstractEventDrivenDetector implements View
     @Override
     public String requiredPermission() {
         return null;
-    }
-
-    @Override
-    public long authenticationListenInterval() {
-        return 3000;
     }
 
     @Override

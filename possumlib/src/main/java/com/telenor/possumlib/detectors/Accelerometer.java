@@ -34,7 +34,9 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (isInvalid(event)) return;
+        if (isInvalid(event)) {
+            return;
+        }
         JsonArray array = new JsonArray();
         array.add(""+timestamp(event));
         array.add(""+event.values[0]);
@@ -47,11 +49,6 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
     @Override
     public String requiredPermission() {
         return null;
-    }
-
-    @Override
-    public long authenticationListenInterval() {
-        return 0;
     }
 
     @Override

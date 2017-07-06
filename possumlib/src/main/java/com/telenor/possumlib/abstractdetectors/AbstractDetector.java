@@ -2,8 +2,6 @@ package com.telenor.possumlib.abstractdetectors;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -24,8 +22,6 @@ import org.joda.time.DateTime;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -43,18 +39,17 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     public static final int MINIMUM_SAMPLES = 500;
     private final String uniqueUserId;
     private IPollComplete pollListener;
-    protected Handler authenticationHandler = new Handler(Looper.getMainLooper());
-    private final boolean isAuthenticating;
+    protected final boolean isAuthenticating;
     int storedValues;
 
-    protected final Queue<JsonArray> sessionValues = new ConcurrentLinkedQueue<>();
+    protected final List<JsonArray> sessionValues; // = new ConcurrentLinkedQueue<>()
     private final List<ISensorStatusUpdate> listeners = new ArrayList<>();
 
     /**
      * Constructor for the most basic of all detector abstractions
      *
      * @param context        a valid android context
-     * @param uniqueUserId  the unique user id
+     * @param uniqueUserId   the unique user id
      * @param eventBus       an event bus for internal messages
      * @param authenticating whether the detector is used for authentication or data gathering
      */
@@ -64,6 +59,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
         this.context = context;
         this.eventBus = eventBus;
         isAuthenticating = authenticating;
+        sessionValues = createInternalList();
     }
 
     /**
@@ -83,6 +79,10 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * @return true if sensor is present, false if not present
      */
     public abstract boolean isEnabled();
+
+    protected List<JsonArray> createInternalList() {
+        return new ArrayList<>();
+    }
 
     /**
      * Whether the detector is currently available (not same as enabled which is whether or not
@@ -134,14 +134,6 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
             // Removed isAvailable from listening, it should start to startListening if it detects that it
             // can startListening regardless of whether it is actually available there and then
             isListening = true;
-            if (isAuthenticating) {
-                authenticationHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        stopListening();
-                    }
-                }, authenticationListenInterval());
-            }
         } else {
             if (!isEnabled()) {
                 eventBus.post(new MetaDataChangeEvent(now() + " DETECTOR OFFLINE (" + detectorName() + ") DISABLED"));
@@ -158,7 +150,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * simply discard it.
      */
     public void stopListening() {
-        if (sessionValues.size() > 0 && isValidSet()) {
+        if (sessionValues.size() > 0) {
             storeData();
         }
         if (pollListener != null && isAuthenticating) {
@@ -166,12 +158,6 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
         }
         isListening = false;
     }
-
-    /**
-     * The max time a detector can spend on authentication
-     * @return the time in milliseconds
-     */
-    public abstract long authenticationListenInterval();
 
     protected long uploadFilesSize() {
         long filesSize = 0;
@@ -208,24 +194,16 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * @param file file to store data in
      */
     protected void storeData(@NonNull File file) {
-        if (isAuthenticating) return; // Should the app attempt to authenticate, ignore storing to file
+        if (isAuthenticating)
+            return; // Should the app attempt to authenticate, ignore storing to file
         if (sessionValues.size() > 0) {
             FileUtil.storeLines(file, sessionValues);
-            sessionValues.clear();
+            clearData();
         }
     }
 
-    public Queue<JsonArray> sessionValues() {
+    public List<JsonArray> sessionValues() {
         return sessionValues;
-    }
-
-    /**
-     * Method for determining if the dataset is valid. Mostly not used, defaults to true
-     *
-     * @return true if the set is valid and should be used
-     */
-    public boolean isValidSet() {
-        return true;
     }
 
     /**
@@ -248,6 +226,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
 
     /**
      * Gives the detectors stored data as a restful json object
+     *
      * @return a jsonObject for all the data
      */
     public JsonArray jsonData() {
@@ -290,9 +269,10 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * @param failedException Exception if failed, null if successful
      */
     public void uploadedData(Exception failedException) {
+        if (isAuthenticating) return;
         if (failedException == null) {
             FileUtil.deleteFile(storedData());
-            sessionValues.clear();
+            clearData();
             storedValues = 0;
             Log.d(tag, "Completed upload of:" + detectorName() + ", deleted it");
         }
@@ -410,7 +390,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
         if (!file.renameTo(dest)) {
             Log.e(tag, "Unable to stage: " + file.getName());
         } else {
-            Log.i(tag, "Staged for upload:"+dest.getAbsolutePath());
+            Log.i(tag, "Staged for upload:" + dest.getAbsolutePath());
         }
         return true;
     }

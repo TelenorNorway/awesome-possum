@@ -33,11 +33,6 @@ public class AbstractEternalEventDetectorTest {
             }
 
             @Override
-            public long authenticationListenInterval() {
-                return 0;
-            }
-
-            @Override
             public int detectorType() {
                 return DetectorType.MetaData;
             }
@@ -64,7 +59,6 @@ public class AbstractEternalEventDetectorTest {
     public void testDefaults() throws Exception {
         Assert.assertTrue(eternalEventDetector.isAvailable());
         Assert.assertTrue(eternalEventDetector.isEnabled());
-        Assert.assertTrue(eternalEventDetector.isValidSet());
         Method intervalField = AbstractEternalEventDetector.class.getDeclaredMethod("storeWithInterval");
         intervalField.setAccessible(true);
         Assert.assertFalse((boolean)intervalField.invoke(eternalEventDetector));

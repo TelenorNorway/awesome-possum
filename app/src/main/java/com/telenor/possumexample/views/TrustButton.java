@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -41,17 +40,17 @@ public class TrustButton extends RelativeLayout {
         init(context);
     }
 
-    public void setRunnableWithId(final String myId) {
+    public void setRunnableWithId(final String id) {
         authRunnable = new Runnable() {
             @Override
             public void run() {
                 timePassedInMillis += authInterval();
-                trustWheel.setProgress(timePassedInMillis);
                 if (timePassedInMillis >= authTime()) {
                     timePassedInMillis = 0;
-                    AwesomePossum.authenticate(getContext(), myId, getContext().getString(R.string.authenticateUrl), getContext().getString(R.string.apiKey), true);
+                } else {
+                    authHandler.postDelayed(authRunnable, authInterval());
                 }
-                authHandler.postDelayed(authRunnable, authInterval());
+                trustWheel.setProgress(timePassedInMillis);
             }
         };
     }
@@ -106,18 +105,25 @@ public class TrustButton extends RelativeLayout {
         trustWheel.setTrustScore(score);
     }
 
-    public void toggleAuthenticating(String id) {
-        authenticating = !authenticating;
-        if (authenticating) {
-            Log.i(tag, "Authenticating");
-            AwesomePossum.authenticate(getContext(), id, getContext().getString(R.string.authenticateUrl), getContext().getString(R.string.apiKey));
-            authHandler.postDelayed(authRunnable, authInterval());
-        } else {
-            AwesomePossum.stopListening(getContext());
-            Log.i(tag, "Stopped authenticating");
-            timePassedInMillis = 0;
-            trustWheel.setProgress(0);
-            authHandler.removeCallbacks(authRunnable);
-        }
+    public void authenticate(String id) {
+        setRunnableWithId(id);
+        AwesomePossum.authenticate(getContext(), id, getContext().getString(R.string.authenticateUrl), getContext().getString(R.string.apiKey));
+        timePassedInMillis = 0;
+        trustWheel.setProgress(0);
+        authenticating = true;
+        authHandler.removeCallbacks(authRunnable);
+        authHandler.postDelayed(authRunnable, authInterval());
+    }
+
+    public void stopAuthenticate() {
+        AwesomePossum.stopListening(getContext());
+        timePassedInMillis = 0;
+        trustWheel.setProgress(0);
+        authHandler.removeCallbacks(authRunnable);
+        authenticating = false;
+    }
+
+    public boolean isAuthenticating() {
+        return authenticating;
     }
 }

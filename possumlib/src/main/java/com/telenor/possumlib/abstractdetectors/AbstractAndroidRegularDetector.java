@@ -58,7 +58,7 @@ public abstract class AbstractAndroidRegularDetector extends AbstractAndroidDete
     public boolean startListening() {
         boolean listen = super.startListening();
         if (listen && sensor != null) {
-            sensorManager.registerListener(this, sensor, MIN_INTERVAL_MICRO); //
+            sensorManager.registerListener(this, sensor, MIN_INTERVAL_MICRO);
         }
         return listen;
     }
@@ -77,8 +77,7 @@ public abstract class AbstractAndroidRegularDetector extends AbstractAndroidDete
 
     /**
      * Unregisters the sensor as a listener to sensorData from the given sensor type and handles
-     * the data retrieved. Note that the AbstractDetector superclass will store the data here only
-     * if the the isValidSet() returns true.
+     * the data retrieved.
      */
     @Override
     public void stopListening() {
@@ -112,8 +111,7 @@ public abstract class AbstractAndroidRegularDetector extends AbstractAndroidDete
         /*
          * Default handling (or refusal to handle) the accuracyChanged part of the sensor listening
          * This should be handled in some way in a later version, as it can severely effect whether
-         * the data is valuable or simply trash. Should perhaps come into play regarding the
-         * isValidSet() method?
+         * the data is valuable or simply trash.
          */
     }
 }
