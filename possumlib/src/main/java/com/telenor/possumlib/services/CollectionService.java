@@ -13,6 +13,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.abstractservices.AbstractBasicService;
+import com.telenor.possumlib.constants.Constants;
 import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.functionality.GatheringFunctionality;
 import com.telenor.possumlib.functionality.RestFunctionality;
@@ -94,7 +95,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
     }
 
     private int authTime() {
-        return 5000;
+        return Constants.AUTHENTICATION_TIME;
     }
 
     private void handleIntent(String action) {

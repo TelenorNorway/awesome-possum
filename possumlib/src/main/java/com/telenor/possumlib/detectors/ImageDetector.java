@@ -14,6 +14,7 @@ import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.asynctasks.AsyncFaceTask;
 import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
+import com.telenor.possumlib.constants.Constants;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.interfaces.ITensorLoadComplete;
 import com.telenor.possumlib.models.PossumBus;
@@ -131,7 +132,7 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
     }
 
     private long listenInterval() {
-        return 5000;
+        return Constants.AUTHENTICATION_TIME;
     }
 
     private AsyncFaceTask getFaceTask() {

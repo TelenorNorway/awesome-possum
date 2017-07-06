@@ -2,6 +2,8 @@ package com.telenor.possumlib.shadows;
 
 import android.media.AudioTrack;
 
+import com.telenor.possumlib.constants.Constants;
+
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
@@ -12,6 +14,6 @@ import org.robolectric.annotation.Implements;
 public class ShadowAudioTrack {
     @Implementation
     public static int getMinBufferSize(int sampleRate, int channelConfig, int audioFormat) {
-        return 5000; // This is actually retrieved by way of a native method, assumes a standard value
+        return Constants.AUTHENTICATION_TIME; // This is actually retrieved by way of a native method, assumes a standard value
     }
 }

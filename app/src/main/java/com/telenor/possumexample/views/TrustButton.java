@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import com.telenor.possumexample.R;
 import com.telenor.possumlib.AwesomePossum;
+import com.telenor.possumlib.constants.Constants;
 import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.utils.Send;
 
@@ -78,7 +79,7 @@ public class TrustButton extends RelativeLayout {
      * @return the time in milliseconds
      */
     private int authTime() {
-        return 5000;
+        return Constants.AUTHENTICATION_TIME;
     }
 
     private int authInterval() {

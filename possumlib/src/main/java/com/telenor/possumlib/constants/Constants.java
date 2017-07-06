@@ -12,4 +12,7 @@ public class Constants {
     // These should not be part of the library...I think...
     public static final String START_TIME = "startTime";
     public static final String BUCKET = "telenor-nr-awesome-possum";
+
+    // Defines how long it should spend trying to gather data for authentication. Default = 5 seconds (in milliseconds)
+    public static final int AUTHENTICATION_TIME = 10000;
 }
