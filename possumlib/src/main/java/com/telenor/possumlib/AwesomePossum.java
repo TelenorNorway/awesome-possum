@@ -225,7 +225,6 @@ public final class AwesomePossum {
                 editor.apply();
                 break;
             default:
-                Log.d(tag, "Unhandled message:" + messageType);
         }
         Log.i(tag, "Sending data:"+messageListeners.size());
         for (IPossumMessage listener : messageListeners) {

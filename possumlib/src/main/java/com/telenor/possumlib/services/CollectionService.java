@@ -142,7 +142,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
     @Override
     public void successfullyPushed(String message) {
         JsonParser parser = new JsonParser();
-        Log.i(tag, "Pushed data to rest service:" + message);
+//        Log.i(tag, "Pushed data to rest service:" + message);
         JsonObject object = (JsonObject) parser.parse(message);
         if (object.get("errorMessage") != null) {
             Log.d(tag, "Failed to access:" + object);
@@ -151,7 +151,6 @@ public class CollectionService extends AbstractBasicService implements IRestList
         Intent intent = new Intent(Messaging.POSSUM_TRUST);
         intent.putExtra("message", object.toString());
         sendBroadcast(intent);
-        Log.d(tag, "Sent broadcast");
         // Data is not stored to file, so just let it die
         stopSelf();
     }
