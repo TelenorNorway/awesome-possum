@@ -59,6 +59,7 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
             }
         });
         ViewPager viewPager = (ViewPager) view.findViewById(R.id.viewPager);
+        viewPager.setOffscreenPageLimit(3);
         TabLayout tabLayout = (TabLayout) view.findViewById(R.id.tabLayout);
         viewPager.setAdapter(new MyPagerAdapter(getChildFragmentManager()));
         tabLayout.setupWithViewPager(viewPager);

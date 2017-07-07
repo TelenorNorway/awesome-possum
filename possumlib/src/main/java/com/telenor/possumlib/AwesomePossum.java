@@ -131,14 +131,17 @@ public final class AwesomePossum {
         return latestTrustScore.get(detector).getAsJsonObject().get("score").getAsFloat();
     }
 
-    private static String detectorNameByType(int detectorType) {
+    public static String detectorNameByType(int detectorType) {
         switch (detectorType) {
             case DetectorType.Accelerometer: return "accelerometer";
             case DetectorType.Bluetooth: return "bluetooth";
             case DetectorType.Audio: return "sound";
+            case DetectorType.Image: return "image";
+            case DetectorType.Position: return "position";
+            case DetectorType.Wifi: return "network";
             case DetectorType.Gyroscope: return "gyroscope";
         }
-        return "f00";
+        return "f00:"+detectorType;
     }
 
     private static void notifyTrustChange(int type, float newValue, String status) {
