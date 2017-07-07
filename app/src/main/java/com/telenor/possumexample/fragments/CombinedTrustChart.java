@@ -46,7 +46,7 @@ public class CombinedTrustChart extends Fragment implements IPossumTrust {
         lineChart.getXAxis().setDrawAxisLine(true);
         lineChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
         lineChart.setDescription(null);
-        lineChart.getAxisLeft().setAxisMaximum(1);
+        lineChart.getAxisLeft().setAxisMaximum(1.1f);
         lineChart.getAxisLeft().setAxisMinimum(0);
         lineChart.getAxisLeft().setDrawLabels(true);
         lineChart.getAxisLeft().setDrawGridLines(false);
@@ -110,17 +110,14 @@ public class CombinedTrustChart extends Fragment implements IPossumTrust {
     private LineDataSet createSet() {
         LineDataSet set = new LineDataSet(null, "TrustScore over time");
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
-        set.setCircleColor(Color.WHITE);
-        set.setColor(ColorTemplate.getHoloBlue());
         set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
         set.setLineWidth(2f);
         set.setCircleRadius(0f);
         set.setFillAlpha(65);
         set.setFillColor(ColorTemplate.getHoloBlue());
         set.setHighLightColor(Color.rgb(244, 117, 117));
-        set.setValueTextColor(Color.BLACK);
-        set.setValueTextSize(9f);
-        set.setDrawValues(true);
+        set.setDrawValues(false);
+        set.setDrawCircles(false);
         return set;
     }
 
