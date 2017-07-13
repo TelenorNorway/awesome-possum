@@ -11,7 +11,6 @@
         android:text="Default text"
         android:layout_centerHorizontal="true"
         android:layout_height="wrap_content" />
-
     <com.telenor.possumexample.views.TrustButton
         android:id="@+id/trustWheel"
         android:layout_width="250dp"
@@ -19,6 +18,12 @@
         android:layout_centerHorizontal="true"
         android:layout_below="@id/status"
         android:layout_height="250dp" />
+    <com.telenor.possumexample.views.IconWheel
+        android:id="@+id/iconWheel"
+        android:layout_width="300dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/status"
+        android:layout_height="300dp" />
 
     <RelativeLayout
         android:layout_width="match_parent"

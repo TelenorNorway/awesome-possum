@@ -135,11 +135,7 @@ public class TrustWheel extends View {
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         if (heightMode != MeasureSpec.UNSPECIFIED && widthMode != MeasureSpec.UNSPECIFIED) {
-            if (widthWithoutPadding > heightWithoutPadding) {
-                size = heightWithoutPadding;
-            } else {
-                size = widthWithoutPadding;
-            }
+            size = widthWithoutPadding > heightWithoutPadding?heightWithoutPadding:widthWithoutPadding;
         } else {
             size = Math.max(heightWithoutPadding, widthWithoutPadding);
         }
