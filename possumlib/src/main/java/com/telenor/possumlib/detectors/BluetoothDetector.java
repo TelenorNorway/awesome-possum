@@ -44,12 +44,10 @@ public class BluetoothDetector extends AbstractDetector {
      * Constructor for a Bluetooth Detector
      *
      * @param context a valid android context
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public BluetoothDetector(final Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
+    public BluetoothDetector(final Context context, @NonNull PossumBus eventBus) {
+        super(context, eventBus);
         // TODO: Confirm coarse/fine location and bluetooth admin for this
         BluetoothManager bluetoothManager;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {

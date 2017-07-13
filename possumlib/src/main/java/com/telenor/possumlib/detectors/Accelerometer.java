@@ -19,12 +19,10 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
      * Constructor for Accelerometer
      *
      * @param context        Any android context
-     * @param uniqueUserId  the unique user id
      * @param eventBus       an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public Accelerometer(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, Sensor.TYPE_ACCELEROMETER, uniqueUserId, eventBus, authenticating);
+    public Accelerometer(Context context, @NonNull PossumBus eventBus) {
+        super(context, Sensor.TYPE_ACCELEROMETER, eventBus);
     }
 
     @Override
@@ -44,11 +42,6 @@ public class Accelerometer extends AbstractZippingAndroidDetector {
         array.add(""+event.values[2]);
         sessionValues.add(array);
         super.onSensorChanged(event);
-    }
-
-    @Override
-    public String requiredPermission() {
-        return null;
     }
 
     @Override

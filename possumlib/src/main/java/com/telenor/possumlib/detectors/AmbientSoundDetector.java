@@ -39,12 +39,10 @@ public class AmbientSoundDetector extends AbstractDetector {
      * Constructor for an ambient sound detector
      *
      * @param context        a valid android context
-     * @param uniqueUserId the unique user id
      * @param eventBus       the event bus used for sending messages to and from
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public AmbientSoundDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
+    public AmbientSoundDetector(Context context, @NonNull PossumBus eventBus) {
+        super(context, eventBus);
 //        int windowSamples = sampleRate() * windowSize() / 1000;
         recordingSamples = sampleRate() * ((int) authenticationListenInterval() / 1000);
         bufferSize = AudioTrack.getMinBufferSize(sampleRate(), AudioFormat.CHANNEL_OUT_MONO, audioEncoding());

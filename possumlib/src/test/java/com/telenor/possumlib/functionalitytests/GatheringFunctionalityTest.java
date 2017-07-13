@@ -64,7 +64,7 @@ public class GatheringFunctionalityTest {
         };
         Assert.assertFalse(methodCalled);
         Assert.assertFalse(detectorsAdded);
-        gatheringFunctionality.setDetectorsWithId(RuntimeEnvironment.application, "uniqueUserId", false, null);
+        gatheringFunctionality.setDetectors(RuntimeEnvironment.application, "uniqueUserId", false, null);
         Assert.assertTrue(methodCalled);
         Assert.assertTrue(detectorsAdded);
     }

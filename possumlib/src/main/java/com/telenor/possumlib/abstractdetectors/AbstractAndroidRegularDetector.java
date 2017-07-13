@@ -22,12 +22,10 @@ public abstract class AbstractAndroidRegularDetector extends AbstractAndroidDete
      * Constructor for regular android sensor detectors
      * @param context    Any android context
      * @param sensorType The Sensor.Type you wish to use for this sensor
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    protected AbstractAndroidRegularDetector(Context context, int sensorType, String uniqueUserId, PossumBus eventBus, boolean authenticating) {
-        super(context, sensorType, uniqueUserId, eventBus, authenticating);
+    protected AbstractAndroidRegularDetector(Context context, int sensorType, PossumBus eventBus) {
+        super(context, sensorType, eventBus);
         if (sensor != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 eventBus.post(new MetaDataChangeEvent(DateTime.now().getMillis()+" "+ detectorName() + " FIFO SIZE " + sensor.getFifoMaxEventCount() + " " + sensor.getFifoReservedEventCount()));

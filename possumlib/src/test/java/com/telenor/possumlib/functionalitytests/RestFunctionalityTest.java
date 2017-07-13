@@ -38,7 +38,7 @@ public class RestFunctionalityTest {
 
             }
         };
-        restFunctionality = new RestFunctionality(listener, detectors, url, uniqueUserId, fakeApiKey);
+        restFunctionality = new RestFunctionality(listener, url, fakeApiKey);
     }
 
     @After

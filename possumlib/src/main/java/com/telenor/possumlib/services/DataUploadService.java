@@ -40,7 +40,8 @@ public class DataUploadService extends AbstractAmazonUploadService {
     @Override
     public List<File> filesDesiredForUpload() {
         PossumBus possumBus = new PossumBus();
-        for (AbstractDetector detector : Get.Detectors(this, uniqueUserId, possumBus, false)) {
+        for (AbstractDetector detector : Get.Detectors(this, possumBus)) {
+            detector.setUniqueUser(uniqueUserId);
             detector.prepareUpload();
             detector.terminate();
         }

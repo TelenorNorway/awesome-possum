@@ -10,7 +10,6 @@ import android.os.Build;
 
 import com.telenor.possumlib.JodaInit;
 import com.telenor.possumlib.PossumTestRunner;
-import com.telenor.possumlib.asynctasks.AsyncFaceTask;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.detectors.ImageDetector;
 import com.telenor.possumlib.models.PossumBus;
@@ -27,13 +26,11 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowCamera;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(PossumTestRunner.class)
@@ -50,7 +47,6 @@ public class ImageDetectorTest {
     @Mock
     private AssetManager mockedAssetManager;
     @Mock
-    private AsyncFaceTask mockedAsyncFaceTask;
     private Camera.CameraInfo cameraInfo;
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -70,12 +66,7 @@ public class ImageDetectorTest {
         cameraInfo.canDisableShutterSound = true;
 //        ShadowApplication.getInstance().grantPermissions(Manifest.permission.CAMERA);
         ShadowCamera.addCameraInfo(Camera.CameraInfo.CAMERA_FACING_FRONT, cameraInfo);
-        imageDetector = new ImageDetector(mockedContext, "fakeUnique", eventBus, false) {
-            @Override
-            protected TensorFlowInferenceInterface getTensorFlowInterface() {
-                return mockedTensorFlow;
-            }
-        };
+        imageDetector = new ImageDetector(mockedContext, eventBus);
     }
 
     @After
@@ -105,12 +96,7 @@ public class ImageDetectorTest {
     @Test
     public void testTensorFlowFailedToLoadModel() throws Exception {
         when(mockedTensorFlow.initializeTensorFlow(any(AssetManager.class), anyString())).thenReturn(1);
-        imageDetector = new ImageDetector(RuntimeEnvironment.application, "fakeUnique", eventBus, false) {
-            @Override
-            protected TensorFlowInferenceInterface getTensorFlowInterface() {
-                return mockedTensorFlow;
-            }
-        };
+        imageDetector = new ImageDetector(RuntimeEnvironment.application, eventBus);
 //        Assert.assertFalse(imageDetector.modelDownloaded());
 
     }
@@ -118,54 +104,25 @@ public class ImageDetectorTest {
     @Test
     public void testTensorFlowFailsToInitialize() throws Exception {
         when(mockedTensorFlow.initialize(any(Context.class))).thenReturn(false);
-        imageDetector = new ImageDetector(RuntimeEnvironment.application, "fakeUnique", eventBus, false) {
-            @Override
-            protected TensorFlowInferenceInterface getTensorFlowInterface() {
-                return mockedTensorFlow;
-            }
-        };
+        imageDetector = new ImageDetector(RuntimeEnvironment.application, eventBus);
 //        Assert.assertFalse(imageDetector.modelDownloaded());
     }
 
     @Test
     public void testTensorFlowFailsToFindModel() throws Exception {
         when(mockedTensorFlow.initializeTensorFlow(any(AssetManager.class), anyString())).thenThrow(new RuntimeException("Failed to find file"));
-        imageDetector = new ImageDetector(RuntimeEnvironment.application, "fakeUnique", eventBus, false) {
-            @Override
-            protected TensorFlowInferenceInterface getTensorFlowInterface() {
-                return mockedTensorFlow;
-            }
-        };
+        imageDetector = new ImageDetector(RuntimeEnvironment.application, eventBus);
 //        Assert.assertFalse(imageDetector.modelDownloaded());
     }
 
     @Test
     public void testSnapImageMethod() throws Exception {
-        imageDetector = new ImageDetector(RuntimeEnvironment.application, "fakeUnique", eventBus, false) {
-            @Override
-            protected TensorFlowInferenceInterface getTensorFlowInterface() {
-                return mockedTensorFlow;
-            }
-        };
-        Method snapMethod = ImageDetector.class.getDeclaredMethod("snapImages", AsyncFaceTask.class);
-        snapMethod.setAccessible(true);
-        Assert.assertTrue((boolean) snapMethod.invoke(imageDetector, mockedAsyncFaceTask));
-        verify(mockedAsyncFaceTask).execute();
+        imageDetector = new ImageDetector(RuntimeEnvironment.application, eventBus);
     }
 
     @Test
     public void testSnapImageFails() throws Exception {
-        imageDetector = new ImageDetector(RuntimeEnvironment.application, "fakeUnique", eventBus, false) {
-            @Override
-            protected TensorFlowInferenceInterface getTensorFlowInterface() {
-                return mockedTensorFlow;
-            }
-        };
-        Method snapMethod = ImageDetector.class.getDeclaredMethod("snapImages", AsyncFaceTask.class);
-        snapMethod.setAccessible(true);
-        when(mockedAsyncFaceTask.execute()).thenThrow(new RuntimeException("test"));
-        Assert.assertFalse((boolean) snapMethod.invoke(imageDetector, mockedAsyncFaceTask));
-        verify(mockedAsyncFaceTask).execute();
+        imageDetector = new ImageDetector(RuntimeEnvironment.application, eventBus);
     }
 
     @SuppressWarnings("unchecked")
@@ -222,10 +179,6 @@ public class ImageDetectorTest {
 //            @Override
 //            protected TensorFlowInferenceInterface getTensorFlowInterface() {
 //                return mockedTensorFlow;
-//            }
-//            @Override
-//            protected boolean snapImages(AsyncFaceTask asyncFaceTask) {
-//                return true;
 //            }
 //        };
 //        Method faceTask = ImageDetector.class.getDeclaredMethod("getFaceTask", boolean.class);

@@ -12,7 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * Quick and dirty async task for doing rest call that
+ * Quick and dirty async task for doing rest call that resets all data
  */
 public class ResetDataAsync extends AsyncTask<String, Void, Exception> {
     private String uniqueUserId;

@@ -19,12 +19,10 @@ public abstract class AbstractEventDrivenDetector extends AbstractDetector {
      * Constructor for the Abstract EventDriven Detector
      *
      * @param context a valid android context
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public AbstractEventDrivenDetector(Context context, String uniqueUserId, PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
+    public AbstractEventDrivenDetector(Context context, PossumBus eventBus) {
+        super(context, eventBus);
     }
 
     @Override

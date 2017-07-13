@@ -43,7 +43,7 @@ public class RestFunctionality extends AsyncTask<JsonObject, Void, Exception> {
             urlConnection.setRequestProperty("x-api-key", apiKey);
             urlConnection.setRequestMethod("POST");
             byte[] data = object.toString().getBytes();
-//            longLog(object.toString());
+            longLog(object.toString());
             urlConnection.setFixedLengthStreamingMode(data.length);
             urlConnection.connect();
 
@@ -86,7 +86,7 @@ public class RestFunctionality extends AsyncTask<JsonObject, Void, Exception> {
     }
 
     public void longLog(String message) {
-        Log.i(tag, "Here it comes:");
+        Log.i(tag, "Here it comes:"+message.length());
         // Split by line, then ensure each line can fit into Log's maximum length.
         for (int i = 0, length = message.length(); i < length; i++) {
             int newline = message.indexOf('\n', i);

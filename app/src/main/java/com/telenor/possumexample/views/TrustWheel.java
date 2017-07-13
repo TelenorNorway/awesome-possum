@@ -35,13 +35,12 @@ public class TrustWheel extends View {
     private int authTime;
     private Path trianglePath = new Path();
 
-    private static final String tag = TrustWheel.class.getName();
-
     public TrustWheel(Context context, int authTime) {
         super(context);
         this.authTime = authTime;
         init();
     }
+
     public void setTrustScore(float score) {
         if (score < 0 || score > 100) {
             throw new IllegalArgumentException("Invalid trustScore, must be within 0 and 100. Was " + score + ".");
@@ -53,7 +52,7 @@ public class TrustWheel extends View {
             circleInnerPaint.setColor(Color.parseColor("#FF6600"));
         } else if (score < 60) {
             circleInnerPaint.setColor(Color.parseColor("#FFCC00"));
-        } else if (score < 80){
+        } else if (score < 80) {
             circleInnerPaint.setColor(Color.parseColor("#90EE90"));
         } else {
             circleInnerPaint.setColor(Color.GREEN);
@@ -65,6 +64,7 @@ public class TrustWheel extends View {
             getHandler().postDelayed(animation(), animInterval());
         }
     }
+
     private Runnable animation() {
         return new Runnable() {
             @Override
@@ -72,9 +72,9 @@ public class TrustWheel extends View {
                 // y = cos((t+1)π)/2+0.5 // Accelerate/Decelerate interpolator
                 // http://cogitolearning.co.uk/?p=1078
                 timeUsed += animInterval();
-                float timeDiff = timeUsed/animTime();
+                float timeDiff = timeUsed / animTime();
                 Rect oldTrust = triangleTrust(trustScore);
-                trustScore = oldTrustScore + (float)((newTrustScore - oldTrustScore) * (Math.cos((timeDiff+1)*Math.PI)/2+0.5));
+                trustScore = oldTrustScore + (float) ((newTrustScore - oldTrustScore) * (Math.cos((timeDiff + 1) * Math.PI) / 2 + 0.5));
                 Rect newTrust = triangleTrust(trustScore);
                 newTrust.union(oldTrust);
                 invalidate(newTrust);
@@ -90,7 +90,7 @@ public class TrustWheel extends View {
     }
 
     private int animInterval() {
-        return 10;
+        return 20;
     }
 
     private void init() {
@@ -110,11 +110,12 @@ public class TrustWheel extends View {
 
     /**
      * Milliseconds passed between auth attempts. Sets
+     *
      * @param timePassed milliseconds passed
      */
     public void setProgress(int timePassed) {
-        progressRads = (float)(360 * timePassed/authTime);
-        invalidate(new Rect((int)circleInnerBounds.left, (int)circleInnerBounds.top, (int)circleInnerBounds.right, (int)circleInnerBounds.bottom));
+        progressRads = (float) (360 * timePassed / authTime);
+        invalidate(new Rect((int) circleInnerBounds.left, (int) circleInnerBounds.top, (int) circleInnerBounds.right, (int) circleInnerBounds.bottom));
     }
 
     @Override
@@ -157,6 +158,7 @@ public class TrustWheel extends View {
 
     /**
      * Width of bar showing colors
+     *
      * @return int with size
      */
     private int barWidth() {
@@ -165,6 +167,7 @@ public class TrustWheel extends View {
 
     /**
      * Inner padding between inner button and outer bar
+     *
      * @return width
      */
     private int innerPadding() {
@@ -173,6 +176,7 @@ public class TrustWheel extends View {
 
     /**
      * Length of sides triangle pointing to current value has
+     *
      * @return length
      */
     private float triangleSize() {
@@ -181,19 +185,19 @@ public class TrustWheel extends View {
 
     private Rect triangleTrust(float trustScore) { // sin for høyde, cos for bredde
         // 100 TS * x = 330 grader = 33/10 = 3.3 grader pr trustScore
-        double rads = (Math.PI/180) * ((trustScore*3.3f)+90);
-        double upperRads = rads + Math.PI + Math.PI/6;
-        double lowerRads = rads + Math.PI - Math.PI/6;
-        float pointX = centerX+(float)Math.cos(rads) * hypotenuse;
-        float pointY = centerY+(float)Math.sin(rads) * hypotenuse;
-        float leftX = pointX+triangleSize()*(float)Math.cos(upperRads);
-        float leftY = pointY+triangleSize()*(float)Math.sin(upperRads);
-        float rightX = pointX+triangleSize()*(float)Math.cos(lowerRads);
-        float rightY = pointY+triangleSize()*(float)Math.sin(lowerRads);
-        int minX = (int)Math.min(leftX, rightX);
-        int maxX = (int)Math.max(leftX, rightX);
-        int minY = (int)Math.min(leftY, rightY);
-        int maxY = (int)Math.max(leftY, rightY);
+        double rads = (Math.PI / 180) * ((trustScore * 3.3f) + 90);
+        double upperRads = rads + Math.PI + Math.PI / 6;
+        double lowerRads = rads + Math.PI - Math.PI / 6;
+        float pointX = centerX + (float) Math.cos(rads) * hypotenuse;
+        float pointY = centerY + (float) Math.sin(rads) * hypotenuse;
+        float leftX = pointX + triangleSize() * (float) Math.cos(upperRads);
+        float leftY = pointY + triangleSize() * (float) Math.sin(upperRads);
+        float rightX = pointX + triangleSize() * (float) Math.cos(lowerRads);
+        float rightY = pointY + triangleSize() * (float) Math.sin(lowerRads);
+        int minX = (int) Math.min(leftX, rightX);
+        int maxX = (int) Math.max(leftX, rightX);
+        int minY = (int) Math.min(leftY, rightY);
+        int maxY = (int) Math.max(leftY, rightY);
         return new Rect(minX, minY, maxX, maxY);
     }
 
@@ -223,7 +227,7 @@ public class TrustWheel extends View {
         gradientMatrix.preRotate(90f, circleBounds.centerX(), circleBounds.centerY());
         sweepGradient.setLocalMatrix(gradientMatrix);
         circlePaint.setShader(sweepGradient);
-        hypotenuse = width/2 - paddingRight - barWidth() - barWidth()/2; // Assumes width = height
+        hypotenuse = width / 2 - paddingRight - barWidth() - barWidth() / 2; // Assumes width = height
         centerX = circleBounds.centerX();
         centerY = circleBounds.centerY();
     }
@@ -234,15 +238,15 @@ public class TrustWheel extends View {
         canvas.drawArc(circleBounds, 90, 330, false, circlePaint);
         canvas.drawArc(circleInnerBounds, 0, 360, false, circleInnerPaint);
         canvas.drawArc(circleInnerBounds, 270, progressRads, false, circleInnerStrokePaint);
-        double rads = (Math.PI/180) * ((trustScore*3.3f)+90); // 100 TS * x = 330 grader = 33/10 = 3.3 grader pr trustScore
-        float triX = centerX+(float)Math.cos(rads) * hypotenuse;
-        float triY = centerY+(float)Math.sin(rads) * hypotenuse;
-        double upperRads = rads + Math.PI + (Math.PI/180)*30;
-        double lowerRads = rads + Math.PI - (Math.PI/180)*30; // sin for høyde, cos for bredde
+        double rads = (Math.PI / 180) * ((trustScore * 3.3f) + 90); // 100 TS * x = 330 grader = 33/10 = 3.3 grader pr trustScore
+        float triX = centerX + (float) Math.cos(rads) * hypotenuse;
+        float triY = centerY + (float) Math.sin(rads) * hypotenuse;
+        double upperRads = rads + Math.PI + (Math.PI / 180) * 30;
+        double lowerRads = rads + Math.PI - (Math.PI / 180) * 30; // sin for høyde, cos for bredde
         trianglePath.reset();
         trianglePath.moveTo(triX, triY);
-        trianglePath.lineTo(triX+triangleSize()*(float)Math.cos(upperRads), triY+triangleSize()*(float)Math.sin(upperRads));
-        trianglePath.lineTo(triX+triangleSize()*(float)Math.cos(lowerRads), triY+triangleSize()*(float)Math.sin(lowerRads));
+        trianglePath.lineTo(triX + triangleSize() * (float) Math.cos(upperRads), triY + triangleSize() * (float) Math.sin(upperRads));
+        trianglePath.lineTo(triX + triangleSize() * (float) Math.cos(lowerRads), triY + triangleSize() * (float) Math.sin(lowerRads));
         trianglePath.close();
         canvas.drawPath(trianglePath, trianglePaint);
     }

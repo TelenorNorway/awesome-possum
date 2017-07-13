@@ -13,6 +13,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.v4.BuildConfig;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -72,7 +73,14 @@ public final class AwesomePossum {
     private static JsonObject latestTrustScore;
     private static DateTime lastAuthenticated;
 
-    private static void init(@NonNull Context context) {
+    /**
+     * Initialization of library, is done automatically by all class needing it - but it should be
+     * the first thing done when starting an app with the library. It will shorten the time it needs
+     * to authenticate or start using it, as the initialization will load a lot of models in the
+     * background first thing.
+     * @param context a valid android context
+     */
+    public static void init(@NonNull Context context) {
         if (initComplete) return;
         context = context.getApplicationContext();// Important since context needs to be equal for receivers
 //        ConnectSdk.sdkInitialize(context);
@@ -94,6 +102,7 @@ public final class AwesomePossum {
         };
         context.registerReceiver(trustReceiver, new IntentFilter(Messaging.POSSUM_TRUST));
         context.registerReceiver(serviceMessageReceiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
+        context.startService(new Intent(context, CollectionService.class));
     }
 
     private static void handleTrustIntent(Intent intent) {
@@ -180,12 +189,12 @@ public final class AwesomePossum {
     /**
      * Starts an attempt to authenticate with the possibility to enforce it
      *
-     * @param context      a valid android context
-     * @param uniqueUserId     the users unique identifier
-     * @param url     the absolute url it will communicate with
-     * @param apiKey     the key used to send to the rest api
-     * @param forceAttempt should it attempt to authenticate no matter what, let this be true
-     * @return true if it starts an attempt, false if too little time has passed
+     * @param context       a valid android context
+     * @param uniqueUserId  the users unique identifier
+     * @param url           the absolute url it will communicate with
+     * @param apiKey        the key used to send to the rest api
+     * @param forceAttempt  should it attempt to authenticate no matter what, let this be true
+     * @return              true if it starts an attempt, false if too little time has passed
      * or it is already running
      */
     public static boolean authenticate(@NonNull Context context, @NonNull String uniqueUserId, @NonNull String url, @NonNull String apiKey, boolean forceAttempt) {
@@ -238,9 +247,10 @@ public final class AwesomePossum {
     /**
      * Starts to listen/gather data while app is running
      *
-     * @param uniqueUserId  the unique user id
-     * @param identityPoolId the identity pool id it will verify with
-     * @throws GatheringNotAuthorizedException If the user hasn't accepted the app, this exception is thrown
+     * @param uniqueUserId                      the unique user id
+     * @param identityPoolId                    the identity pool id it will verify with
+     * @throws GatheringNotAuthorizedException  If the user hasn't accepted the app, this exception
+     *                                          is thrown
      */
     public static void startListening(@NonNull Context context, @NonNull String uniqueUserId, @NonNull String identityPoolId) throws GatheringNotAuthorizedException {
         init(context);
@@ -266,8 +276,8 @@ public final class AwesomePossum {
     /**
      * Enables you to request the needed permissions
      *
-     * @param activity an android activity to handle the requesting
-     * @return true if no permissions are missing, else false
+     * @param activity  an android activity to handle the requesting
+     * @return          true if no permissions are missing, else false
      */
     public static boolean requestNeededPermissions(@NonNull Activity activity) {
         init(activity);
@@ -309,14 +319,23 @@ public final class AwesomePossum {
     }
 
     /**
-     * This method is stops listening and clears up all resources used. Run this in your
-     * application onDestroy - but remember to call startUpload after it.
+     * This method is stops listening but does not clear up resources. Use terminate to do that.
      *
      * @param context a valid android context
      */
     public static void stopListening(@NonNull Context context) {
         context.stopService(new Intent(context, CollectionService.class));
         isListening = false;
+    }
+
+    /**
+     * This method is used to stop all usage of the library, terminating all listening and clearing
+     * up all resources used. Use this when you are done listening and are terminating your app.
+     *
+     * @param context a valid android context
+     */
+    public static void terminate(@NonNull Context context) {
+        stopListening(context);
         if (initComplete) {
             context = context.getApplicationContext(); // Important since context needs to be equal
             context.unregisterReceiver(serviceMessageReceiver);
@@ -425,6 +444,7 @@ public final class AwesomePossum {
         dangerousPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
         dangerousPermissions.add(Manifest.permission.CAMERA);
         dangerousPermissions.add(Manifest.permission.RECORD_AUDIO);
+//        dangerousPermissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE); // debug
         return dangerousPermissions;
     }
 

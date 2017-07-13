@@ -37,9 +37,9 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     private Context context;
     private final PossumBus eventBus;
     public static final int MINIMUM_SAMPLES = 500;
-    private final String uniqueUserId;
+    private String uniqueUserId;
     private IPollComplete pollListener;
-    protected final boolean isAuthenticating;
+    private boolean isAuthenticating; // Default not used for authenticating
     int storedValues;
 
     protected final List<JsonArray> sessionValues; // = new ConcurrentLinkedQueue<>()
@@ -49,17 +49,21 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * Constructor for the most basic of all detector abstractions
      *
      * @param context        a valid android context
-     * @param uniqueUserId   the unique user id
      * @param eventBus       an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    protected AbstractDetector(Context context, @NonNull String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
+    protected AbstractDetector(Context context, @NonNull PossumBus eventBus) {
         if (context == null) throw new RuntimeException("Missing context on detector:" + this);
-        this.uniqueUserId = uniqueUserId;
         this.context = context;
         this.eventBus = eventBus;
-        isAuthenticating = authenticating;
         sessionValues = createInternalList();
+    }
+
+    /**
+     * Set the unique user id the detector will use
+     * @param uniqueUserId a string representation of the user id, must be unique for user
+     */
+    public void setUniqueUser(String uniqueUserId) {
+        this.uniqueUserId = uniqueUserId;
     }
 
     /**
@@ -74,11 +78,14 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     /**
      * Whether the detector is enabled on the phone. This is usually a yes or no, depending on model
      * etc. The detector cannot be used if it is not enabled. All subclasses must check for its
-     * respective confirmation of whether or not it exist on the phone
+     * respective confirmation of whether or not it exist on the phone. Default the detector is
+     * enabled. All detectors must confirm this or it will be so.
      *
      * @return true if sensor is present, false if not present
      */
-    public abstract boolean isEnabled();
+    public boolean isEnabled() {
+        return true;
+    }
 
     protected List<JsonArray> createInternalList() {
         return new ArrayList<>();
@@ -95,12 +102,14 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     }
 
     /**
-     * The required permission to use the detector, if any. Must be overridden. If null, no
-     * permission is needed.
+     * The required permission to use the detector, if any. Must be overridden if a permission is
+     * needed
      *
      * @return a manifest permission or null for none needed
      */
-    public abstract String requiredPermission();
+    public String requiredPermission() {
+        return null;
+    }
 
     /**
      * For detectors requiring access to certain privileges - like location or camera,
@@ -130,7 +139,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * @return true if started to startListening, else false
      */
     public boolean startListening() {
-        if (isEnabled()) { // && isAvailable()
+        if (isEnabled() && uniqueUserId != null) { // && isAvailable()
             // Removed isAvailable from listening, it should start to startListening if it detects that it
             // can startListening regardless of whether it is actually available there and then
             isListening = true;
@@ -165,6 +174,14 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
             filesSize += file.length();
         }
         return filesSize;
+    }
+
+    /**
+     * Method for setting an eventual model to the detector
+     * @param model the model
+     */
+    public void setModel(Object model) {
+        // Empty on purpose, override in relevant detectors
     }
 
     /**
@@ -340,6 +357,22 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * @return string with "name" or "designation" of detector
      */
     public abstract String detectorName();
+
+    /**
+     * Define whether the detector should be used for authenticating next, or for listening
+     * @param isAuthenticating true if it should be used for authenticating
+     */
+    public void setAuthenticating(boolean isAuthenticating) {
+        this.isAuthenticating = isAuthenticating;
+    }
+
+    /**
+     * Whether the detector is presently being used for authentication or not
+     * @return true if used for authentication, false if not
+     */
+    public boolean isAuthenticating() {
+        return isAuthenticating;
+    }
 
     /**
      * Zip data and move to upload directory.

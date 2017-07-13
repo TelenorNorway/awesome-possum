@@ -35,12 +35,10 @@ public class NetworkDetector extends AbstractDetector implements IOnReceive {
      * Constructor for NetworkDetector
      *
      * @param context a valid android context
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public NetworkDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
+    public NetworkDetector(Context context, @NonNull PossumBus eventBus) {
+        super(context, eventBus);
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -98,11 +96,6 @@ public class NetworkDetector extends AbstractDetector implements IOnReceive {
 
     public boolean wifiAvailable() {
         return wifiManager != null && wifiManager.isWifiEnabled() && wifiState == WifiManager.WIFI_STATE_ENABLED;
-    }
-
-    @Override
-    public String requiredPermission() {
-        return null;
     }
 
     @Override

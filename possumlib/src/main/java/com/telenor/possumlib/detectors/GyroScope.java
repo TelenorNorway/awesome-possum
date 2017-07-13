@@ -20,17 +20,10 @@ public class GyroScope extends AbstractZippingAndroidDetector {
      * Constructor for the gyroscope
      *
      * @param context    Any android context
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public GyroScope(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, Sensor.TYPE_GYROSCOPE, uniqueUserId, eventBus, authenticating);
-    }
-
-    @Override
-    public String requiredPermission() {
-        return null;
+    public GyroScope(Context context, @NonNull PossumBus eventBus) {
+        super(context, Sensor.TYPE_GYROSCOPE, eventBus);
     }
 
     @Override

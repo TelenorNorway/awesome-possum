@@ -20,17 +20,10 @@ public class Magnetometer extends AbstractZippingAndroidDetector implements Sens
      * Constructor for the Magnetometer
      *
      * @param context    Any android context
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public Magnetometer(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, Sensor.TYPE_MAGNETIC_FIELD, uniqueUserId, eventBus, authenticating);
-    }
-
-    @Override
-    public String requiredPermission() {
-        return null;
+    public Magnetometer(Context context, @NonNull PossumBus eventBus) {
+        super(context, Sensor.TYPE_MAGNETIC_FIELD, eventBus);
     }
 
     @Override

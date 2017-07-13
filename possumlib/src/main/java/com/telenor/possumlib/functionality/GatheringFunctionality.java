@@ -2,12 +2,10 @@ package com.telenor.possumlib.functionality;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
 
 import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
-import com.telenor.possumlib.constants.DetectorType;
-import com.telenor.possumlib.interfaces.IPollComplete;
+import com.telenor.possumlib.interfaces.IModelLoaded;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.Get;
 
@@ -17,30 +15,26 @@ import java.util.List;
 /**
  * Handles the start and stop of collecting data from the detectors
  */
-public class GatheringFunctionality {
-    private PossumBus eventBus;
+public class GatheringFunctionality implements IModelLoaded {
     private boolean isGathering;
     private List<AbstractDetector> detectors = new ArrayList<>();
 
     private static final String tag = GatheringFunctionality.class.getName();
 
-    public GatheringFunctionality() {
-        eventBus = new PossumBus();
+    public GatheringFunctionality(@NonNull Context context) {
+        detectors.addAll(Get.Detectors(context, new PossumBus()));
     }
 
-    public void setDetectorsWithId(final @NonNull Context context, final @NonNull String uniqueUserId, final boolean authenticating, final IPollComplete listener) {
-        stopGathering();
-        detectors.clear();
-        eventBus.clearAll();
-        addDetectors(context, uniqueUserId, authenticating);
+    public void setAuthenticationState(boolean isAuthenticating) {
         for (AbstractDetector detector : detectors) {
-            detector.setPollListener(listener);
+            detector.setAuthenticating(isAuthenticating);
         }
     }
 
-    @VisibleForTesting
-    protected void addDetectors(@NonNull Context context, @NonNull String uniqueUserId, boolean authenticating) {
-        detectors.addAll(Get.Detectors(context, uniqueUserId, eventBus, authenticating));
+    public void setUniqueUserId(String uniqueUserId) {
+        for (AbstractDetector detector : detectors) {
+            detector.setUniqueUser(uniqueUserId);
+        }
     }
 
     public void startGathering() {
@@ -55,7 +49,7 @@ public class GatheringFunctionality {
     public void stopGathering() {
         if (isGathering) {
             for (AbstractDetector detector : detectors) {
-                detector.terminate();
+                detector.stopListening();
                 detector.prepareUpload();
             }
             isGathering = false;
@@ -69,12 +63,6 @@ public class GatheringFunctionality {
         }
         return detectorObjects;
     }
-    public AbstractDetector acc() {
-        for (AbstractDetector detector : detectors) {
-            if (detector.detectorType() == DetectorType.Accelerometer) return detector;
-        }
-        return null;
-    }
 
     public List<AbstractDetector> detectors() {
         return detectors;
@@ -82,5 +70,17 @@ public class GatheringFunctionality {
 
     public boolean isGathering() {
         return isGathering;
+    }
+
+    public AbstractDetector detectorWithId(int detectorType) {
+        for (AbstractDetector detector : detectors) {
+            if (detector.detectorType() == detectorType) return detector;
+        }
+        return null;
+    }
+
+    @Override
+    public void modelLoaded(int detectorType, Object model) {
+        detectorWithId(detectorType).setModel(model);
     }
 }

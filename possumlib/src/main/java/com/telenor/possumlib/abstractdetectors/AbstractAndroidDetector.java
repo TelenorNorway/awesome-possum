@@ -23,12 +23,10 @@ public abstract class AbstractAndroidDetector extends AbstractDetector {
      *
      * @param context    Any android context
      * @param sensorType The Sensor.Type you wish to use for this sensor
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    protected AbstractAndroidDetector(Context context, int sensorType, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
+    protected AbstractAndroidDetector(Context context, int sensorType, @NonNull PossumBus eventBus) {
+        super(context, eventBus);
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager == null) {
             isEnabled = false;

@@ -17,12 +17,10 @@ public class SatelliteDetector extends AbstractEventDrivenDetector {
     /**
      * Constructor for SatelliteDetector
      * @param context a valid android context
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public SatelliteDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
+    public SatelliteDetector(Context context, @NonNull PossumBus eventBus) {
+        super(context, eventBus);
     }
 
     @Override

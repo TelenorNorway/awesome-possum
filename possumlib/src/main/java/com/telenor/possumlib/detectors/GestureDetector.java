@@ -19,27 +19,10 @@ public class GestureDetector extends AbstractEventDrivenDetector implements View
      * Constructor for GestureDetector
      *
      * @param context a valid android context
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public GestureDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
-
-    @Override
-    public boolean isAvailable() {
-        return true;
-    }
-
-    @Override
-    public String requiredPermission() {
-        return null;
+    public GestureDetector(Context context, @NonNull PossumBus eventBus) {
+        super(context, eventBus);
     }
 
     @Override

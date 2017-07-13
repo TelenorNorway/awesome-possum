@@ -2,76 +2,78 @@ package com.telenor.possumlib.detectors;
 
 import android.Manifest;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.ImageFormat;
+import android.graphics.PointF;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
-import android.os.AsyncTask;
-import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Frame;
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.FaceDetector;
+import com.google.android.gms.vision.face.Landmark;
+import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
-import com.telenor.possumlib.asynctasks.AsyncFaceTask;
-import com.telenor.possumlib.changeevents.MetaDataChangeEvent;
-import com.telenor.possumlib.constants.Constants;
 import com.telenor.possumlib.constants.DetectorType;
-import com.telenor.possumlib.interfaces.ITensorLoadComplete;
+import com.telenor.possumlib.interfaces.IFaceFound;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.tensorflow.TensorFlowInferenceInterface;
+import com.telenor.possumlib.utils.AwesomeFaceDetector;
 
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.util.List;
+
+import static com.telenor.possumlib.utils.ImageUtils.alignFace;
+import static com.telenor.possumlib.utils.ImageUtils.bitmapToIntArray;
+import static com.telenor.possumlib.utils.ImageUtils.rotateBitmap;
 
 /***
  * Uses camera to determine familiar places, face and face identity.
  */
-public class ImageDetector extends AbstractDetector implements ITensorLoadComplete {
+public class ImageDetector  extends AbstractDetector implements IFaceFound {
+    private boolean requestedListening;
+    private TensorFlowInferenceInterface tensorFlowInterface;
+    private CameraSource cameraSource;
+    private static final int BMP_WIDTH = 96;
+    private static final int BMP_HEIGHT = 96;
+    private static final int PREVIEW_WIDTH = 640;
+    private static final int PREVIEW_HEIGHT = 480;
+    private static long lastFaceFound;
+    private static final long minTimeBetweenFaces = 2000; // Defines the time between faces in milliseconds
+
     private static final String tag = ImageDetector.class.getName();
-    private boolean modelLoaded = false;
-    private boolean requestedListening = false;
-    private int totalFaces;
-    private AsyncFaceTask asyncFaceTask;
-    private TensorLoad tensorLoad;
-    private Handler handler = new Handler(Looper.getMainLooper());
-    private static final String fileName = "tensorflow_facerecognition.pb";
-    private static final String fullPath = "file:///android_asset/" + fileName;
-    public TensorFlowInferenceInterface tensorFlowInterface;
 
     /**
      * Constructor for Image detector
      *
-     * @param context        a valid android context
-     * @param uniqueUserId   the unique user id
-     * @param eventBus       an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
+     * @param context  a valid android context
+     * @param eventBus an event bus for internal messages
      */
-    public ImageDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
-        totalFaces = 0;
-        // Load tensorFlow interface
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            try {
-                if (!modelLoaded) {
-                    // Confirm file is found in assets before attempting to use it
-                    tensorLoad = new TensorLoad(context, this);
-                    tensorLoad.execute();
-                }
-            } catch (Exception e) {
-                Log.e(tag, "Failed to initialize TensorFlow:", e);
-            }
-        }
+    public ImageDetector(Context context, @NonNull PossumBus eventBus) {
+        super(context, eventBus);
+        AwesomeFaceDetector faceDetector = getGoogleFaceDetector(context);
+        faceDetector.setProcessor(
+                new LargestFaceFocusingProcessor.Builder(faceDetector, null)
+                        .build());
+        cameraSource = new CameraSource.Builder(context, faceDetector)
+                .setFacing(CameraSource.CAMERA_FACING_FRONT)
+                .setRequestedPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT)
+                .setRequestedFps(30)
+                .build();
     }
 
-    protected TensorFlowInferenceInterface getTensorFlowInterface() {
-        return new TensorFlowInferenceInterface();
-    }
-
-    @Override
-    public void stopListening() {
-        cancelFaceSnap();
-        cancelTensorLoad();
-        requestedListening = false;
-        super.stopListening();
+    private AwesomeFaceDetector getGoogleFaceDetector(Context context) {
+        FaceDetector.Builder builder = new FaceDetector.Builder(context);
+        builder.setLandmarkType(FaceDetector.ALL_LANDMARKS);
+        builder.setTrackingEnabled(false);
+        builder.setMode(FaceDetector.ACCURATE_MODE);
+        return new AwesomeFaceDetector(builder.build(), this);
     }
 
     @Override
@@ -80,8 +82,11 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
     }
 
     @Override
-    public boolean isAvailable() {
-        return modelLoaded && super.isAvailable();
+    public void setModel(Object model) {
+        this.tensorFlowInterface = (TensorFlowInferenceInterface) model;
+        if (requestedListening) {
+            startListening();
+        }
     }
 
     @Override
@@ -95,155 +100,81 @@ public class ImageDetector extends AbstractDetector implements ITensorLoadComple
     }
 
     @Override
+    @SuppressWarnings("MissingPermission")
+    public boolean startListening() {
+        requestedListening = true;
+        boolean listen = isAvailable() && super.startListening();
+        if (listen) {
+            try {
+                cameraSource.start();
+            } catch (Exception e) {
+                Log.i(tag, "Failed:", e);
+                stopListening();
+                return false;
+            }
+        }
+        return listen;
+    }
+
+    @Override
+    public void stopListening() {
+        if (isListening()) {
+            cameraSource.stop();
+        }
+        super.stopListening();
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return tensorFlowInterface != null && super.isAvailable();
+    }
+
+    @Override
     public String detectorName() {
         return "image";
     }
 
     @Override
-    public boolean startListening() {
-        boolean listen = super.startListening();
-        requestedListening = true;
-        if (listen && isAvailable()) {
-            cancelFaceSnap();
-            snapImages(getFaceTask());
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    stopListening();
-                }
-            }, listenInterval());
+    public void faceFound(Face face, Frame frame) {
+        if ((now() - lastFaceFound) < minTimeBetweenFaces) {
+            return;
         }
-        return listen;
-    }
-
-    private void cancelFaceSnap() {
-        if (asyncFaceTask != null) {
-            asyncFaceTask.cancel(true);
-            asyncFaceTask = null;
-            Log.d(tag, "Stopping eventual image capture running");
-        }
-    }
-
-    private void cancelTensorLoad() {
-        if (tensorLoad != null) {
-            tensorLoad.cancel(true);
-            tensorLoad = null;
-        }
-    }
-
-    private long listenInterval() {
-        return Constants.AUTHENTICATION_TIME;
-    }
-
-    private AsyncFaceTask getFaceTask() {
-        try {
-            return new AsyncFaceTask(context(), this,
-                    Camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT));
-        } catch (Exception e) {
-            eventBus().post(new MetaDataChangeEvent("Camera was busy when taking picture"));
-            Log.e(tag, "Could not open camera, aborting");
-        }
-        return null;
-    }
-
-    protected boolean snapImages(AsyncFaceTask asyncFaceTask) {
-        if (asyncFaceTask != null) {
-            try {
-                this.asyncFaceTask = asyncFaceTask;
-                this.asyncFaceTask.execute();
-            } catch (Exception ignore) {
-                return false;
+        int height = frame.getMetadata().getHeight();
+        int width = frame.getMetadata().getWidth();
+        YuvImage yuvimage = new YuvImage(frame.getGrayscaleImageData().array(), ImageFormat.NV21, width, height, null);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        yuvimage.compressToJpeg(new Rect(0, 0, width, height), 100, byteArrayOutputStream); // Where 100 is the quality of the generated jpeg
+        byte[] jpegArray = byteArrayOutputStream.toByteArray();
+        Bitmap image = rotateBitmap(BitmapFactory.decodeByteArray(jpegArray, 0, jpegArray.length), -90);
+        PointF leftEye = null;
+        PointF rightEye = null;
+        PointF mouth = null;
+        List<Landmark> landmarks = face.getLandmarks();
+        for (Landmark landmark : landmarks) {
+            if (landmark.getType() == Landmark.LEFT_EYE) {
+                leftEye = landmark.getPosition();
+            } else if (landmark.getType() == Landmark.RIGHT_EYE) {
+                rightEye = landmark.getPosition();
+            } else if (landmark.getType() == Landmark.BOTTOM_MOUTH) {
+                mouth = landmark.getPosition();
             }
-            return true;
-        } else return false;
-    }
-
-    public void storeFace(float[] weights) {
-        totalFaces += 1;
+        }
+        if (leftEye == null || rightEye == null || mouth == null) {
+            Log.i(tag, "Could not find enough landmarks, skipping face");
+            return;
+        }
+        // Additional check for landmarks with invalid values
+        else if (leftEye.x == 0.0 || rightEye.x == 0.0 || mouth.x == 0.0) {
+            Log.d(tag, "Some landmarks found to be invalid, skipping face");
+            return;
+        }
+        lastFaceFound = now();
         JsonArray array = new JsonArray();
         array.add("" + now());
+        float[] weights = tensorFlowInterface.getWeights(bitmapToIntArray(Bitmap.createScaledBitmap(alignFace(image, leftEye, rightEye, mouth), BMP_WIDTH, BMP_HEIGHT, false)));
         for (float weight : weights) {
             array.add("" + weight);
         }
         sessionValues.add(array);
-    }
-
-    @Override
-    public void tensorFlowLoaded() {
-        modelLoaded = true;
-        if (requestedListening) {
-            startListening();
-        }
-    }
-
-    @Override
-    public void tensorFlowFailedLoad() {
-        modelLoaded = false;
-    }
-
-    private class TensorLoad extends AsyncTask<Void, Void, Boolean> {
-        private ITensorLoadComplete listener;
-        private Context context;
-
-        TensorLoad(Context context, ITensorLoadComplete listener) {
-            this.context = context;
-            this.listener = listener;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            String[] paths;
-            try {
-                paths = context.getAssets().list("");
-            } catch (IOException e) {
-                return false;
-            }
-            if (paths.length == 0) {
-                Log.w(tag, "No tensorFlow file found - no assets, ignoring image detector");
-                return false;
-            } else {
-                boolean tensorFlowIsFound = false;
-                for (String file : paths) {
-                    if (file.equals(fileName)) tensorFlowIsFound = true;
-                }
-                if (!tensorFlowIsFound) {
-                    Log.w(tag, "No tensorFlow file is found in assets, ignoring image detector");
-                    return false;
-                }
-            }
-            Log.d(tag, "Starting initialize of TensorFlow");
-            try {
-                tensorFlowInterface = getTensorFlowInterface();
-                if (tensorFlowInterface.initialize(context)) {
-                    final int status = tensorFlowInterface.initializeTensorFlow(context.getAssets(),
-                            fullPath);
-                    if (status != 0) {
-                        Log.e(tag, "TF init status: " + status);
-                        return false;
-                    }
-                    Log.d(tag, "Model loaded");
-                    return true;
-                } else {
-                    Log.w(tag, "Failed to initialize TensorFlow");
-                    return false;
-                }
-            } catch (Exception e) {
-                return false;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Boolean result) {
-            if (result) listener.tensorFlowLoaded();
-            else listener.tensorFlowFailedLoad();
-        }
-    }
-
-    public void resetTotalFaces() {
-        totalFaces = 0;
-    }
-
-    public int getTotalFaces() {
-        return totalFaces;
     }
 }

@@ -17,22 +17,15 @@ public class MetaDataDetector extends AbstractEternalEventDetector {
      * Constructor for the MetaDataDetector
      *
      * @param context a valid android context
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public MetaDataDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
-    }
-
-    @Override
-    public String requiredPermission() {
-        return null;
+    public MetaDataDetector(Context context, @NonNull PossumBus eventBus) {
+        super(context, eventBus);
     }
 
     @Override
     public void eventReceived(PossumEvent object) {
-        if (object instanceof MetaDataChangeEvent && isListening()) {
+        if (object instanceof MetaDataChangeEvent && isListening() && !isAuthenticating()) {
             super.eventReceived(object);
         }
     }

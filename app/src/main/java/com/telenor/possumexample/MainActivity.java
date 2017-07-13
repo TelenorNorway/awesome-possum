@@ -16,7 +16,6 @@ import com.google.gson.JsonArray;
 import com.telenor.possumexample.dialogs.DefineIdDialog;
 import com.telenor.possumexample.fragments.MainFragment;
 import com.telenor.possumlib.AwesomePossum;
-import com.telenor.possumlib.asynctasks.ResetDataAsync;
 import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
 
 import java.util.Locale;
@@ -29,11 +28,18 @@ public class MainActivity extends AppCompatActivity {
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         setContentView(R.layout.activity_main);
+        AwesomePossum.init(getApplicationContext());
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         preferences = getSharedPreferences("dummyPrefs", MODE_PRIVATE);
         showFragment(MainFragment.class);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        AwesomePossum.terminate(getApplicationContext());
     }
 
     private void showFragment(Class<? extends Fragment> fragmentClass) {
@@ -91,15 +97,14 @@ public class MainActivity extends AppCompatActivity {
             case R.id.resetData:
                 if (validId(myId())) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("Sletting av data");
-                    builder.setMessage(String.format(Locale.US, "Vil du slette all data relatert til id '%s' ?", myId()));
+                    builder.setTitle("Deletion of training data");
+                    builder.setMessage(String.format(Locale.US, "Do you want to delete all training data related to the id '%s' ?", myId()));
                     builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             JsonArray detectors = new JsonArray();
                             detectors.add("all");
-                            ResetDataAsync async = new ResetDataAsync(myId(), getString(R.string.apiKey), detectors);
-                            async.execute(getString(R.string.resetUrl));
+                            AwesomePossum.resetMyData(myId(), getString(R.string.resetUrl), getString(R.string.apiKey), detectors);
                             dialog.dismiss();
                         }
                     });

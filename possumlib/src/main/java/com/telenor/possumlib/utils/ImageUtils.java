@@ -3,7 +3,6 @@ package com.telenor.possumlib.utils;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PointF;
-import android.util.Log;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
@@ -14,39 +13,40 @@ import static org.opencv.imgproc.Imgproc.getAffineTransform;
 import static org.opencv.imgproc.Imgproc.warpAffine;
 
 public class ImageUtils {
-    private static final String tag = ImageUtils.class.getName();
-
+    /**
+     * Rotates a bitmap to a given angle
+     *
+     * @param source the original bitmap
+     * @param angle rotation in degrees (not radians)
+     * @return the rotated bitmap
+     */
     public static Bitmap rotateBitmap(Bitmap source, float angle) {
         Matrix matrix = new Matrix();
         matrix.postRotate(angle);
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
-    private static int[] bitmapToIntArray(Bitmap image) {
+    public static int[] bitmapToIntArray(Bitmap image) {
         int width = image.getWidth();
         int height = image.getHeight();
-        int[] result = new int[width * height];
-        image.getPixels(result, 0, width, 0, 0, width, height);
-        return result;
-    }
-
-    public static int[][][] bitmapToRGBArray(Bitmap image) {
-        int width = image.getWidth();
-        int height = image.getHeight();
-        int[][][] result = new int[width][height][3];
-        int[] pixels = bitmapToIntArray(image);
+        int[] pixels = new int[width * height];
+        image.getPixels(pixels, 0, width, 0, 0, width, height);
+        if (width != height) {
+            throw new java.lang.Error("BitmapToIntArray only makes sense on square images");
+        }
+        int[] intArray = new int[width*width*3];
         for (int i=0; i<width; i++) {
-            for (int j=0; j<height; j++) {
-                result[i][j][0] = (pixels[i*j] >> 16) & 0xff;
-                result[i][j][1] = (pixels[i*j] >> 8) & 0xff;
-                result[i][j][2] = pixels[i*j] & 0xff;
+            for (int j=0; j<width; j++) {
+                intArray[i*width+3*j] = (pixels[i*j] >> 16) & 0xff;
+                intArray[i*width+3*j+1] = (pixels[i*j] >> 8) & 0xff;
+                intArray[i*width+3*j+2] = pixels[i*j] & 0xff;
             }
         }
-        return result;
+        return intArray;
     }
 
     public static Bitmap alignFace(Bitmap face, PointF leftEye, PointF rightEye, PointF mouth) {
-        Log.i(tag, "Face input: " + face.getWidth() + ", " + face.getHeight());
+       // Log.i(tag, "Face input: " + face.getWidth() + ", " + face.getHeight());
         MatOfPoint2f src = new MatOfPoint2f();
         MatOfPoint2f dest = new MatOfPoint2f();
 
@@ -72,17 +72,5 @@ public class ImageUtils {
         Utils.matToBitmap(alignedImage, alignedFace);
 
         return alignedFace;
-    }
-
-    public static int[] RGBArrayToIntArray(int[][][] RGBArray, int dimension) {
-        int[] intArray = new int[dimension*dimension*3];
-        for (int i=0; i<dimension; i++) {
-            for (int j=0; j<dimension; j++) {
-                intArray[i*dimension+3*j] = RGBArray[i][j][0];
-                intArray[i*dimension+3*j+1] = RGBArray[i][j][1];
-                intArray[i*dimension+3*j+2] = RGBArray[i][j][2];
-            }
-        }
-        return intArray;
     }
 }

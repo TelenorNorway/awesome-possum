@@ -38,12 +38,10 @@ public class LocationDetector extends AbstractDetector implements LocationListen
      * Constructor for the location detector
      *
      * @param context a valid android context
-     * @param uniqueUserId the unique user id
      * @param eventBus an event bus for internal messages
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public LocationDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
+    public LocationDetector(Context context, @NonNull PossumBus eventBus) {
+        super(context, eventBus);
         locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         if (locationManager == null) {
             Log.d(tag, "No positioning available");

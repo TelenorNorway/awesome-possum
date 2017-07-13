@@ -19,23 +19,11 @@ public class HardwareDetector extends AbstractDetector {
      * Constructor for the Hardware Detector
      *
      * @param context        a valid android context
-     * @param uniqueUserId the unique user id
      * @param eventBus       the event bus used for sending messages to and from
-     * @param authenticating whether the detector is used for authentication or data gathering
      */
-    public HardwareDetector(Context context, String uniqueUserId, @NonNull PossumBus eventBus, boolean authenticating) {
-        super(context, uniqueUserId, eventBus, authenticating);
+    public HardwareDetector(Context context, @NonNull PossumBus eventBus) {
+        super(context, eventBus);
         findHardwareSpecs();
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
-
-    @Override
-    public String requiredPermission() {
-        return null;
     }
 
     @Override
@@ -50,6 +38,7 @@ public class HardwareDetector extends AbstractDetector {
 
     private void findHardwareSpecs() {
         // It should be sent for each time the app is instantiated, in case he updates his android
+        if (isAuthenticating()) return;
         JsonArray array = new JsonArray();
         array.add("HARDWARE_INFO START");
         array.add("Board:"+ Build.BOARD);

@@ -13,11 +13,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.abstractservices.AbstractBasicService;
+import com.telenor.possumlib.asynctasks.modelloaders.TensorLoad;
 import com.telenor.possumlib.constants.Constants;
 import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.functionality.GatheringFunctionality;
 import com.telenor.possumlib.functionality.RestFunctionality;
-import com.telenor.possumlib.interfaces.IPollComplete;
 import com.telenor.possumlib.interfaces.IRestListener;
 import com.telenor.possumlib.utils.Send;
 
@@ -26,10 +26,9 @@ import java.net.MalformedURLException;
 /***
  * Service that handles all actions pertaining to collecting the data from the sensors.
  */
-public class CollectionService extends AbstractBasicService implements IRestListener, IPollComplete {
+public class CollectionService extends AbstractBasicService implements IRestListener {
     protected GatheringFunctionality gatheringFunctionality;
     private BroadcastReceiver receiver;
-    private static String uniqueUserId;
     private static boolean isAuthenticating;
     private static String url;
     private static String apiKey;
@@ -48,16 +47,13 @@ public class CollectionService extends AbstractBasicService implements IRestList
     @Override
     public int onStartCommand(Intent intent, int flags, int requestCode) {
         // Ensures all detectors are terminated and cleared before adding new ones
-        uniqueUserId = intent.getStringExtra("uniqueUserId");
+        final String uniqueUserId = intent.getStringExtra("uniqueUserId");
         url = intent.getStringExtra("url");
         apiKey = intent.getStringExtra("apiKey");
         isAuthenticating = intent.getBooleanExtra("authenticating", false);
-        if (uniqueUserId == null) {
-            Log.e(tag, "Missing needed value in intent. Unique user id is null. Terminating service..");
-            Send.messageIntent(this, Messaging.COLLECTION_FAILED, "Missing unique user id in service");
-            stopSelf();
-        } else {
-            gatheringFunctionality.setDetectorsWithId(this, uniqueUserId, isAuthenticating, this);
+        if (uniqueUserId != null) {
+            gatheringFunctionality.setAuthenticationState(isAuthenticating);
+            gatheringFunctionality.setUniqueUserId(uniqueUserId);
             if (gatheringFunctionality.isGathering()) {
                 gatheringFunctionality.stopGathering();
 //                gatheringFunctionality.clearData();
@@ -67,7 +63,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
                 authHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        stopSelf();
+                        performAuth(uniqueUserId);
                     }
                 }, authTime());
             }
@@ -83,7 +79,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
     @Override
     public void onCreate() {
         super.onCreate();
-        gatheringFunctionality = new GatheringFunctionality();
+        gatheringFunctionality = new GatheringFunctionality(this);
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -92,6 +88,9 @@ public class CollectionService extends AbstractBasicService implements IRestList
             }
         };
         getApplicationContext().registerReceiver(receiver, new IntentFilter(Messaging.POSSUM_MESSAGE));
+        // Loading all the models, letting the listener be the gatherer
+        TensorLoad tensorLoad = new TensorLoad(this, gatheringFunctionality);
+        tensorLoad.execute((Void)null);
     }
 
     private int authTime() {
@@ -108,12 +107,8 @@ public class CollectionService extends AbstractBasicService implements IRestList
         }
     }
 
-    public void pollComplete(AbstractDetector detector) {
-    }
-
     /**
-     * onDestroy - when service is about to die or is closed by upload, all sensors are
-     * "decommissioned" and unListened to.
+     * onDestroy - when service is about to die. Ideally happens by android recycling it
      */
     @Override
     public void onDestroy() {
@@ -122,11 +117,17 @@ public class CollectionService extends AbstractBasicService implements IRestList
         getApplicationContext().unregisterReceiver(receiver);
         gatheringFunctionality.stopGathering();
         receiver = null;
+    }
+
+    private void performAuth(String uniqueUserId) {
+        Log.i(tag, "RestFunctionality: Performing auth with "+uniqueUserId);
         try {
             if (isAuthenticating) {
                 JsonObject object = new JsonObject();
                 object.addProperty("connectId", uniqueUserId);
+
                 for (AbstractDetector detector : gatheringFunctionality.detectors()) {
+                    detector.stopListening();
                     JsonArray jsonData = detector.jsonData();
                     object.add(detector.detectorName(), jsonData);
                     detector.clearData();
@@ -143,7 +144,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
     @Override
     public void successfullyPushed(String message) {
         JsonParser parser = new JsonParser();
-//        Log.i(tag, "Pushed data to rest service:" + message);
+        Log.i(tag, "RestFunctionality: Pushed data to rest service:" + message);
         JsonObject object = (JsonObject) parser.parse(message);
         if (object.get("errorMessage") != null) {
             Log.d(tag, "Failed to access:" + object);
@@ -153,13 +154,11 @@ public class CollectionService extends AbstractBasicService implements IRestList
         intent.putExtra("message", object.toString());
         sendBroadcast(intent);
         // Data is not stored to file, so just let it die
-        stopSelf();
     }
 
     @Override
     public void failedToPush(Exception exception) {
         Log.e(tag, "Failed to push to rest service:", exception);
         // Data is not stored to file, so just let it die
-        stopSelf();
     }
 }

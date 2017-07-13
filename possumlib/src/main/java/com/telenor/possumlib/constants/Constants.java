@@ -14,5 +14,5 @@ public class Constants {
     public static final String BUCKET = "telenor-nr-awesome-possum";
 
     // Defines how long it should spend trying to gather data for authentication. Default = 5 seconds (in milliseconds)
-    public static final int AUTHENTICATION_TIME = 10000;
+    public static final int AUTHENTICATION_TIME = 5000;
 }
