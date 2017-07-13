@@ -13,7 +13,7 @@
 
     <!--<uses-permission android:name="android.permission.READ_PHONE_STATE" />--> <!-- dangerous, needs confirmation on marshmallow -->
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!--<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />-->
     <!-- Necessary for retina, iris and face recognition -->
     <uses-permission android:name="android.permission.CAMERA" /> <!-- dangerous, needs confirmation on marshmallow -->
     <uses-feature
