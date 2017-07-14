@@ -254,7 +254,7 @@ public class BluetoothDetector extends AbstractDetector {
 
     @Override
     public boolean isAvailable() {
-        return bluetoothAdapter != null && super.isAvailable(); //&& bluetoothAdapter.isEnabled()
+        return bluetoothAdapter != null && bluetoothAdapter.isEnabled() && super.isAvailable();
     }
 
     @Override
