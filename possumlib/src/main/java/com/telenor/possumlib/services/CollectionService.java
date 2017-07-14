@@ -11,6 +11,7 @@ import android.util.Log;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.abstractservices.AbstractBasicService;
 import com.telenor.possumlib.asynctasks.modelloaders.TensorLoad;
@@ -91,6 +92,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
         // Loading all the models, letting the listener be the gatherer
         TensorLoad tensorLoad = new TensorLoad(this, gatheringFunctionality);
         tensorLoad.execute((Void)null);
+        AwesomePossum.sendDetectorStatus(this);
     }
 
     private int authTime() {

@@ -238,7 +238,6 @@ public final class AwesomePossum {
                 break;
             default:
         }
-        Log.i(tag, "Sending data:"+messageListeners.size());
         for (IPossumMessage listener : messageListeners) {
             listener.possumMessageReceived(messageType, intent.getStringExtra(Messaging.POSSUM_MESSAGE));
         }
@@ -432,7 +431,7 @@ public final class AwesomePossum {
      *
      * @param context a valid android context
      */
-    public static void requestDetectorStatus(@NonNull Context context) {
+    public static void sendDetectorStatus(@NonNull Context context) {
         Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
         intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, Messaging.REQUEST_DETECTORS);
         context.sendBroadcast(intent);

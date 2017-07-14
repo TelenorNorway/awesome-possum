@@ -15,15 +15,20 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.telenor.possumexample.R;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.constants.Messaging;
+import com.telenor.possumlib.interfaces.IPossumMessage;
 import com.telenor.possumlib.interfaces.IPossumTrust;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class IconWheel extends View implements IPossumTrust {
+public class IconWheel extends View implements IPossumTrust, IPossumMessage {
     private Paint offlinePaint = new Paint(), trainingPaint = new Paint(), onlinePaint = new Paint();
     private static int width;
     private static int height;
@@ -32,18 +37,20 @@ public class IconWheel extends View implements IPossumTrust {
     private static float iconHeight;
     private static float hypotenuse;
 
+    private static final String tag = IconWheel.class.getName();
+
     private Map<Integer, SensorContainer> sensors = new HashMap<>();
 
     @Override
     public void changeInCombinedTrust(float combinedTrustScore, String status) {
-
+        AwesomePossum.sendDetectorStatus(getContext());
     }
 
     @Override
     public void changeInDetectorTrust(int detectorType, float newTrustScore, String status) {
         SensorContainer sensor = sensors.get(detectorType);
         if (sensor != null) {
-            sensor.setStatus("TRAINING".equals(status)?SensorStatus.Training:SensorStatus.Online);
+            sensor.setStatus("TRAINING".equals(status) ? SensorStatus.Training : SensorStatus.Online);
             invalidate();
         }
     }
@@ -51,6 +58,31 @@ public class IconWheel extends View implements IPossumTrust {
     @Override
     public void failedToAscertainTrust(Exception exception) {
 
+    }
+
+    @Override
+    public void possumMessageReceived(String msgType, String message) {
+        if (Messaging.DETECTORS_STATUS.equals(msgType)) {
+            JsonArray sensorsArray = (JsonArray) new JsonParser().parse(message);
+            for (int i = 0; i < sensorsArray.size(); i++) {
+                JsonObject sensor = sensorsArray.get(i).getAsJsonObject();
+                int type = sensor.get("type").getAsInt();
+                boolean enabled = sensor.get("isEnabled").getAsBoolean();
+                boolean available = sensor.get("isAvailable").getAsBoolean();
+//                boolean isListening = sensor.get("isListening").getAsBoolean();
+                SensorContainer sensorContainer = sensors.get(type);
+                if (sensorContainer != null) {
+                    if (!enabled) {
+                        sensorContainer.setStatus(SensorStatus.Offline);
+                    } else if (available) {
+                        if (sensorContainer.sensorStatus() != SensorStatus.Training) {
+                            sensorContainer.setStatus(SensorStatus.Online);
+                        }
+                    }
+                    invalidate();
+                }
+            }
+        }
     }
 
     private enum SensorStatus {
@@ -65,31 +97,28 @@ public class IconWheel extends View implements IPossumTrust {
         private double angleRad;
         private Rect rect;
 
-        public SensorContainer(Bitmap bitmap, float angle) {
+        SensorContainer(Bitmap bitmap, float angle) {
             this.bitmap = bitmap;
             angleRad = (Math.PI / 180) * angle;
         }
 
-        public Bitmap bitmap() {
+        Bitmap bitmap() {
             return bitmap;
         }
-        public void setStatus(SensorStatus sensorStatus) {
+
+        void setStatus(SensorStatus sensorStatus) {
             this.sensorStatus = sensorStatus;
         }
 
-        public void setRect(Rect rect) {
-            this.rect = rect;
-        }
-
-        public Rect rect() {
+        Rect rect() {
             return rect;
         }
 
-        public SensorStatus sensorStatus() {
+        SensorStatus sensorStatus() {
             return sensorStatus;
         }
 
-        public void updateRect() {
+        void updateRect() {
             rect = new Rect((int) (centerX - iconWidth / 2), (int) (centerY - iconHeight / 2), (int) (centerX + iconWidth / 2), (int) (centerY + iconHeight / 2));
             rect.offset((int) (hypotenuse * Math.cos(angleRad)), (int) (hypotenuse * Math.sin(angleRad)));
         }
@@ -137,13 +166,15 @@ public class IconWheel extends View implements IPossumTrust {
 
         offlinePaint.setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.SRC_IN));
         trainingPaint.setColorFilter(new PorterDuffColorFilter(Color.parseColor("#FF6600"), PorterDuff.Mode.SRC_IN));
-        onlinePaint.setColorFilter(new PorterDuffColorFilter(Color.GREEN, PorterDuff.Mode.SRC_IN));
+        onlinePaint.setColorFilter(new PorterDuffColorFilter(Color.parseColor("#009900"), PorterDuff.Mode.SRC_IN));
 
         iconWidth = pixelValue(30);
         iconHeight = pixelValue(30);
         hypotenuse = pixelValue(140);
 
         AwesomePossum.addTrustListener(getContext(), this);
+        AwesomePossum.addMessageListener(getContext(), this);
+        AwesomePossum.sendDetectorStatus(getContext());
     }
 
     @Override
@@ -188,7 +219,7 @@ public class IconWheel extends View implements IPossumTrust {
                 height - paddingBottom);
         centerX = area.centerX();
         centerY = area.centerY();
-        for (SensorContainer sensor: sensors.values()) {
+        for (SensorContainer sensor : sensors.values()) {
             sensor.updateRect();
         }
         invalidate();
@@ -196,12 +227,13 @@ public class IconWheel extends View implements IPossumTrust {
 
     public void terminate() {
         AwesomePossum.removeTrustListener(this);
+        AwesomePossum.removeMessageListener(this);
     }
 
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        for (SensorContainer sensor: sensors.values()) {
+        for (SensorContainer sensor : sensors.values()) {
             Paint paint;
             switch (sensor.sensorStatus()) {
                 case Training:

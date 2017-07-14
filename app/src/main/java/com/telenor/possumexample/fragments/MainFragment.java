@@ -167,10 +167,14 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                         status.setTextColor(Color.BLACK);
                         trustButton.setEnabled(true);
                         break;
+                    case Messaging.DETECTORS_STATUS:
+                        break;
+                    case Messaging.REQUEST_DETECTORS:
+                        break;
                     default:
-                        status.setText(message);
-                        status.setTextColor(Color.RED);
-                        trustButton.setEnabled(false);
+//                        status.setText(message);
+//                        status.setTextColor(Color.RED);
+//                        trustButton.setEnabled(false);
                         Log.e(tag, "Sending data: Unhandled possum message:"+msgType+":"+message);
                 }
             }

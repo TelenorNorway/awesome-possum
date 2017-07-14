@@ -19,6 +19,7 @@ import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.Landmark;
 import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 import com.google.gson.JsonArray;
+import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.interfaces.IFaceFound;
@@ -84,6 +85,7 @@ public class ImageDetector  extends AbstractDetector implements IFaceFound {
     @Override
     public void setModel(Object model) {
         this.tensorFlowInterface = (TensorFlowInferenceInterface) model;
+        AwesomePossum.sendDetectorStatus(context());
         if (requestedListening) {
             startListening();
         }
