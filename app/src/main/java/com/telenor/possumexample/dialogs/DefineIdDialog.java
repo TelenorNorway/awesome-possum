@@ -1,13 +1,13 @@
 package com.telenor.possumexample.dialogs;
 
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 
 import com.telenor.possumexample.MainActivity;
@@ -17,16 +17,11 @@ import com.telenor.possumlib.utils.Send;
 
 public class DefineIdDialog extends AppCompatDialogFragment {
     private EditText uniqueId;
+    private Button okButton;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle bundle) {
         return inflater.inflate(R.layout.dialog_define_id, parent, false);
-    }
-
-    @Override
-    public void onCreate(Bundle bundle) {
-        super.onCreate(bundle);
-        setStyle(DialogFragment.STYLE_NORMAL, getTheme());
     }
 
     @Override
@@ -50,7 +45,13 @@ public class DefineIdDialog extends AppCompatDialogFragment {
                 updatePreferences();
             }
         });
-
+        okButton = (Button)view.findViewById(R.id.ok);
+        okButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dismiss();
+            }
+        });
     }
 
 
