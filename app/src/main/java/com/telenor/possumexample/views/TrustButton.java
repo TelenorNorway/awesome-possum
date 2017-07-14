@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -63,7 +64,8 @@ public class TrustButton extends RelativeLayout {
         addView(trustWheel);
         centerTextView = new TextView(context);
         centerTextView.setTextColor(Color.GRAY);
-        centerTextView.setTextSize(32); // TODO: Text size should be size dependent
+        centerTextView.setTextSize(pixelValue(10)); // TODO: Text size should be size dependent
+
         centerTextView.setBackgroundColor(Color.TRANSPARENT);
         LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
@@ -72,6 +74,11 @@ public class TrustButton extends RelativeLayout {
         centerTextView.bringToFront();
         setTrustScore(trustScore, null);
     }
+
+    private float pixelValue(int dpValue) {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpValue, getResources().getDisplayMetrics());
+    }
+
 
     /**
      * Time spent waiting for an authentication
