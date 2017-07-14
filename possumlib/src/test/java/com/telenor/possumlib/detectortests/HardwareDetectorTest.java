@@ -30,7 +30,7 @@ public class HardwareDetectorTest {
         if (fakeFile.exists()) {
             Assert.assertTrue(fakeFile.delete());
         }
-        hardwareDetector = new HardwareDetector(RuntimeEnvironment.application, "id", eventBus, false);
+        hardwareDetector = new HardwareDetector(RuntimeEnvironment.application, eventBus);
     }
 
     @After

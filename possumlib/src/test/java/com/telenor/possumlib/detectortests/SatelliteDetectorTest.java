@@ -46,7 +46,7 @@ public class SatelliteDetectorTest {
         when(mockedLocationManager.getAllProviders()).thenReturn(allProviders);
         mockedGpsStatus = Mockito.mock(GpsStatus.class);
         setLocationDetectorWith(true, PackageManager.PERMISSION_GRANTED);
-        satelliteDetector = new SatelliteDetector(mockedContext, "encryptedFake", eventBus, false);
+        satelliteDetector = new SatelliteDetector(mockedContext, eventBus);
     }
 
     private void setLocationDetectorWith(boolean enabled, int permission) {

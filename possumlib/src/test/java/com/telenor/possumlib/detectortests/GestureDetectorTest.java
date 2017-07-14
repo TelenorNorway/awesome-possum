@@ -25,7 +25,7 @@ public class GestureDetectorTest {
     public void setUp() throws Exception {
         eventBus  = new PossumBus();
         JodaTimeAndroid.init(RuntimeEnvironment.application);
-        gestureDetector = new GestureDetector(RuntimeEnvironment.application, "fakeUnique", eventBus, false);
+        gestureDetector = new GestureDetector(RuntimeEnvironment.application, eventBus);
         if (gestureDetector.storedData().exists()) {
             Assert.assertTrue(gestureDetector.storedData().delete());
         }

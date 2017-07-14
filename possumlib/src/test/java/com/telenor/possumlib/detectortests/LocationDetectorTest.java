@@ -68,7 +68,7 @@ public class LocationDetectorTest {
             Assert.assertTrue(fakeFile.delete());
         }
         Assert.assertTrue(fakeFile.createNewFile());
-        locationDetector = new LocationDetector(mockedContext, "fakeUnique", eventBus, false) {
+        locationDetector = new LocationDetector(mockedContext, eventBus) {
             @Override
             public File storedData() {
                 return fakeFile;
@@ -95,7 +95,7 @@ public class LocationDetectorTest {
         mockedLocationManager = mock(LocationManager.class);
         when(mockedContext.getSystemService(Context.LOCATION_SERVICE)).thenReturn(mockedLocationManager);
         when(mockedLocationManager.getAllProviders()).thenReturn(Collections.<String>emptyList());
-        locationDetector = new LocationDetector(mockedContext, "fakeUnique", eventBus, false);
+        locationDetector = new LocationDetector(mockedContext, eventBus);
         Assert.assertFalse(locationDetector.isEnabled());
     }
 

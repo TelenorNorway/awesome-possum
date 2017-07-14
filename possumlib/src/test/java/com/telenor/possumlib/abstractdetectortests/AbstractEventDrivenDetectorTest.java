@@ -60,7 +60,7 @@ public class AbstractEventDrivenDetectorTest {
 
 
     private AbstractEventDrivenDetector getDetectorWithEventBus(Context context, PossumBus eventBus) {
-        return new AbstractEventDrivenDetector(context, "fakeUnique", eventBus, false) {
+        return new AbstractEventDrivenDetector(context, eventBus) {
             @Override
             protected boolean storeWithInterval() {
                 return storeWithInterval;
@@ -74,11 +74,6 @@ public class AbstractEventDrivenDetectorTest {
             @Override
             public boolean isAvailable() {
                 return true;
-            }
-
-            @Override
-            public String requiredPermission() {
-                return null;
             }
 
             @Override

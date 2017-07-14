@@ -31,7 +31,7 @@ public class MetaDataDetectorTest {
         fakeFile = new File(RuntimeEnvironment.application.getFilesDir()+"/MetaData");
         if (fakeFile.exists()) Assert.assertTrue(fakeFile.delete());
         Assert.assertTrue(fakeFile.createNewFile());
-        metaDataDetector = new MetaDataDetector(RuntimeEnvironment.application, "fakeUnique", eventBus, false) {
+        metaDataDetector = new MetaDataDetector(RuntimeEnvironment.application, eventBus) {
             @Override
             public File storedData() {
                 return fakeFile;

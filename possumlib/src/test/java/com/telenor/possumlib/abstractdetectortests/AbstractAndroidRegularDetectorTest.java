@@ -156,15 +156,10 @@ public class AbstractAndroidRegularDetectorTest {
     }
 
     private AbstractAndroidRegularDetector getDetector(Context context, PossumBus eventBus) {
-        return new AbstractAndroidRegularDetector(context, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
+        return new AbstractAndroidRegularDetector(context, Sensor.TYPE_ACCELEROMETER, eventBus) {
             @Override
             protected int detectorRequestCode() {
                 return requestCode;
-            }
-
-            @Override
-            public String requiredPermission() {
-                return null;
             }
 
             @Override

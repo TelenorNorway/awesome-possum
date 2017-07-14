@@ -75,7 +75,7 @@ public class BluetoothDetectorTest {
         when(mockedContext.checkPermission(anyString(), anyInt(), anyInt())).thenReturn(PackageManager.PERMISSION_GRANTED);
 //        when(mockedBluetoothManager.getAdapter()).thenReturn(mockedBluetoothAdapter);
         when(mockedBluetoothManager.getAdapter()).thenReturn(bluetoothAdapter);
-        bluetoothDetector = new BluetoothDetector(mockedContext, "fakeUnique", eventBus, false);
+        bluetoothDetector = new BluetoothDetector(mockedContext, eventBus);
     }
 
     @After
@@ -86,7 +86,7 @@ public class BluetoothDetectorTest {
 
     @Test
     public void testInitWithoutAdapter() throws Exception {
-        bluetoothDetector = new BluetoothDetector(Mockito.mock(Context.class), "fakeUnique", eventBus, false);
+        bluetoothDetector = new BluetoothDetector(Mockito.mock(Context.class), eventBus);
         Assert.assertNotNull(bluetoothDetector);
         Assert.assertFalse(bluetoothDetector.isAvailable());
         Assert.assertFalse(bluetoothDetector.isEnabled());
@@ -107,7 +107,7 @@ public class BluetoothDetectorTest {
     public void testStopScanWhenNotScanning() throws Exception {
         BluetoothAdapter mockedBluetoothAdapter = mock(BluetoothAdapter.class);
         when(mockedBluetoothManager.getAdapter()).thenReturn(mockedBluetoothAdapter);
-        bluetoothDetector = new BluetoothDetector(mockedContext, "fakeUnique", eventBus, false);
+        bluetoothDetector = new BluetoothDetector(mockedContext, eventBus);
         Method stopScanMethod = BluetoothDetector.class.getDeclaredMethod("stopScan");
         stopScanMethod.setAccessible(true);
         stopScanMethod.invoke(bluetoothDetector);
@@ -121,7 +121,7 @@ public class BluetoothDetectorTest {
         BluetoothAdapter mockedBluetoothAdapter = mock(BluetoothAdapter.class);
         when(mockedBluetoothAdapter.isDiscovering()).thenReturn(true);
         when(mockedBluetoothManager.getAdapter()).thenReturn(mockedBluetoothAdapter);
-        bluetoothDetector = new BluetoothDetector(mockedContext, "fakeUnique", eventBus, false);
+        bluetoothDetector = new BluetoothDetector(mockedContext, eventBus);
         Method stopScanMethod = BluetoothDetector.class.getDeclaredMethod("stopScan");
         stopScanMethod.setAccessible(true);
         stopScanMethod.invoke(bluetoothDetector);
@@ -226,7 +226,7 @@ public class BluetoothDetectorTest {
     public void testSystemMissingBluetooth() throws Exception {
         mockedContext = mock(Context.class);
         when(mockedContext.getSystemService(Context.BLUETOOTH_SERVICE)).thenReturn(null);
-        bluetoothDetector = new BluetoothDetector(mockedContext, "fakeUnique", eventBus, false);
+        bluetoothDetector = new BluetoothDetector(mockedContext, eventBus);
         Assert.assertFalse(bluetoothDetector.isAvailable());
         Assert.assertFalse(bluetoothDetector.isEnabled());
     }

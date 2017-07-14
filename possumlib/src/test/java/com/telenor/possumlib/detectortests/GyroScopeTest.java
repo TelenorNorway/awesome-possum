@@ -33,7 +33,7 @@ public class GyroScopeTest extends GeneralSensorTest {
         event1 = false;
         event2 = false;
         eventBus = new PossumBus();
-        gyroScope = new GyroScope(mockedContext, "fakeUnique", eventBus, false){
+        gyroScope = new GyroScope(mockedContext, eventBus){
             @Override
             public Context context() {
                 return mockedContext;

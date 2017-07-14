@@ -73,7 +73,7 @@ public class AbstractZippingAndroidDetectorTest {
         when(mockedContext.getSystemService(Context.POWER_SERVICE)).thenReturn(mockedPowerManager);
         when(mockedContext.getSystemService(Context.ALARM_SERVICE)).thenReturn(mockedAlarmManager);
         when(mockedSensorManager.getDefaultSensor(anyInt())).thenReturn(mockedSensor);
-        androidSensor = new AbstractZippingAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
+        androidSensor = new AbstractZippingAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, eventBus) {
             @Override
             protected int detectorRequestCode() {
                 return 13371337;
@@ -97,11 +97,6 @@ public class AbstractZippingAndroidDetectorTest {
             @Override
             public String detectorName() {
                 return "Accelerometer";
-            }
-
-            @Override
-            public String requiredPermission() {
-                return null;
             }
 
             @Override

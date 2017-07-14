@@ -65,7 +65,7 @@ public class AbstractDetectorReceiverTest {
     }
 
     private AbstractDetectorReceiver getDetector(Context context, PossumBus eventBus, final int detectType, final String detectorName) {
-        return new AbstractDetectorReceiver(context, Arrays.asList("test1","test2"), "fakeUnique", eventBus, false) {
+        return new AbstractDetectorReceiver(context, Arrays.asList("test1","test2"), eventBus) {
             @Override
             public void onReceive(Context context, Intent intent) {
                 onReceiveFired = true;
@@ -84,11 +84,6 @@ public class AbstractDetectorReceiverTest {
             @Override
             public boolean isAvailable() {
                 return true;
-            }
-
-            @Override
-            public String requiredPermission() {
-                return null;
             }
 
             @Override

@@ -70,7 +70,7 @@ public class NetworkDetectorTest {
         when(mockedApplicationContext.getSystemService(Context.WIFI_SERVICE)).thenReturn(mockedWifiService);
         when(mockedApplicationContext.getFilesDir()).thenReturn(RuntimeEnvironment.application.getFilesDir());
         when(mockedWifiService.isWifiEnabled()).thenReturn(true);
-        networkDetector = new NetworkDetector(mockedContext, "fakeUnique", eventBus, false);
+        networkDetector = new NetworkDetector(mockedContext, eventBus);
     }
 
     @After
@@ -102,7 +102,7 @@ public class NetworkDetectorTest {
         when(mockedApplicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)).thenReturn(mockedConnectivityManager);
         when(mockedConnectivityManager.getActiveNetworkInfo()).thenReturn(mockedNetworkInfo);
         when(mockedApplicationContext.getSystemService(Context.WIFI_SERVICE)).thenReturn(null);
-        networkDetector = new NetworkDetector(mockedContext, "fakeUnique", eventBus, false);
+        networkDetector = new NetworkDetector(mockedContext, eventBus);
         Assert.assertFalse(networkDetector.isEnabled());
     }
 
@@ -185,7 +185,7 @@ public class NetworkDetectorTest {
 
     @Test
     public void testOnReceiveNetworkChange() throws Exception {
-        networkDetector = new NetworkDetector(mockedContext, "fakeUnique", eventBus, false) {
+        networkDetector = new NetworkDetector(mockedContext, eventBus) {
             @Override
             public void sensorStatusChanged() {
                 checkedValue = true;

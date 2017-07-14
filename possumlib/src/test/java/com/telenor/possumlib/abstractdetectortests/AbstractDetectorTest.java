@@ -65,7 +65,7 @@ public class AbstractDetectorTest {
     }
 
     private AbstractDetector getDetector(Context context, PossumBus eventBus, final String detectorName) {
-        return new AbstractDetector(context, "fakeUnique", eventBus, false) {
+        return new AbstractDetector(context, eventBus) {
             @Override
             public boolean isEnabled() {
                 return isActuallyEnabled;
@@ -74,11 +74,6 @@ public class AbstractDetectorTest {
             @Override
             public boolean isAvailable() {
                 return isActuallyAvailable;
-            }
-
-            @Override
-            public String requiredPermission() {
-                return null;
             }
 
             @Override

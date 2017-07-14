@@ -22,7 +22,7 @@ public class TypingRecognitionDetectorTest {
     @Before
     public void setUp() throws Exception {
         eventBus = new PossumBus();
-        typingRecognitionDetector = new TypingRecognitionDetector(RuntimeEnvironment.application, "encryptedId", eventBus, false);
+        typingRecognitionDetector = new TypingRecognitionDetector(RuntimeEnvironment.application, eventBus);
     }
 
     @After

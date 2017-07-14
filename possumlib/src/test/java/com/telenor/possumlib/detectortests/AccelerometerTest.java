@@ -29,7 +29,7 @@ public class AccelerometerTest extends GeneralSensorTest {
     public void setUp() throws Exception {
         super.setUp(Sensor.TYPE_ACCELEROMETER);
         eventBus = new PossumBus();
-        accelerometer = new Accelerometer(mockedContext, "fakeUnique", eventBus, false){
+        accelerometer = new Accelerometer(mockedContext, eventBus){
             @Override
             public boolean isEnabled() {
                 return sensorIsEnabled;

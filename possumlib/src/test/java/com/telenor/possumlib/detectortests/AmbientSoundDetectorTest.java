@@ -63,7 +63,7 @@ public class AmbientSoundDetectorTest {
         fos.close();
         MyShadowAudioManager.setMicrophoneMuted(false);
         ShadowApplication.getInstance().grantPermissions(Manifest.permission.RECORD_AUDIO);
-        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, "id", eventBus, false);
+        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, eventBus);
         savedFile = ambientSoundDetector.storedData();
         Assert.assertTrue(savedFile.delete());
     }
@@ -155,7 +155,7 @@ public class AmbientSoundDetectorTest {
 
     @Test
     public void testRecording() throws Exception {
-        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, "id", eventBus, false) {
+        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, eventBus) {
             @Override
             protected AudioRecord getAudioRecord() {
                 return mockedAudioRecord;
@@ -172,7 +172,7 @@ public class AmbientSoundDetectorTest {
 
     @Test
     public void testStopListeningWhenNotListening() throws Exception {
-        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, "id", eventBus, false) {
+        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, eventBus) {
             @Override
             protected AudioRecord getAudioRecord() {
                 return mockedAudioRecord;
@@ -189,7 +189,7 @@ public class AmbientSoundDetectorTest {
     @Test
     public void testStopListeningWhenListeningAndMuted() throws Exception {
         MyShadowAudioManager.setMicrophoneMuted(true);
-        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, "id", eventBus, false) {
+        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, eventBus) {
             @Override
             protected AudioRecord getAudioRecord() {
                 return mockedAudioRecord;
@@ -218,7 +218,7 @@ public class AmbientSoundDetectorTest {
 
     @Test
     public void testStopListeningWhenListeningAndNotMuted() throws Exception {
-        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, "id", eventBus, false) {
+        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, eventBus) {
             @Override
             protected AudioRecord getAudioRecord() {
                 return mockedAudioRecord;
@@ -238,7 +238,7 @@ public class AmbientSoundDetectorTest {
     @Test
     public void testRecordingStoresFeaturesToFile() throws Exception {
         // TODO: Yelp :o
-        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, "id", eventBus, false);
+        ambientSoundDetector = new AmbientSoundDetector(RuntimeEnvironment.application, eventBus);
         Assert.assertFalse(savedFile.exists());
         Assert.assertFalse(ShadowAudioRecord.hasReadFromStream());
         Assert.assertTrue(ambientSoundDetector.startListening());

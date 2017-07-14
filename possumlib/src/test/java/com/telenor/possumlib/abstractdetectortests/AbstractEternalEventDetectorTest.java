@@ -26,12 +26,7 @@ public class AbstractEternalEventDetectorTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        eternalEventDetector = new AbstractEternalEventDetector(mockedContext, "fakeUnique", new PossumBus(), false) {
-            @Override
-            public String requiredPermission() {
-                return null;
-            }
-
+        eternalEventDetector = new AbstractEternalEventDetector(mockedContext, new PossumBus()) {
             @Override
             public int detectorType() {
                 return DetectorType.MetaData;

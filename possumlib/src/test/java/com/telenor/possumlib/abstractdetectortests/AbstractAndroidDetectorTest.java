@@ -79,7 +79,7 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
     }
 
     private AbstractAndroidDetector getDetector(Context context, PossumBus eventBus) {
-        return new AbstractAndroidDetector(context, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
+        return new AbstractAndroidDetector(context, Sensor.TYPE_ACCELEROMETER, eventBus) {
             @Override
             protected int detectorRequestCode() {
                 return 0;
@@ -93,11 +93,6 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
             @Override
             public String detectorName() {
                 return "Accelerometer";
-            }
-
-            @Override
-            public String requiredPermission() {
-                return null;
             }
 
             @Override
@@ -139,7 +134,7 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
     }
 
     private AbstractAndroidDetector getMockedSensor() {
-        return new AbstractAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, "fakeUnique", eventBus, false) {
+        return new AbstractAndroidDetector(mockedContext, Sensor.TYPE_ACCELEROMETER, eventBus) {
             @Override
             protected int detectorRequestCode() {
                 return 0;
@@ -153,11 +148,6 @@ public class AbstractAndroidDetectorTest { // extends GeneralSensorTest
             @Override
             public String detectorName() {
                 return "Accelerometer";
-            }
-
-            @Override
-            public String requiredPermission() {
-                return null;
             }
 
             @Override

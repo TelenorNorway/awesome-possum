@@ -210,15 +210,4 @@ public class ImageDetectorTest {
     public void testStopImageCaptureEvent() throws Exception {
 //        imageDetector.objectChanged(new EventObject(ImageDetector.STOP_IMAGE_CAPTURE, null));
     }
-
-    @Test
-    public void testFaceFunctions() throws Exception {
-        Assert.assertEquals(0, imageDetector.getTotalFaces());
-        float[] fakeWeights = new float[]{1.1f, 1.2f, 1.3f};
-        imageDetector.storeFace(fakeWeights);
-        imageDetector.storeFace(fakeWeights);
-        Assert.assertEquals(2, imageDetector.getTotalFaces());
-        imageDetector.resetTotalFaces();
-        Assert.assertEquals(0, imageDetector.getTotalFaces());
-    }
 }

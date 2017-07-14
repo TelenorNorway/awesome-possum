@@ -24,7 +24,7 @@ public class MagnetometerTest extends GeneralSensorTest {
     public void setUp() throws Exception {
         super.setUp(Sensor.TYPE_MAGNETIC_FIELD);
         eventBus = new PossumBus();
-        magnetometer = new Magnetometer(mockedContext, "fakeUnique", eventBus, false) {
+        magnetometer = new Magnetometer(mockedContext, eventBus) {
             @Override
             public Context context() {
                 return mockedContext;
