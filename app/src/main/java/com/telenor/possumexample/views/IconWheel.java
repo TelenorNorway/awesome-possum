@@ -72,12 +72,10 @@ public class IconWheel extends View implements IPossumTrust, IPossumMessage {
 //                boolean isListening = sensor.get("isListening").getAsBoolean();
                 SensorContainer sensorContainer = sensors.get(type);
                 if (sensorContainer != null) {
-                    if (!enabled) {
-                        sensorContainer.setStatus(SensorStatus.Offline);
-                    } else if (available) {
-                        if (sensorContainer.sensorStatus() != SensorStatus.Training) {
-                            sensorContainer.setStatus(SensorStatus.Online);
-                        }
+                    sensorContainer.setEnabled(enabled);
+                    sensorContainer.setAvailable(available);
+                    if (sensorContainer.sensorStatus() != SensorStatus.Training) {
+                        sensorContainer.setStatus(SensorStatus.Online);
                     }
                     invalidate();
                 }
@@ -96,6 +94,8 @@ public class IconWheel extends View implements IPossumTrust, IPossumMessage {
         private SensorStatus sensorStatus = SensorStatus.Offline;
         private double angleRad;
         private Rect rect;
+        private boolean enabled;
+        private boolean available;
 
         SensorContainer(Bitmap bitmap, float angle) {
             this.bitmap = bitmap;
@@ -108,14 +108,29 @@ public class IconWheel extends View implements IPossumTrust, IPossumMessage {
 
         void setStatus(SensorStatus sensorStatus) {
             this.sensorStatus = sensorStatus;
+            invalidate();
         }
 
         Rect rect() {
             return rect;
         }
 
+        void setEnabled(boolean enabled) {
+            if (this.enabled != enabled) {
+                this.enabled = enabled;
+                invalidate();
+            }
+        }
+
+        void setAvailable(boolean available) {
+            if (this.available != available) {
+                this.available = available;
+                invalidate();
+            }
+        }
+
         SensorStatus sensorStatus() {
-            return sensorStatus;
+            return (!enabled || !available) ? SensorStatus.Offline : sensorStatus;
         }
 
         void updateRect() {
