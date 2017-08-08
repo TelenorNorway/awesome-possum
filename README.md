@@ -4,12 +4,13 @@ A library meant to gather data about a user and upload to the cloud. In order to
 
 To use, add the following to your app gradle dependencies:
 
-    compile 'com.telenor:possumlib:1.1.0'
+    compile 'com.telenor:possumlib:1.2.0'
     
 Remember to add jCenter() to your repositories.
 
 To use this library, here is a short list of the commands you need:
 
+NOTE: This readme must be updated - at present it is not correct. Update coming later today.
 Gather data:
 
      AwesomePossum.startListening(Context, String uniqueUserId);
