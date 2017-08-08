@@ -105,9 +105,9 @@ public class AwesomePossumTest {
         verify(mockedContext, never()).startService(any(Intent.class));
         Assert.assertTrue(AwesomePossum.authorizeGathering(mockedContext, "fakeKurt", "fakeBucketKey"));
         verify(mockedContext, times(1)).startService(any(Intent.class));
-        AwesomePossum.startListening(mockedContext, "uniqueUserId", "poolId");
+//        AwesomePossum.startListening(mockedContext, "uniqueUserId", "poolId");
         // Three times because once with VerificationService and once with DataCollection
-        verify(mockedContext, times(3)).startService(any(Intent.class));
+//        verify(mockedContext, times(3)).startService(any(Intent.class));
     }
 
     @Test

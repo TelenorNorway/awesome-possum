@@ -12,6 +12,11 @@ android {
 //        javaMaxHeapSize "4g" // In case of out of memory problems
 //    }
 
+    lintOptions {
+        tasks.lint.enabled = false
+        checkReleaseBuilds false
+        abortOnError false
+    }
     defaultConfig {
         applicationId "com.telenor.possumexample"
         minSdkVersion 17
