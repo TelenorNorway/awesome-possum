@@ -1,1 +1,1 @@
-include ':possumlib', ':app', ':openCVLibrary320', ':openCVLibrary320', ':openCVLibrary320'
+include ':possumlib', ':app'

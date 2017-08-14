@@ -12,7 +12,7 @@ import com.telenor.possumlib.models.PossumBus;
  * sensor manager. Note that OnSensorChanged is NOT implemented here, it will need to be
  * in all usages of this class. The important thing it will need to do is to
  */
-public abstract class AbstractAndroidDetector extends AbstractDetector {
+public abstract class AbstractAndroidDetector extends com.telenor.possumlib.abstractdetectors.AbstractDetector {
     protected Sensor sensor;
     private final boolean isEnabled;
     SensorManager sensorManager;

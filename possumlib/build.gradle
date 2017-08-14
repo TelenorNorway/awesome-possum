@@ -3,8 +3,8 @@ apply plugin: 'com.novoda.bintray-release'
 
 project.group = 'com.telenor'
 ext {
-    VERSION_CODE = 5 // siste lanserte var versjonskode 4
-    VERSION_NAME = "1.2.0" // 1.2.0 er neste versjon - 1.1.0 var siste lanserte versjonsnavn
+    VERSION_CODE = 6 // siste lanserte var versjonskode 4
+    VERSION_NAME = '1.2.1' // 1.2.0 er neste versjon - 1.1.0 var siste lanserte versjonsnavn
 }
 
 Properties properties = new Properties()
@@ -13,13 +13,12 @@ properties.load(project.rootProject.file('local.properties').newDataInputStream(
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
-
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 25
         versionCode VERSION_CODE
         versionName VERSION_NAME
-//        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         ndk {
             abiFilters "x86", "x86_64", "armeabi-v7a", "armeabi", "mips"
         }
@@ -45,11 +44,6 @@ android {
             path "CMakeLists.txt"
         }
     }
-    lintOptions {
-        tasks.lint.enabled = false
-        checkReleaseBuilds false
-        abortOnError false
-    }
 
     sourceSets {
         main {
@@ -65,12 +59,34 @@ configurations {
 
 publish {
     userOrg = 'telenordigital'
-    groupId = project.group
+    groupId = 'com.telenor'
     artifactId = 'awesome-possum'
-    publishVersion = VERSION_NAME
     bintrayUser = properties["bintrayUser"]
     bintrayKey = properties["bintrayKey"]
+    publishVersion = VERSION_NAME
     dryRun = false
+}
+
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    failOnError false
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
 }
 
 dependencies {
@@ -82,11 +98,13 @@ dependencies {
     compile 'com.google.code.gson:gson:2.7'
     compile 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.3.2'
     compile 'com.amazonaws:aws-android-sdk-s3:2.3.2'
-    compile 'com.android.support:support-v4:25.3.1' // ActivityCompat & ContextCompat
+    compile 'com.android.support:support-v4:25.3.1'
+    //compile project(':openCVLibrary320')
+    compile 'no.nordli:opencv_awesomepossum_repo:1.0'
+    // ActivityCompat & ContextCompat
     compile 'com.google.android.gms:play-services-vision:11.0.4'
     testCompile 'junit:junit:4.12'
     testCompile 'org.robolectric:robolectric:3.2.2'
     testCompile 'org.robolectric:shadows-support-v4:3.0'
     testCompile 'org.mockito:mockito-core:2.0.31-beta'
-    compile project(':openCVLibrary320')
 }
