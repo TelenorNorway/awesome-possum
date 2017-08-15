@@ -402,7 +402,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     }
 
     protected String bucketKey() {
-        return "possumlibdata/" + AwesomePossum.versionName() + "/" + detectorName() + "/" + uniqueUserId + "/" + timestamp() + ".zip";
+        return "possumlibdata/" + AwesomePossum.versionName(context()) + "/" + detectorName() + "/" + uniqueUserId + "/" + timestamp() + ".zip";
     }
 
     protected boolean stageForUpload(File file) {

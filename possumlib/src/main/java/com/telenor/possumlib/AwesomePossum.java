@@ -13,7 +13,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.v4.BuildConfig;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -403,10 +402,11 @@ public final class AwesomePossum {
     /**
      * Handy little method for confirming the version of the library in-app.
      *
+     * @param context a valid android context
      * @return the versionName of the library
      */
-    public static String versionName() {
-        return BuildConfig.VERSION_NAME;
+    public static String versionName(@NonNull Context context) {
+        return context.getString(R.string.awesome_possum_library_version_name);
     }
 
     /**

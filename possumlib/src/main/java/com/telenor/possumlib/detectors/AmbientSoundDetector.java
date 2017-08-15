@@ -13,11 +13,14 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.gson.JsonArray;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.utils.sound.SoundFeatureExtractor;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -154,6 +157,10 @@ public class AmbientSoundDetector extends AbstractDetector {
                 }
             }
         }
+    }
+    @Override
+    protected List<JsonArray> createInternalList() {
+        return new CopyOnWriteArrayList<>();
     }
 
     /**

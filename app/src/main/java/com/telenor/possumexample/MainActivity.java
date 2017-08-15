@@ -31,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
         AwesomePossum.init(getApplicationContext());
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         preferences = getSharedPreferences("dummyPrefs", MODE_PRIVATE);
         showFragment(MainFragment.class);
     }

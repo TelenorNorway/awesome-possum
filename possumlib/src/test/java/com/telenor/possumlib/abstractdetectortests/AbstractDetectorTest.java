@@ -281,7 +281,7 @@ public class AbstractDetectorTest {
         Method bucketKeyMethod = AbstractDetector.class.getDeclaredMethod("bucketKey");
         bucketKeyMethod.setAccessible(true);
         String bucketKey = (String) bucketKeyMethod.invoke(abstractDetector);
-        String shouldBe = "possumlibdata/" + AwesomePossum.versionName() + "/Accelerometer/fakeUnique/" + timestamp + ".zip";
+        String shouldBe = "possumlibdata/" + AwesomePossum.versionName(RuntimeEnvironment.application) + "/Accelerometer/fakeUnique/" + timestamp + ".zip";
 //        Assert.assertEquals(shouldBe, bucketKey);
     }
 
