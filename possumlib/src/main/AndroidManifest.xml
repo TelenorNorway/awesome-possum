@@ -33,11 +33,11 @@
     <!-- Necessary for all neural network transmissions and data sending -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <application> <!--  android:name="android.support.multidex.MultiDexApplication" -->
+    <application>
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
-
+        <meta-data android:name="com.google.android.gms.vision.DEPENDENCIES" android:value="face" />
         <service
             android:name=".services.CollectionService"
             android:process=":possum"

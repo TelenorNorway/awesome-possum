@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
@@ -120,6 +121,7 @@ public class TrustButton extends RelativeLayout {
         AwesomePossum.authenticate(getContext(), id, getContext().getString(R.string.authenticateUrl), getContext().getString(R.string.apiKey), true);
         timePassedInMillis = 0;
         trustWheel.setProgress(0);
+        Log.i(tag, "TestAuth: Authenticate: "+id);
         authenticating = true;
         authHandler.removeCallbacks(authRunnable);
         authHandler.postDelayed(authRunnable, authInterval());
@@ -131,6 +133,7 @@ public class TrustButton extends RelativeLayout {
             AwesomePossum.stopListening(getContext());
             timePassedInMillis = 0;
             trustWheel.setProgress(0);
+            Log.i(tag, "TestAuth: Authenticate stop");
             authHandler.removeCallbacks(authRunnable);
             authenticating = false;
             Send.messageIntent(getContext(), Messaging.AUTH_STOP, null);

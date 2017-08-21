@@ -46,10 +46,18 @@ public class GatheringFunctionality implements IModelLoaded {
         }
     }
 
-    public void stopGathering() {
+    /**
+     * Stops gathering and terminates if desired
+     * @param andTerminate
+     */
+    public void stopGathering(boolean andTerminate) {
         if (isGathering) {
             for (AbstractDetector detector : detectors) {
-                detector.stopListening();
+                if (andTerminate) {
+                    detector.terminate();
+                } else {
+                    detector.stopListening();
+                }
                 detector.prepareUpload();
             }
             isGathering = false;

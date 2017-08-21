@@ -56,7 +56,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
             gatheringFunctionality.setAuthenticationState(isAuthenticating);
             gatheringFunctionality.setUniqueUserId(uniqueUserId);
             if (gatheringFunctionality.isGathering()) {
-                gatheringFunctionality.stopGathering();
+                gatheringFunctionality.stopGathering(false);
 //                gatheringFunctionality.clearData();
             }
             gatheringFunctionality.startGathering();
@@ -117,7 +117,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
         super.onDestroy();
 //        Log.d(tag, "Destroying Collector service:"+this);
         getApplicationContext().unregisterReceiver(receiver);
-        gatheringFunctionality.stopGathering();
+        gatheringFunctionality.stopGathering(true);
         receiver = null;
     }
 

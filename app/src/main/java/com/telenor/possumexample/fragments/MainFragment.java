@@ -15,7 +15,6 @@ import android.widget.TextView;
 
 import com.telenor.possumexample.MainActivity;
 import com.telenor.possumexample.R;
-import com.telenor.possumexample.views.IconWheel;
 import com.telenor.possumexample.views.TrustButton;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.constants.Messaging;
@@ -26,7 +25,6 @@ import com.telenor.possumlib.utils.Send;
 
 public class MainFragment extends Fragment implements IPossumTrust, IPossumMessage {
     private TrustButton trustButton;
-    private IconWheel iconWheel;
     private TextView status;
     private static final String tag = MainFragment.class.getName();
 
@@ -40,7 +38,6 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
         super.onViewCreated(view, bundle);
         AwesomePossum.addTrustListener(getContext(), this);
         status = (TextView) view.findViewById(R.id.status);
-        iconWheel = (IconWheel)view.findViewById(R.id.iconWheel);
         AwesomePossum.addMessageListener(getContext(), this);
         trustButton = (TrustButton) view.findViewById(R.id.trustWheel);
         trustButton.setOnClickListener(new View.OnClickListener() {
@@ -144,11 +141,13 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                     case Messaging.AUTH_STOP:
                         status.setText(R.string.stopped_auth);
                         status.setTextColor(Color.BLACK);
+                        Log.i(tag, "TestAuth: Received Auth Stop");
                         trustButton.setEnabled(true);
                         trustButton.stopAuthenticate();
                         break;
                     case Messaging.AUTH_DONE:
                         if (trustButton.isAuthenticating()) {
+                            Log.i(tag, "TestAuth: Auth done, reapplying");
                             trustButton.authenticate(myId());
                         }
                         break;

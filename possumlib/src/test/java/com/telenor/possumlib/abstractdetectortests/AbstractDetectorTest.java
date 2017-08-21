@@ -2,11 +2,13 @@ package com.telenor.possumlib.abstractdetectortests;
 
 import android.content.Context;
 
+import com.google.gson.JsonArray;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.FileManipulator;
 import com.telenor.possumlib.JodaInit;
 import com.telenor.possumlib.PossumTestRunner;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
+import com.telenor.possumlib.changeevents.PossumEvent;
 import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.interfaces.ISensorStatusUpdate;
 import com.telenor.possumlib.models.PossumBus;
@@ -23,6 +25,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.mockito.Mockito.mock;
@@ -87,7 +90,7 @@ public class AbstractDetectorTest {
             }
 
             @Override
-            public long timestamp() {
+            public long now() {
                 return timestamp;
             }
         };
@@ -95,9 +98,30 @@ public class AbstractDetectorTest {
 
     @Test
     public void testNow() throws Exception {
+        abstractDetector = new AbstractDetector(RuntimeEnvironment.application, eventBus) {
+            @Override
+            public int detectorType() {
+                return DetectorType.Accelerometer;
+            }
+
+            @Override
+            public String detectorName() {
+                return "accelerometer";
+            }
+        };
         long present = DateTime.now().getMillis();
         Thread.sleep(2);
         Assert.assertTrue(abstractDetector.now() > present);
+    }
+
+    @Test
+    public void testEventReceived() throws Exception {
+        abstractDetector.eventReceived(new PossumEvent("meh", "meh"));
+    }
+
+    @Test
+    public void testSetModel() throws Exception {
+        abstractDetector.setModel("meh");
     }
 
     @Test
@@ -113,6 +137,37 @@ public class AbstractDetectorTest {
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Missing context on detector:"));
         }
+    }
+
+    @Test
+    public void testInternalList() throws Exception {
+        Assert.assertTrue(abstractDetector.sessionValues() instanceof ArrayList);
+    }
+
+    @Test
+    public void testSetUniqueUserId() throws Exception {
+        Assert.assertTrue(abstractDetector.toJson().get("uniqueUserId").isJsonNull());
+        abstractDetector.setUniqueUser("fooey");
+        Assert.assertEquals("fooey", abstractDetector.toJson().get("uniqueUserId").getAsString());
+    }
+
+    @Test
+    public void testEventBus() throws Exception {
+        Assert.assertEquals(eventBus, abstractDetector.eventBus());
+    }
+
+    @Test
+    public void testGettingJsonDataFromValues() throws Exception {
+        Assert.assertTrue(abstractDetector.jsonData().size() == 0);
+        abstractDetector.sessionValues().add(new JsonArray());
+        Assert.assertTrue(abstractDetector.jsonData().size() == 1);
+    }
+
+    @Test
+    public void testIsAuthenticating() throws Exception {
+        Assert.assertFalse(abstractDetector.isAuthenticating());
+        abstractDetector.setAuthenticating(true);
+        Assert.assertTrue(abstractDetector.isAuthenticating());
     }
 
     @Test
@@ -301,16 +356,5 @@ public class AbstractDetectorTest {
         abstractDetector.prepareUpload();
         Assert.assertFalse(fakedStoredData.exists());
         Assert.assertTrue(zippedFile.exists());
-    }
-
-    @Test
-    public void testTimestamp() throws Exception {
-        abstractDetector = getDetector(RuntimeEnvironment.application, eventBus, "Accelerometer");
-        long now = DateTime.now().getMillis();
-        Method timestampMethod = AbstractDetector.class.getDeclaredMethod("timestamp");
-        timestampMethod.setAccessible(true);
-        long result = (long) timestampMethod.invoke(abstractDetector);
-        Assert.assertEquals(timestamp, result);
-        Assert.assertTrue(now >= result);
     }
 }

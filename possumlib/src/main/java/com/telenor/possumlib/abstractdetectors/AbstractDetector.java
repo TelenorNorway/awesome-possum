@@ -48,8 +48,8 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
     /**
      * Constructor for the most basic of all detector abstractions
      *
-     * @param context        a valid android context
-     * @param eventBus       an event bus for internal messages
+     * @param context  a valid android context
+     * @param eventBus an event bus for internal messages
      */
     protected AbstractDetector(Context context, @NonNull PossumBus eventBus) {
         if (context == null) throw new RuntimeException("Missing context on detector:" + this);
@@ -60,6 +60,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
 
     /**
      * Set the unique user id the detector will use
+     *
      * @param uniqueUserId a string representation of the user id, must be unique for user
      */
     public void setUniqueUser(String uniqueUserId) {
@@ -178,6 +179,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
 
     /**
      * Method for setting an eventual model to the detector
+     *
      * @param model the model
      */
     public void setModel(Object model) {
@@ -280,20 +282,20 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
         listeners.remove(listener);
     }
 
-    /**
-     * Function to handle what happens when data is uploaded
-     *
-     * @param failedException Exception if failed, null if successful
-     */
-    public void uploadedData(Exception failedException) {
-        if (isAuthenticating) return;
-        if (failedException == null) {
-            FileUtil.deleteFile(storedData());
-            clearData();
-            storedValues = 0;
-            Log.d(tag, "Completed upload of:" + detectorName() + ", deleted it");
-        }
-    }
+//    /**
+//     * Function to handle what happens when data is uploaded
+//     *
+//     * @param failedException Exception if failed, null if successful
+//     */
+//    public void uploadedData(Exception failedException) {
+//        if (isAuthenticating) return;
+//        if (failedException == null) {
+//            FileUtil.deleteFile(storedData());
+//            clearData();
+//            storedValues = 0;
+//            Log.d(tag, "Completed upload of:" + detectorName() + ", deleted it");
+//        }
+//    }
 
     /**
      * Sends the sensorUpdate to all listeners for sensor availability updates
@@ -360,6 +362,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
 
     /**
      * Define whether the detector should be used for authenticating next, or for listening
+     *
      * @param isAuthenticating true if it should be used for authenticating
      */
     public void setAuthenticating(boolean isAuthenticating) {
@@ -368,6 +371,7 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
 
     /**
      * Whether the detector is presently being used for authentication or not
+     *
      * @return true if used for authentication, false if not
      */
     public boolean isAuthenticating() {
@@ -397,12 +401,8 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
         }
     }
 
-    protected long timestamp() {
-        return DateTime.now().getMillis();
-    }
-
     protected String bucketKey() {
-        return "possumlibdata/" + AwesomePossum.versionName(context()) + "/" + detectorName() + "/" + uniqueUserId + "/" + timestamp() + ".zip";
+        return "possumlibdata/" + AwesomePossum.versionName(context()) + "/" + detectorName() + "/" + uniqueUserId + "/" + now() + ".zip";
     }
 
     protected boolean stageForUpload(File file) {
@@ -450,11 +450,6 @@ public abstract class AbstractDetector implements IPossumEventListener, Comparab
      * @param object the event received
      */
     public void eventReceived(PossumEvent object) {
-
-    }
-
-    public void setPollListener(IPollComplete listener) {
-        this.pollListener = listener;
     }
 
     public void clearData() {
