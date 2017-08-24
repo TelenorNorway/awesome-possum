@@ -1,4 +1,4 @@
-package com.telenor.possumlib.utils;
+package com.telenor.possumlib.utils.face;
 
 import android.util.SparseArray;
 
@@ -7,6 +7,9 @@ import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.telenor.possumlib.interfaces.IFaceFound;
 
+/**
+ * A custom face detector, reporting any face found to the listener interface
+ */
 public class AwesomeFaceDetector extends Detector<Face> {
     private Detector<Face> mDelegate;
     private IFaceFound listener;
@@ -20,7 +23,10 @@ public class AwesomeFaceDetector extends Detector<Face> {
     public SparseArray<Face> detect(Frame frame) {
         SparseArray<Face> faces = mDelegate.detect(frame);
         if (faces.size() > 0 && listener != null) {
-            listener.faceFound(faces.get(0),frame);
+            Face face = faces.get(0);
+            if (face != null) {
+                listener.faceFound(faces.get(0), frame);
+            }
         }
         return faces;
     }
@@ -28,8 +34,4 @@ public class AwesomeFaceDetector extends Detector<Face> {
     public boolean isOperational() {
         return mDelegate.isOperational();
     }
-
-//    public boolean setFocus(int id) {
-//        return mDelegate.setFocus(id);
-//    }
 }

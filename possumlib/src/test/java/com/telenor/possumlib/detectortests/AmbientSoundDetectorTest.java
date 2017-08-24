@@ -25,6 +25,7 @@ import org.robolectric.shadows.ShadowApplication;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.reflect.Field;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -72,6 +73,11 @@ public class AmbientSoundDetectorTest {
     @Test
     public void testInit() throws Exception {
         Assert.assertNotNull(ambientSoundDetector);
+    }
+
+    @Test
+    public void testConcurrentDataList() throws Exception {
+        Assert.assertTrue(ambientSoundDetector.sessionValues() instanceof CopyOnWriteArrayList);
     }
 
     @Test

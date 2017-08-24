@@ -9,15 +9,21 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.telenor.possumexample.MainActivity;
 import com.telenor.possumexample.R;
+import com.telenor.possumexample.views.CameraPreview;
 import com.telenor.possumexample.views.TrustButton;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.constants.Messaging;
+import com.telenor.possumlib.exceptions.GatheringNotAuthorizedException;
 import com.telenor.possumlib.interfaces.IPossumMessage;
 import com.telenor.possumlib.interfaces.IPossumTrust;
 import com.telenor.possumlib.utils.Do;
@@ -26,6 +32,15 @@ import com.telenor.possumlib.utils.Send;
 public class MainFragment extends Fragment implements IPossumTrust, IPossumMessage {
     private TrustButton trustButton;
     private TextView status;
+    private long clientGatherStart;
+    private long clientGatherEnd;
+    private long clientSendStart;
+    private long clientSendEnd;
+    private long serverWaitStart;
+    private long serverWaitEnd;
+    private RelativeLayout graphContainer;
+    private CameraPreview preview;
+    private static final boolean isGathering = false; // Set to false if it should do authentication
     private static final String tag = MainFragment.class.getName();
 
     @Override
@@ -39,22 +54,40 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
         AwesomePossum.addTrustListener(getContext(), this);
         status = (TextView) view.findViewById(R.id.status);
         AwesomePossum.addMessageListener(getContext(), this);
+        graphContainer = (RelativeLayout)view.findViewById(R.id.graphContainer);
+        preview = (CameraPreview) view.findViewById(R.id.preview);
         trustButton = (TrustButton) view.findViewById(R.id.trustWheel);
         trustButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (((MainActivity)getActivity()).validId(myId())) {
-                    if (AwesomePossum.isAuthorized(getActivity(), myId())) {
-                        if (trustButton.isAuthenticating()) {
-                            trustButton.stopAuthenticate();
-                        } else {
-                            trustButton.authenticate(myId());
-                        }
+                if (isGathering) {
+                    if (AwesomePossum.isListening()) {
+                        AwesomePossum.stopListening(getActivity());
+                        AwesomePossum.startUpload(getActivity(), myId(), getString(R.string.identityPoolId));
+                        Toast.makeText(getActivity(), "Stopping listening", Toast.LENGTH_SHORT).show();
                     } else {
-                        AwesomePossum.getAuthorizeDialog(getActivity(), myId(), getString(R.string.identityPoolId), "Authorize AwesomePossum", "We need permission from you", "Granted", "Denied").show();
+                        try {
+                            AwesomePossum.startListening(getActivity(), myId(), getString(R.string.identityPoolId));
+                            Toast.makeText(getActivity(), "Starting listening", Toast.LENGTH_SHORT).show();
+                        } catch (GatheringNotAuthorizedException e) {
+                            AwesomePossum.getAuthorizeDialog(getActivity(), myId(), getString(R.string.identityPoolId), "poc_consent/", "Authorize AwesomePossum", "We need permission from you", "Granted", "Denied").show();
+                        }
                     }
                 } else {
-                    ((MainActivity)getActivity()).showInvalidIdDialog();
+                    if (((MainActivity) getActivity()).validId(myId())) {
+                        if (AwesomePossum.isAuthorized(getActivity(), myId())) {
+                            if (trustButton.isAuthenticating()) {
+                                trustButton.stopAuthenticate();
+                            } else {
+                                clientGatherStart = System.currentTimeMillis();
+                                trustButton.authenticate(myId());
+                            }
+                        } else {
+                            AwesomePossum.getAuthorizeDialog(getActivity(), myId(), getString(R.string.identityPoolId), "Authorize AwesomePossum", "We need permission from you", "Granted", "Denied").show();
+                        }
+                    } else {
+                        ((MainActivity) getActivity()).showInvalidIdDialog();
+                    }
                 }
             }
         });
@@ -64,12 +97,43 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
         viewPager.setAdapter(new MyPagerAdapter(getChildFragmentManager()));
         tabLayout.setupWithViewPager(viewPager);
         viewPager.setCurrentItem(1);
+        toggleBottom(null);
+        setHasOptionsMenu(true);
         updateStatus();
-        if (!((MainActivity)getActivity()).validId(myId())) {
+        if (!((MainActivity) getActivity()).validId(myId())) {
             Send.messageIntent(getContext(), Messaging.MISSING_VALID_ID, null);
         } else {
             Send.messageIntent(getContext(), Messaging.READY_TO_AUTH, null);
         }
+    }
+
+    @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        MenuItem bottomDisplay = menu.findItem(R.id.toggleBottom);
+        if (preview.getVisibility() == View.GONE) bottomDisplay.setTitle(R.string.show_camera);
+        else bottomDisplay.setTitle(R.string.show_graph);
+    }
+
+    private void toggleBottom(MenuItem menuItem) {
+        if (preview.getVisibility() == View.GONE) {
+            preview.setVisibility(View.VISIBLE);
+            graphContainer.setVisibility(View.GONE);
+        } else {
+            preview.setVisibility(View.GONE);
+            graphContainer.setVisibility(View.VISIBLE);
+        }
+        if (menuItem != null) menuItem.setTitle(preview.getVisibility() == View.GONE?R.string.show_graph:R.string.show_camera);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem menuItem) {
+        switch (menuItem.getItemId()) {
+            case R.id.toggleBottom:
+                toggleBottom(menuItem);
+                return true;
+        }
+        return false;
     }
 
     @Override
@@ -128,8 +192,8 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
             @Override
             public void run() {
                 switch (msgType) {
-                    case Messaging.ANALYSING:
-                        status.setText(getContext().getString(R.string.analysing));
+                    case Messaging.GATHERING:
+                        status.setText(getContext().getString(R.string.gathering));
                         status.setTextColor(Color.BLACK);
                         trustButton.setEnabled(true);
                         break;
@@ -141,13 +205,15 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                     case Messaging.AUTH_STOP:
                         status.setText(R.string.stopped_auth);
                         status.setTextColor(Color.BLACK);
-                        Log.i(tag, "TestAuth: Received Auth Stop");
                         trustButton.setEnabled(true);
                         trustButton.stopAuthenticate();
                         break;
                     case Messaging.AUTH_DONE:
+                        serverWaitEnd = System.currentTimeMillis();
+                        Log.i(tag, "TestAuth: Server response wait time: "+(serverWaitEnd-serverWaitStart)+" ms");
+                        Log.i(tag, "TestAuth: Total roundTime:"+((clientGatherEnd-clientGatherStart)+(clientSendEnd-clientSendStart)+(serverWaitEnd-serverWaitStart))+" ms");
                         if (trustButton.isAuthenticating()) {
-                            Log.i(tag, "TestAuth: Auth done, reapplying");
+                            clientGatherStart = System.currentTimeMillis();
                             trustButton.authenticate(myId());
                         }
                         break;
@@ -156,14 +222,36 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                         status.setTextColor(Color.BLACK);
                         trustButton.setEnabled(true);
                         break;
+                    case Messaging.POSSUM_MESSAGE:
+                        Log.i(tag, "TestAuth: "+message);
+                        break;
+                    case Messaging.FACE_FOUND:
+                        Log.i(tag, "TestAuth: Face found during interval after:"+(Long.parseLong(message)-clientGatherStart)+" ms");
+                        break;
                     case Messaging.SENDING_RESULT:
                         status.setText(getContext().getString(R.string.sending_result));
+                        status.setTextColor(Color.BLACK);
+                        trustButton.setEnabled(true);
+                        break;
+                    case Messaging.START_SERVER_DATA_SEND:
+                        clientGatherEnd = System.currentTimeMillis();
+                        Log.i(tag, "TestAuth: Time spent gathering data:"+(clientGatherEnd-clientGatherStart)+" ms");
+                        clientSendStart = Long.parseLong(message);
+                        status.setText(getString(R.string.sending_data_to_server));
                         status.setTextColor(Color.BLACK);
                         trustButton.setEnabled(true);
                         break;
                     case Messaging.VERIFICATION_SUCCESS:
                         status.setText(getContext().getString(R.string.verification_success));
                         status.setTextColor(Color.BLACK);
+                        trustButton.setEnabled(true);
+                        break;
+                    case Messaging.WAITING_FOR_SERVER_RESPONSE:
+                        clientSendEnd = System.currentTimeMillis();
+                        status.setText(getString(R.string.waiting_for_server_response));
+                        status.setTextColor(Color.BLACK);
+                        serverWaitStart = Long.parseLong(message);
+                        Log.i(tag, "TestAuth: Time spent processing and sending: "+(clientSendEnd-clientSendStart)+" ms");
                         trustButton.setEnabled(true);
                         break;
                     case Messaging.DETECTORS_STATUS:
@@ -174,7 +262,7 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
 //                        status.setText(message);
 //                        status.setTextColor(Color.RED);
 //                        trustButton.setEnabled(false);
-                        Log.e(tag, "Sending data: Unhandled possum message:"+msgType+":"+message);
+                        Log.e(tag, "Sending data: Unhandled possum message:" + msgType + ":" + message);
                 }
             }
         });

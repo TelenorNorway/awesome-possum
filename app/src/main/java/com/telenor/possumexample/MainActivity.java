@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
         switch (menuItem.getItemId()) {
             case R.id.define_id:
                 defineIdDialog(menuItem);
-                break;
+                return true;
             case R.id.listening:
                 if (validId(myId())) {
                     try {
@@ -87,12 +87,12 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     showInvalidIdDialog();
                 }
-                break;
+                return true;
             case R.id.upload:
                 if (validId(myId())) {
                     AwesomePossum.startUpload(this, myId(), getString(R.string.identityPoolId));
                 }
-                break;
+                return true;
             case R.id.resetData:
                 if (validId(myId())) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -115,9 +115,9 @@ public class MainActivity extends AppCompatActivity {
                     });
                     builder.create().show();
                 }
-                break;
+                return true;
         }
-        return true;
+        return false;
     }
 
     public void showInvalidIdDialog() {

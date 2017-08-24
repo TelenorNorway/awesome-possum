@@ -12,7 +12,6 @@ import com.telenor.possumlib.detectors.GyroScope;
 import com.telenor.possumlib.detectors.HardwareDetector;
 import com.telenor.possumlib.detectors.ImageDetector;
 import com.telenor.possumlib.detectors.LocationDetector;
-import com.telenor.possumlib.detectors.MetaDataDetector;
 import com.telenor.possumlib.detectors.NetworkDetector;
 import com.telenor.possumlib.models.PossumBus;
 
@@ -56,7 +55,7 @@ public class Get {
 
     public static List<AbstractDetector> Detectors(@NonNull Context context, @NonNull PossumBus eventBus) {
         List<AbstractDetector> detectors = new ArrayList<>();
-        detectors.add(new MetaDataDetector(context, eventBus)); // Should always be first in line
+//        detectors.add(new MetaDataDetector(context, eventBus)); // Should always be first in line // Not necessary for present use
         detectors.add(new HardwareDetector(context, eventBus));
         detectors.add(new Accelerometer(context, eventBus));
         detectors.add(new GyroScope(context, eventBus));

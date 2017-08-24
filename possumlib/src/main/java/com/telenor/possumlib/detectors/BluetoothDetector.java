@@ -4,6 +4,7 @@ import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanRecord;
@@ -23,6 +24,7 @@ import com.telenor.possumlib.constants.DetectorType;
 import com.telenor.possumlib.models.PossumBus;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /***
@@ -31,12 +33,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class BluetoothDetector extends AbstractDetector {
     private BluetoothAdapter bluetoothAdapter;
     private BroadcastReceiver receiver;
+    private BluetoothManager bluetoothManager;
     private ScanCallback callback;
     private IntentFilter intentFilter;
 
     private boolean isBLE = false;
     private boolean isRegistered;
     private long lastStart;
+    private int[] deviceSettings = new int[]{BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_DISCONNECTED};
 
     private static final String tag = BluetoothDetector.class.getName();
 
@@ -49,8 +53,7 @@ public class BluetoothDetector extends AbstractDetector {
     public BluetoothDetector(final Context context, @NonNull PossumBus eventBus) {
         super(context, eventBus);
         // TODO: Confirm coarse/fine location and bluetooth admin for this
-        BluetoothManager bluetoothManager;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
             if (bluetoothManager == null) {
                 // Device does not support bluetooth
@@ -151,6 +154,7 @@ public class BluetoothDetector extends AbstractDetector {
                             array.add(""+txPowerLvl);
                             array.add(""+device.getBondState());
                             sessionValues.add(array);
+                            Log.i(tag, "TestAuth: Adding device:"+array);
                         } catch (Exception ignore) {
                         }
                     }
@@ -192,23 +196,41 @@ public class BluetoothDetector extends AbstractDetector {
     public boolean startListening() {
         boolean listen = super.startListening();
         if (listen) {
-            scanForBluetooth();
+            Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
+            for (BluetoothDevice device : bondedDevices) {
+                JsonArray array = new JsonArray();
+                array.add(""+now());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    array.add(""+device.getType());
+                } else {
+                    array.add("1"); // Classic
+                }
+                array.add(device.getAddress());
+                array.add("-1");// array.add(""+result.getRssi());
+                array.add("-1");// array.add(""+txPowerLvl);
+                array.add(""+device.getBondState());
+                Log.i(tag, "TestAuth2: Device found:"+array.toString());
+                sessionValues.add(array);
+            }
+//            scanForBluetooth();
         }
         return listen;
     }
 
+    @SuppressWarnings("unused")
     private void scanForBluetooth() {
         long nowStamp = now();
         long diff = nowStamp - lastStart;
         if (diff >= minimumInterval()) {
-            Log.d(tag, "Starting bluetooth scan");
             if (isBLEDevice() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 // Start BLE scan
                 BluetoothLeScanner scanner = bluetoothAdapter.getBluetoothLeScanner();
                 if (scanner != null) {
                     ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
                     scanSettingsBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
+//                    scanSettingsBuilder.setReportDelay(0);
                     scanner.startScan(null, scanSettingsBuilder.build(), callback);
+//                    scanner.flushPendingScanResults(callback);
                     lastStart = nowStamp;
                 }
             } else {

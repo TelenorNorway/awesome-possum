@@ -52,8 +52,12 @@ public class AmbientSoundDetector extends AbstractDetector {
 //        SoundFeatureExtractor mfcc = new SoundFeatureExtractor();
         audioHandler = getAudioHandler();
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        audioRecorder = getAudioRecord();
+        initializeAudioRecorder();
         supportsUnprocessed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && Boolean.parseBoolean(audioManager.getProperty("android.media.property.SUPPORT_AUDIO_SOURCE_UNPROCESSED"));
+    }
+
+    private void initializeAudioRecorder() {
+        audioRecorder = getAudioRecord();
     }
 
     protected Handler getAudioHandler() {
@@ -115,7 +119,7 @@ public class AmbientSoundDetector extends AbstractDetector {
      *
      * @return true if it is recording
      */
-    public boolean isRecording() {
+    private boolean isRecording() {
         return audioRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING;
     }
 
@@ -127,15 +131,22 @@ public class AmbientSoundDetector extends AbstractDetector {
                 audioManager.setMicrophoneMute(false);
                 disabledMute = true;
             }
+            if (audioRecorder == null || audioRecorder.getState() == AudioRecord.STATE_UNINITIALIZED) {
+                initializeAudioRecorder();
+            }
             Log.d(tag, "Start recording ambient sound");
-            audioRecorder.startRecording();
-            audioHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    stopListening();
-                }
-            }, authenticationListenInterval());
-            backgroundService.submit(new RecordThread());
+            if (!isRecording()) {
+                audioRecorder.startRecording();
+                audioHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        stopListening();
+                    }
+                }, authenticationListenInterval());
+                backgroundService.submit(new RecordThread());
+            } else {
+                Log.e(tag, "Wrong state of audioRecorder:"+audioRecorder.getState()+" - "+audioRecorder.getRecordingState());
+            }
         }
         return started;
     }
@@ -143,7 +154,7 @@ public class AmbientSoundDetector extends AbstractDetector {
     private class RecordThread implements Runnable {
         @Override
         public void run() {
-            Log.i(tag, "Starting to read from audio stream");
+            Log.d(tag, "Starting to read from audio stream");
             short[] buffer = new short[bufferSize];
             int recordedSamples = 0;
             int readSize;
@@ -168,7 +179,7 @@ public class AmbientSoundDetector extends AbstractDetector {
      *
      * @return value of encoding used
      */
-    public int audioEncoding() {
+    private int audioEncoding() {
         return AudioFormat.ENCODING_PCM_16BIT;
     }
 
@@ -177,23 +188,31 @@ public class AmbientSoundDetector extends AbstractDetector {
      *
      * @return int value of present sampleRate
      */
-    public int sampleRate() {
+    private int sampleRate() {
         return 48000;
     }
 
-    /**
-     * the MFCC window size in milliseconds, presently default is 64. Override to change
-     *
-     * @return the window size in milliseconds
-     */
-    public int windowSize() {
-        return 64;
-    }
+//    /**
+//     * the MFCC window size in milliseconds, presently default is 64. Override to change
+//     *
+//     * @return the window size in milliseconds
+//     */
+//    public int windowSize() {
+//        return 64;
+//    }
 
     private void stopRecording() {
         if (audioRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
             Log.d(tag, "Stopping recording of ambient sound");
             audioRecorder.stop();
+        }
+    }
+
+    @Override
+    public void terminate() {
+        super.terminate();
+        if (audioRecorder != null) {
+            audioRecorder.release();
         }
     }
 
@@ -210,7 +229,7 @@ public class AmbientSoundDetector extends AbstractDetector {
         }
     }
 
-    public long authenticationListenInterval() {
+    private long authenticationListenInterval() {
         return 3000;
     }
 }

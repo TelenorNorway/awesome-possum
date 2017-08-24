@@ -16,8 +16,12 @@
     <string name="ok">Ok</string>
     <string name="reset_my_data">Reset My Data</string>
     <string name="training">Training</string>
-    <string name="analysing">Analysing…</string>
+    <string name="gathering">Gathering sensorData…</string>
     <string name="sending_result">Sending result to server</string>
-    <string name="verification_success">Verified authenticatin id</string>
+    <string name="verification_success">Verified authentication id</string>
     <string name="stopped_auth">Stopped authenticating</string>
+    <string name="waiting_for_server_response">Awaiting server response</string>
+    <string name="sending_data_to_server">Sending data to server</string>
+    <string name="show_camera">Show camera</string>
+    <string name="show_graph">Show graphs</string>
 </resources>

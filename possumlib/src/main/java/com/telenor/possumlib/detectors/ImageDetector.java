@@ -19,15 +19,18 @@ import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.Landmark;
-import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 import com.google.gson.JsonArray;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.abstractdetectors.AbstractDetector;
 import com.telenor.possumlib.constants.DetectorType;
+import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.interfaces.IFaceFound;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.tensorflow.TensorFlowInferenceInterface;
-import com.telenor.possumlib.utils.AwesomeFaceDetector;
+import com.telenor.possumlib.utils.Send;
+import com.telenor.possumlib.utils.face.AwesomeFaceDetector;
+import com.telenor.possumlib.utils.face.AwesomeFaceProcessor;
+import com.telenor.possumlib.utils.face.AwesomeFaceTracker;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -37,7 +40,7 @@ import static com.telenor.possumlib.utils.ImageUtils.bitmapToIntArray;
 import static com.telenor.possumlib.utils.ImageUtils.rotateBitmap;
 
 /***
- * Uses camera to determine familiar places, face and face identity.
+ * Uses camera to determine face identity.
  */
 public class ImageDetector extends AbstractDetector implements IFaceFound {
     private boolean requestedListening;
@@ -65,9 +68,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
 //        findOutIfArchitectureIsInvalid();
 //        if (!supportedArchitecture) return;
         faceDetector = getGoogleFaceDetector(context);
-        faceDetector.setProcessor(
-                new LargestFaceFocusingProcessor.Builder(faceDetector, null)
-                        .build());
         cameraSource = new CameraSource.Builder(context, faceDetector)
                 .setFacing(CameraSource.CAMERA_FACING_FRONT)
                 .setRequestedPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT)
@@ -112,8 +112,12 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         FaceDetector.Builder builder = new FaceDetector.Builder(context);
         builder.setLandmarkType(FaceDetector.ALL_LANDMARKS);
         builder.setTrackingEnabled(false);
-        builder.setMode(FaceDetector.ACCURATE_MODE);
-        return new AwesomeFaceDetector(builder.build(), this);
+        builder.setMode(FaceDetector.FAST_MODE);
+        AwesomeFaceDetector detector = new AwesomeFaceDetector(builder.build(), this);
+        AwesomeFaceTracker tracker = new AwesomeFaceTracker();
+        AwesomeFaceProcessor processor = new AwesomeFaceProcessor(detector, tracker);
+        detector.setProcessor(processor);
+        return detector;
     }
 
     @Override
@@ -159,7 +163,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
 
     @Override
     public void stopListening() {
-        if (isListening()) {
+        if (isListening() && cameraSource != null) {
             cameraSource.stop();
         }
         super.stopListening();
@@ -216,6 +220,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         PointF leftEye = null;
         PointF rightEye = null;
         PointF mouth = null;
+        if (face == null) return;
         List<Landmark> landmarks = face.getLandmarks();
         for (Landmark landmark : landmarks) {
             if (landmark.getType() == Landmark.LEFT_EYE) {
@@ -243,5 +248,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             array.add("" + weight);
         }
         sessionValues.add(array);
+        Send.messageIntent(context(), Messaging.FACE_FOUND, ""+System.currentTimeMillis());
     }
 }

@@ -43,16 +43,16 @@ public class RestFunctionality extends AsyncTask<JsonObject, Void, Exception> {
             urlConnection.setRequestProperty("x-api-key", apiKey);
             urlConnection.setRequestMethod("POST");
             byte[] data = object.toString().getBytes();
-            longLog(object.toString());
+//            longLog(object.toString());
             urlConnection.setFixedLengthStreamingMode(data.length);
             urlConnection.connect();
 
             os = urlConnection.getOutputStream();
             // TODO: Post to stream
             os.write(data);
-            int responseCode = urlConnection.getResponseCode();
-            String responseMessage = urlConnection.getResponseMessage();
-            Log.i(tag, "Response:" + responseCode + " -> " + responseMessage);
+            //int responseCode = urlConnection.getResponseCode();
+            //String responseMessage = urlConnection.getResponseMessage();
+            //Log.d(tag, responseCode + " -> " + responseMessage);
             is = urlConnection.getInputStream();
             successMessage = "";
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
@@ -85,15 +85,14 @@ public class RestFunctionality extends AsyncTask<JsonObject, Void, Exception> {
         return exception;
     }
 
-    public void longLog(String message) {
-        Log.i(tag, "Here it comes:"+message.length());
+    private void longLog(String message) {
         // Split by line, then ensure each line can fit into Log's maximum length.
         for (int i = 0, length = message.length(); i < length; i++) {
             int newline = message.indexOf('\n', i);
             newline = newline != -1 ? newline : length;
             do {
                 int end = Math.min(newline, i + 1000);
-                Log.d(tag, message.substring(i, end));
+                Log.d(tag, "TestAuth:"+message.substring(i, end));
                 i = end;
             } while (i < newline);
         }

@@ -27,7 +27,6 @@ public class TrustButton extends RelativeLayout {
     private int timePassedInMillis;
     private Handler authHandler = new Handler(Looper.getMainLooper());
     private Runnable authRunnable;
-
     private static final String tag = TrustButton.class.getName();
 
     public TrustButton(Context context) {
@@ -121,11 +120,10 @@ public class TrustButton extends RelativeLayout {
         AwesomePossum.authenticate(getContext(), id, getContext().getString(R.string.authenticateUrl), getContext().getString(R.string.apiKey), true);
         timePassedInMillis = 0;
         trustWheel.setProgress(0);
-        Log.i(tag, "TestAuth: Authenticate: "+id);
         authenticating = true;
         authHandler.removeCallbacks(authRunnable);
         authHandler.postDelayed(authRunnable, authInterval());
-        Send.messageIntent(getContext(), Messaging.ANALYSING, null);
+        Send.messageIntent(getContext(), Messaging.GATHERING, null);
     }
 
     public void stopAuthenticate() {
@@ -133,9 +131,9 @@ public class TrustButton extends RelativeLayout {
             AwesomePossum.stopListening(getContext());
             timePassedInMillis = 0;
             trustWheel.setProgress(0);
-            Log.i(tag, "TestAuth: Authenticate stop");
             authHandler.removeCallbacks(authRunnable);
             authenticating = false;
+            Log.i(tag, "TestAuth: Stop authenticating");
             Send.messageIntent(getContext(), Messaging.AUTH_STOP, null);
         }
     }

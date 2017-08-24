@@ -18,10 +18,13 @@ public class Messaging {
     public static final String POSSUM_TERMINATE = "PossumTerminate";
 
     // Status messages
-    public static final String ANALYSING = "Analysing";
+    public static final String GATHERING = "gathering";
     public static final String SENDING_RESULT = "SendingResult";
     public static final String READY_TO_AUTH = "ReadyForAuth";
     public static final String MISSING_VALID_ID = "MissingValidId";
     public static final String AUTH_STOP = "authStop";
     public static final String AUTH_DONE = "authDone";
+    public static final String WAITING_FOR_SERVER_RESPONSE = "waitingServerResponse";
+    public static final String START_SERVER_DATA_SEND = "sendingToServer";
+    public static final String FACE_FOUND = "faceFound";
 }

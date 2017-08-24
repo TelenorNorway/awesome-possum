@@ -23,10 +23,15 @@ import java.util.List;
 final public class SendUserIdService extends AbstractAmazonUploadService {
     private static final String tag = SendUserIdService.class.getName();
     private String uniqueUserId;
+    private String consentFolder;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         uniqueUserId = intent.getStringExtra("uniqueUserId");
+        consentFolder = intent.getStringExtra("consentFolder");
+        if (consentFolder == null) {
+            consentFolder = "consent/";
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -41,7 +46,7 @@ final public class SendUserIdService extends AbstractAmazonUploadService {
         JsonObject object = new JsonObject();
         object.addProperty("time", DateTime.now().getMillis());
         object.addProperty("uniqueUserId", uniqueUserId);
-        File tempFile = FileUtil.toUploadFile(this, "consent/"+ uniqueUserId);
+        File tempFile = FileUtil.toUploadFile(this, consentFolder+ uniqueUserId);
         String errorMsg;
         if (tempFile.exists()) {
             if (!tempFile.delete()) {

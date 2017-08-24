@@ -12,4 +12,7 @@
     <item
         android:id="@+id/resetData"
         android:title="@string/reset_my_data" />
+    <item
+        android:id="@+id/toggleBottom"
+        android:title="@string/show_camera" />
 </menu>

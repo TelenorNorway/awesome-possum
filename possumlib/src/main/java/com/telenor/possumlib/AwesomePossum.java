@@ -77,6 +77,7 @@ public final class AwesomePossum {
      * the first thing done when starting an app with the library. It will shorten the time it needs
      * to authenticate or start using it, as the initialization will load a lot of models in the
      * background first thing.
+     *
      * @param context a valid android context
      */
     public static void init(@NonNull Context context) {
@@ -106,7 +107,7 @@ public final class AwesomePossum {
 
     private static void handleTrustIntent(Intent intent) {
         String message = intent.getStringExtra("message");
-        JsonObject object = (JsonObject)parser.parse(message);
+        JsonObject object = (JsonObject) parser.parse(message);
         latestTrustScore = new JsonObject();
         latestTrustScore.add("trustScore", object.get("trustscore").getAsJsonObject());
         JsonObject sensors = object.get("sensors").getAsJsonObject();
@@ -125,7 +126,7 @@ public final class AwesomePossum {
         notifyTrustChange(DetectorType.Position, latestTrustScore("position"), latestStatus("position"));
         notifyTrustChange(DetectorType.Image, latestTrustScore("image"), latestStatus("image"));
 
-        for (IPossumTrust listener: trustListeners) {
+        for (IPossumTrust listener : trustListeners) {
             listener.changeInCombinedTrust(latestTrustScore("trustScore"), latestStatus("trustScore"));
         }
         lastAuthenticated = DateTime.now();
@@ -135,21 +136,29 @@ public final class AwesomePossum {
     public static String latestStatus(@NonNull String detector) {
         return latestTrustScore.get(detector).getAsJsonObject().get("status").getAsString();
     }
+
     public static float latestTrustScore(@NonNull String detector) {
         return latestTrustScore.get(detector).getAsJsonObject().get("score").getAsFloat();
     }
 
     public static String detectorNameByType(int detectorType) {
         switch (detectorType) {
-            case DetectorType.Accelerometer: return "accelerometer";
-            case DetectorType.Bluetooth: return "bluetooth";
-            case DetectorType.Audio: return "sound";
-            case DetectorType.Image: return "image";
-            case DetectorType.Position: return "position";
-            case DetectorType.Wifi: return "network";
-            case DetectorType.Gyroscope: return "gyroscope";
+            case DetectorType.Accelerometer:
+                return "accelerometer";
+            case DetectorType.Bluetooth:
+                return "bluetooth";
+            case DetectorType.Audio:
+                return "sound";
+            case DetectorType.Image:
+                return "image";
+            case DetectorType.Position:
+                return "position";
+            case DetectorType.Wifi:
+                return "network";
+            case DetectorType.Gyroscope:
+                return "gyroscope";
         }
-        return "f00:"+detectorType;
+        return "f00:" + detectorType;
     }
 
     private static void notifyTrustChange(int type, float newValue, String status) {
@@ -177,8 +186,8 @@ public final class AwesomePossum {
      *
      * @param context  a valid android context
      * @param uniqueId the users unique Id
-     * @param url     the absolute url it will communicate with
-     * @param apiKey     the key used to send to the rest api
+     * @param url      the absolute url it will communicate with
+     * @param apiKey   the key used to send to the rest api
      * @return true if it starts an attempt, false if too little time has passed
      */
     public static boolean authenticate(@NonNull Context context, @NonNull String uniqueId, @NonNull String url, @NonNull String apiKey) {
@@ -188,12 +197,12 @@ public final class AwesomePossum {
     /**
      * Starts an attempt to authenticate with the possibility to enforce it
      *
-     * @param context       a valid android context
-     * @param uniqueUserId  the users unique identifier
-     * @param url           the absolute url it will communicate with
-     * @param apiKey        the key used to send to the rest api
-     * @param forceAttempt  should it attempt to authenticate no matter what, let this be true
-     * @return              true if it starts an attempt, false if too little time has passed
+     * @param context      a valid android context
+     * @param uniqueUserId the users unique identifier
+     * @param url          the absolute url it will communicate with
+     * @param apiKey       the key used to send to the rest api
+     * @param forceAttempt should it attempt to authenticate no matter what, let this be true
+     * @return true if it starts an attempt, false if too little time has passed
      * or it is already running
      */
     public static boolean authenticate(@NonNull Context context, @NonNull String uniqueUserId, @NonNull String url, @NonNull String apiKey, boolean forceAttempt) {
@@ -205,6 +214,7 @@ public final class AwesomePossum {
             intent.putExtra("uniqueUserId", uniqueUserId);
             intent.putExtra("authenticating", true);
             intent.putExtra("apiKey", apiKey);
+            intent.putExtra("startTime", System.currentTimeMillis());
             context.startService(intent);
             return true;
         } else return false;
@@ -245,10 +255,10 @@ public final class AwesomePossum {
     /**
      * Starts to listen/gather data while app is running
      *
-     * @param uniqueUserId                      the unique user id
-     * @param identityPoolId                    the identity pool id it will verify with
-     * @throws GatheringNotAuthorizedException  If the user hasn't accepted the app, this exception
-     *                                          is thrown
+     * @param uniqueUserId   the unique user id
+     * @param identityPoolId the identity pool id it will verify with
+     * @throws GatheringNotAuthorizedException If the user hasn't accepted the app, this exception
+     *                                         is thrown
      */
     public static void startListening(@NonNull Context context, @NonNull String uniqueUserId, @NonNull String identityPoolId) throws GatheringNotAuthorizedException {
         init(context);
@@ -274,8 +284,8 @@ public final class AwesomePossum {
     /**
      * Enables you to request the needed permissions
      *
-     * @param activity  an android activity to handle the requesting
-     * @return          true if no permissions are missing, else false
+     * @param activity an android activity to handle the requesting
+     * @return true if no permissions are missing, else false
      */
     public static boolean requestNeededPermissions(@NonNull Activity activity) {
         init(activity);
@@ -371,7 +381,7 @@ public final class AwesomePossum {
 
     /**
      * @param context        a valid android context
-     * @param uniqueUserId  the unique user id
+     * @param uniqueUserId   the unique user id
      * @param identityPoolId the identity pool id it will use
      * @return true if upload was started, false if no network to upload on or not initialized
      */
@@ -418,7 +428,7 @@ public final class AwesomePossum {
     public static void setLearning(@NonNull Context context, boolean isLearning) {
         init(context);
         preferences.edit().putBoolean(Constants.IS_LEARNING, isLearning).apply();
-        Send.messageIntent(context, Messaging.LEARNING, ""+isLearning);
+        Send.messageIntent(context, Messaging.LEARNING, "" + isLearning);
         Log.i(tag, "Is learning now set to:" + isLearning);
     }
 
@@ -447,20 +457,41 @@ public final class AwesomePossum {
         return dangerousPermissions;
     }
 
+
     /**
      * Fire this method to tell the system that the user has approved of using the AwesomePossum
      * library. Until it is done, no data will be collected
      *
-     * @param uniqueUserId  the unique id reflecting the user who is authorized
+     * @param uniqueUserId   the unique id reflecting the user who is authorized
      * @param identityPoolId the identity pool id you are using
      * @return true if authorized, false if not initialized yet
      */
     public static boolean authorizeGathering(@NonNull Context context, @NonNull String uniqueUserId, @NonNull String identityPoolId) {
+        return authorizeGathering(context, uniqueUserId, identityPoolId, null);
+    }
+
+    /**
+     * Fire this method to tell the system that the user has approved of using the AwesomePossum
+     * library. Until it is done, no data will be collected
+     *
+     * @param uniqueUserId   the unique id reflecting the user who is authorized
+     * @param identityPoolId the identity pool id you are using
+     * @param consentFolder  the folder on S3 you want to upload the consent to.
+     *                       IMPORTANT: Remember it needs the / at the end or it will fail
+     * @return true if authorized, false if not initialized yet
+     */
+    public static boolean authorizeGathering(@NonNull Context context, @NonNull String uniqueUserId, @NonNull String identityPoolId, String consentFolder) {
         init(context);
+        if (consentFolder != null) {
+            // Verify it has a / at the end
+            if (!consentFolder.endsWith("/")) {
+                throw new IllegalArgumentException("Consent folder is not correctly formatted. Need a / at the end, is:"+consentFolder);
+            }
+        }
         String previouslyStoredUserId = preferences.getString(Constants.UNIQUE_USER_ID, null);
         boolean foundInStoredUsers = false;
         if (previouslyStoredUserId != null) {
-            JsonArray userArray = (JsonArray)parser.parse(previouslyStoredUserId);
+            JsonArray userArray = (JsonArray) parser.parse(previouslyStoredUserId);
             for (JsonElement el : userArray) {
                 if (uniqueUserId.equals(el.getAsString())) {
                     foundInStoredUsers = true;
@@ -474,7 +505,7 @@ public final class AwesomePossum {
             if (tempStored == null) {
                 tempArray = new JsonArray();
             } else {
-                tempArray = (JsonArray)parser.parse(tempStored);
+                tempArray = (JsonArray) parser.parse(tempStored);
             }
             boolean foundInTempUsers = false;
             for (JsonElement el : tempArray) {
@@ -490,6 +521,7 @@ public final class AwesomePossum {
                     Intent intent = new Intent(context, SendUserIdService.class);
                     intent.putExtra("uniqueUserId", uniqueUserId);
                     intent.putExtra("identityPoolId", identityPoolId);
+                    intent.putExtra("consentFolder", consentFolder);
                     context.startService(intent);
                 }
             }
@@ -499,8 +531,9 @@ public final class AwesomePossum {
 
     /**
      * Call this method to check whether user has allowed the Awesome Possum to gather data
-     * @param context       a valid android context
-     * @param id            the user id you want to confirm is authorized
+     *
+     * @param context a valid android context
+     * @param id      the user id you want to confirm is authorized
      * @return true if allowed, false if not allowed yet
      */
     public static boolean isAuthorized(@NonNull Context context, @NonNull String id) {
@@ -510,14 +543,14 @@ public final class AwesomePossum {
         if (storedUserIds == null && storedTempUserIds == null) return false;
         if (storedUserIds != null) {
             // users is not null
-            JsonArray storedUsersArray = (JsonArray)parser.parse(storedUserIds);
+            JsonArray storedUsersArray = (JsonArray) parser.parse(storedUserIds);
             for (JsonElement el : storedUsersArray) {
                 if (id.equals(el.getAsString())) return true;
             }
 
         }
         if (storedTempUserIds != null) {
-            JsonArray storedTempUsersArray = (JsonArray)parser.parse(storedTempUserIds);
+            JsonArray storedTempUsersArray = (JsonArray) parser.parse(storedTempUserIds);
             for (JsonElement el : storedTempUsersArray) {
                 if (id.equals(el.getAsString())) return true;
             }
@@ -547,6 +580,32 @@ public final class AwesomePossum {
                                             String message,
                                             String ok,
                                             String cancel) {
+        return getAuthorizeDialog(activity, uniqueUserId, identityPoolId, null, title, message, ok, cancel);
+    }
+
+    /**
+     * A default dialog for requesting authorization. Alternatively, manually create a dialog and
+     * make sure it calls AwesomePossum.authorizeGathering() then before it starts to startListening, calls
+     * AwesomePossum.requestNeededPermissions(Activity) to
+     *
+     * @param activity       an android activity
+     * @param uniqueUserId   the user id the dialog will authorize
+     * @param identityPoolId the identity pool id of the upload
+     * @param consentFolder  the folder in S3 you upload the consent to. IMPORTANT: Need a / at the end or it will fail
+     * @param title          the title of the dialog
+     * @param message        the message of the dialog
+     * @param ok             the ok button text of the dialog
+     * @param cancel         the cancel button text of the dialog
+     * @return a dialog that can be show()'ed
+     */
+    public static Dialog getAuthorizeDialog(@NonNull final Activity activity,
+                                            @NonNull final String uniqueUserId,
+                                            @NonNull final String identityPoolId,
+                                            final String consentFolder,
+                                            String title,
+                                            String message,
+                                            String ok,
+                                            String cancel) {
         init(activity);
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle(title);
@@ -554,7 +613,7 @@ public final class AwesomePossum {
         builder.setPositiveButton(ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                authorizeGathering(activity, uniqueUserId, identityPoolId);
+                authorizeGathering(activity, uniqueUserId, identityPoolId, consentFolder);
                 requestNeededPermissions(activity);
                 dialog.dismiss();
             }
