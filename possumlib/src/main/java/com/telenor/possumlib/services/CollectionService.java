@@ -8,7 +8,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.telenor.possumlib.AwesomePossum;
@@ -17,7 +16,6 @@ import com.telenor.possumlib.abstractservices.AbstractBasicService;
 import com.telenor.possumlib.asynctasks.modelloaders.TensorLoad;
 import com.telenor.possumlib.constants.Constants;
 import com.telenor.possumlib.constants.Messaging;
-import com.telenor.possumlib.detectors.BluetoothDetector;
 import com.telenor.possumlib.functionality.GatheringFunctionality;
 import com.telenor.possumlib.functionality.RestFunctionality;
 import com.telenor.possumlib.interfaces.IRestListener;
@@ -34,7 +32,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
     private static boolean isAuthenticating;
     private static String url;
     private static String apiKey;
-    private long startTime;
+    private Runnable authRunnable;
     private Handler authHandler = new Handler(Looper.getMainLooper());
     private static final String tag = CollectionService.class.getName();
 
@@ -51,7 +49,6 @@ public class CollectionService extends AbstractBasicService implements IRestList
     public int onStartCommand(Intent intent, int flags, int requestCode) {
         // Ensures all detectors are terminated and cleared before adding new ones
         final String uniqueUserId = intent.getStringExtra("uniqueUserId");
-        startTime = intent.getLongExtra("startTime", 0);
         url = intent.getStringExtra("url");
         apiKey = intent.getStringExtra("apiKey");
         isAuthenticating = intent.getBooleanExtra("authenticating", false);
@@ -64,12 +61,13 @@ public class CollectionService extends AbstractBasicService implements IRestList
             }
             gatheringFunctionality.startGathering();
             if (isAuthenticating) {
-                authHandler.postDelayed(new Runnable() {
+                authRunnable = new Runnable() {
                     @Override
                     public void run() {
                         performAuth(uniqueUserId);
                     }
-                }, authTime());
+                };
+                authHandler.postDelayed(authRunnable, authTime());
             }
         }
         return super.onStartCommand(intent, flags, requestCode);
@@ -113,15 +111,23 @@ public class CollectionService extends AbstractBasicService implements IRestList
     }
 
     /**
-     * onDestroy - when service is about to die. Ideally happens by android recycling it
+     * onDestroy - when service is about to die. Ideally happens by android recycling it, or not
+     * needed anymore
      */
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(tag, "Destroying Collector service:"+this);
-        getApplicationContext().unregisterReceiver(receiver);
+        destroyAsyncMethods();
         gatheringFunctionality.stopGathering(true);
+        getApplicationContext().unregisterReceiver(receiver);
         receiver = null;
+    }
+
+    private void destroyAsyncMethods() {
+        if (authHandler != null && authRunnable != null) {
+            authHandler.removeCallbacks(authRunnable);
+        }
     }
 
     private void performAuth(String uniqueUserId) {
@@ -130,20 +136,16 @@ public class CollectionService extends AbstractBasicService implements IRestList
             if (isAuthenticating) {
                 JsonObject object = new JsonObject();
                 object.addProperty("connectId", uniqueUserId);
-
                 for (AbstractDetector detector : gatheringFunctionality.detectors()) {
                     detector.stopListening();
-                    JsonArray jsonData = detector.jsonData();
-                    object.add(detector.detectorName(), jsonData);
-                    if (detector instanceof BluetoothDetector) {
-                        Send.messageIntent(this, Messaging.POSSUM_MESSAGE, "Found bluetooth:"+jsonData.toString());
-                    }
+                    object.add(detector.detectorName(), detector.jsonData());
                     detector.clearData();
                 }
                 RestFunctionality restFunctionality = new RestFunctionality(this, url, apiKey);
                 restFunctionality.execute(object);
 //                Send.messageIntent(this, Messaging.WAITING_FOR_SERVER_RESPONSE, "Time spent since auth start to send start:"+(System.currentTimeMillis()-startTime));
                 Send.messageIntent(this, Messaging.WAITING_FOR_SERVER_RESPONSE, ""+System.currentTimeMillis());
+                Log.i(tag, "Auth is performed. Has service been killed?");
             }
         } catch (MalformedURLException e) {
             Log.e(tag, "Failed to post data due to malformed url:", e);
@@ -153,7 +155,7 @@ public class CollectionService extends AbstractBasicService implements IRestList
     @Override
     public void successfullyPushed(String message) {
         JsonParser parser = new JsonParser();
-        //Log.d(tag, "Pushed data to rest service:" + message);
+        Log.d(tag, "Response from rest service:" + message);
         JsonObject object = (JsonObject) parser.parse(message);
         if (object.get("errorMessage") != null) {
             Log.d(tag, "Failed to access:" + object);

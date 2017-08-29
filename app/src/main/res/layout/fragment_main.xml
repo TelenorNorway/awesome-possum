@@ -3,6 +3,26 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+    <LinearLayout
+        android:id="@+id/cameraResult"
+        android:layout_width="match_parent"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        android:layout_centerHorizontal="true"
+        android:layout_height="wrap_content">
+        <com.telenor.possumexample.views.PreviewImage
+            android:layout_width="192dp"
+            android:layout_margin="20dp"
+            android:layout_weight="1"
+            android:layout_height="192dp" />
+        <com.telenor.possumexample.views.PreviewImage
+            android:layout_width="192dp"
+            android:layout_weight="1"
+            app:faceFound="true"
+            android:layout_margin="20dp"
+            android:layout_height="192dp" />
+    </LinearLayout>
     <TextView
         android:id="@+id/status"
         android:layout_alignParentTop="true"
@@ -28,6 +48,7 @@
     <RelativeLayout
         android:id="@+id/graphContainer"
         android:layout_below="@id/trustWheel"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <android.support.design.widget.TabLayout
@@ -44,10 +65,4 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
     </RelativeLayout>
-    <com.telenor.possumexample.views.CameraPreview
-        android:id="@+id/preview"
-        android:layout_below="@id/trustWheel"
-        android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
 </RelativeLayout>

@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
                         invalidateOptionsMenu();
                     } catch (GatheringNotAuthorizedException e) {
                         AwesomePossum.getAuthorizeDialog(this, myId(), getString(R.string.identityPoolId), "Authorize AwesomePossum", "We need permission from you", "Granted", "Denied").show();
-                    }
+                        }
                 } else {
                     showInvalidIdDialog();
                 }

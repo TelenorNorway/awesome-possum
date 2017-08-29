@@ -23,4 +23,11 @@ public class Send {
         context.sendBroadcast(intent);
     }
 
+    public static void imageByteArrayIntent(@NonNull Context context, boolean faceFound, byte[] array) {
+        Intent intent = new Intent(Messaging.POSSUM_MESSAGE);
+        intent.putExtra(Messaging.POSSUM_MESSAGE_TYPE, Messaging.POSSUM_PREVIEWS);
+        intent.putExtra("preview", array);
+        intent.putExtra("foundFace", faceFound);
+        context.sendBroadcast(intent);
+    }
 }

@@ -1,4 +1,7 @@
 <resources>
+    <declare-styleable name="PreviewImage">
+        <attr name="faceFound" format="boolean" />
+    </declare-styleable>
     <string name="app_name">AwesomePossum</string>
     <string name="startup">Start Listen</string>
     <string name="stop_listen">Stop Listen</string>

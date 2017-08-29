@@ -9,17 +9,16 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.telenor.possumexample.MainActivity;
 import com.telenor.possumexample.R;
-import com.telenor.possumexample.views.CameraPreview;
 import com.telenor.possumexample.views.TrustButton;
 import com.telenor.possumlib.AwesomePossum;
 import com.telenor.possumlib.constants.Messaging;
@@ -39,7 +38,7 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
     private long serverWaitStart;
     private long serverWaitEnd;
     private RelativeLayout graphContainer;
-    private CameraPreview preview;
+    private LinearLayout previewImageContainer;
     private static final boolean isGathering = false; // Set to false if it should do authentication
     private static final String tag = MainFragment.class.getName();
 
@@ -53,9 +52,9 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
         super.onViewCreated(view, bundle);
         AwesomePossum.addTrustListener(getContext(), this);
         status = (TextView) view.findViewById(R.id.status);
-        AwesomePossum.addMessageListener(getContext(), this);
         graphContainer = (RelativeLayout)view.findViewById(R.id.graphContainer);
-        preview = (CameraPreview) view.findViewById(R.id.preview);
+        AwesomePossum.addMessageListener(getContext(), this);
+        previewImageContainer = (LinearLayout) view.findViewById(R.id.cameraResult);
         trustButton = (TrustButton) view.findViewById(R.id.trustWheel);
         trustButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -97,7 +96,6 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
         viewPager.setAdapter(new MyPagerAdapter(getChildFragmentManager()));
         tabLayout.setupWithViewPager(viewPager);
         viewPager.setCurrentItem(1);
-        toggleBottom(null);
         setHasOptionsMenu(true);
         updateStatus();
         if (!((MainActivity) getActivity()).validId(myId())) {
@@ -107,33 +105,27 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
         }
     }
 
-    @Override
-    public void onPrepareOptionsMenu(Menu menu) {
-        super.onPrepareOptionsMenu(menu);
-        MenuItem bottomDisplay = menu.findItem(R.id.toggleBottom);
-        if (preview.getVisibility() == View.GONE) bottomDisplay.setTitle(R.string.show_camera);
-        else bottomDisplay.setTitle(R.string.show_graph);
-    }
-
-    private void toggleBottom(MenuItem menuItem) {
-        if (preview.getVisibility() == View.GONE) {
-            preview.setVisibility(View.VISIBLE);
-            graphContainer.setVisibility(View.GONE);
-        } else {
-            preview.setVisibility(View.GONE);
-            graphContainer.setVisibility(View.VISIBLE);
-        }
-        if (menuItem != null) menuItem.setTitle(preview.getVisibility() == View.GONE?R.string.show_graph:R.string.show_camera);
-    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.toggleBottom:
-                toggleBottom(menuItem);
+                toggleCamera(menuItem);
                 return true;
         }
         return false;
+    }
+
+    private void toggleCamera(MenuItem menuItem) {
+        if (previewImageContainer.getVisibility() == View.GONE) {
+            menuItem.setTitle(R.string.show_graph);
+            previewImageContainer.setVisibility(View.VISIBLE);
+            graphContainer.setVisibility(View.GONE);
+        } else {
+            menuItem.setTitle(R.string.show_camera);
+            previewImageContainer.setVisibility(View.GONE);
+            graphContainer.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -162,11 +154,15 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
         Do.onMain(new Runnable() {
             @Override
             public void run() {
-                if ("TRAINING".equals(status)) {
-                    trustButton.setTrustScore(0, getContext().getString(R.string.training));
-                } else {
-                    trustButton.setTrustScore(combinedTrustScore * 100, null);
-                }
+//                Log.i(tag, "Change in combined trust:"+combinedTrustScore+", Status:"+status);
+//                trustButton.setTrustScore(combinedTrustScore * 100, "TRAINING".equals(status)?getString(R.string.training):null);
+                trustButton.setTrustScore(combinedTrustScore * 100, null);
+
+//                if ("TRAINING".equals(status)) {
+//                    trustButton.setTrustScore(0, getContext().getString(R.string.training));
+//                } else {
+//                    trustButton.setTrustScore(combinedTrustScore * 100, null);
+//                }
             }
         });
     }
@@ -210,8 +206,8 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                         break;
                     case Messaging.AUTH_DONE:
                         serverWaitEnd = System.currentTimeMillis();
-                        Log.i(tag, "TestAuth: Server response wait time: "+(serverWaitEnd-serverWaitStart)+" ms");
-                        Log.i(tag, "TestAuth: Total roundTime:"+((clientGatherEnd-clientGatherStart)+(clientSendEnd-clientSendStart)+(serverWaitEnd-serverWaitStart))+" ms");
+                        Log.d(tag, "TestAuth: Server response wait time: "+(serverWaitEnd-serverWaitStart)+" ms");
+                        Log.d(tag, "TestAuth: Total roundTime:"+((clientGatherEnd-clientGatherStart)+(clientSendEnd-clientSendStart)+(serverWaitEnd-serverWaitStart))+" ms");
                         if (trustButton.isAuthenticating()) {
                             clientGatherStart = System.currentTimeMillis();
                             trustButton.authenticate(myId());
@@ -223,10 +219,8 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                         trustButton.setEnabled(true);
                         break;
                     case Messaging.POSSUM_MESSAGE:
-                        Log.i(tag, "TestAuth: "+message);
                         break;
                     case Messaging.FACE_FOUND:
-                        Log.i(tag, "TestAuth: Face found during interval after:"+(Long.parseLong(message)-clientGatherStart)+" ms");
                         break;
                     case Messaging.SENDING_RESULT:
                         status.setText(getContext().getString(R.string.sending_result));
@@ -235,7 +229,7 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                         break;
                     case Messaging.START_SERVER_DATA_SEND:
                         clientGatherEnd = System.currentTimeMillis();
-                        Log.i(tag, "TestAuth: Time spent gathering data:"+(clientGatherEnd-clientGatherStart)+" ms");
+                        Log.d(tag, "TestAuth: Time spent gathering data:"+(clientGatherEnd-clientGatherStart)+" ms");
                         clientSendStart = Long.parseLong(message);
                         status.setText(getString(R.string.sending_data_to_server));
                         status.setTextColor(Color.BLACK);
@@ -251,11 +245,12 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                         status.setText(getString(R.string.waiting_for_server_response));
                         status.setTextColor(Color.BLACK);
                         serverWaitStart = Long.parseLong(message);
-                        Log.i(tag, "TestAuth: Time spent processing and sending: "+(clientSendEnd-clientSendStart)+" ms");
+                        Log.d(tag, "TestAuth: Time spent processing and sending: "+(clientSendEnd-clientSendStart)+" ms");
                         trustButton.setEnabled(true);
                         break;
                     case Messaging.DETECTORS_STATUS:
-                        break;
+                    case Messaging.POSSUM_PREVIEWS:
+                    case Messaging.POSSUM_PREVIEWS_INVALID:
                     case Messaging.REQUEST_DETECTORS:
                         break;
                     default:
@@ -266,6 +261,19 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
                 }
             }
         });
+    }
+
+    @Override
+    public void possumFaceFound(byte[] dataReceived) {
+    }
+
+    @Override
+    public void possumImageSnapped(byte[] dataReceived) {
+
+    }
+
+    @Override
+    public void possumFaceCoordsReceived(int[] xCoords, int[] yCoords) {
     }
 
     private class MyPagerAdapter extends FragmentPagerAdapter {

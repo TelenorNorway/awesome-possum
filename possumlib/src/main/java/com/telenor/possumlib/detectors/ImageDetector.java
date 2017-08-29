@@ -4,10 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
 import android.graphics.PointF;
-import android.graphics.Rect;
-import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -15,7 +12,6 @@ import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.google.android.gms.vision.CameraSource;
-import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.Landmark;
@@ -27,6 +23,7 @@ import com.telenor.possumlib.constants.Messaging;
 import com.telenor.possumlib.interfaces.IFaceFound;
 import com.telenor.possumlib.models.PossumBus;
 import com.telenor.possumlib.tensorflow.TensorFlowInferenceInterface;
+import com.telenor.possumlib.utils.ImageUtils;
 import com.telenor.possumlib.utils.Send;
 import com.telenor.possumlib.utils.face.AwesomeFaceDetector;
 import com.telenor.possumlib.utils.face.AwesomeFaceProcessor;
@@ -37,7 +34,6 @@ import java.util.List;
 
 import static com.telenor.possumlib.utils.ImageUtils.alignFace;
 import static com.telenor.possumlib.utils.ImageUtils.bitmapToIntArray;
-import static com.telenor.possumlib.utils.ImageUtils.rotateBitmap;
 
 /***
  * Uses camera to determine face identity.
@@ -46,8 +42,6 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     private boolean requestedListening;
     private TensorFlowInferenceInterface tensorFlowInterface;
     private CameraSource cameraSource;
-    private static final int BMP_WIDTH = 96;
-    private static final int BMP_HEIGHT = 96;
     private static final int PREVIEW_WIDTH = 640;
     private static final int PREVIEW_HEIGHT = 480;
     private static long lastFaceFound;
@@ -179,6 +173,9 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
                 Log.e(tag, "Possum failed to release camera:",e);
             }
         }
+        if (faceDetector != null) {
+            faceDetector.destroy();
+        }
     }
 
     /**
@@ -206,22 +203,17 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     }
 
     @Override
-    public void faceFound(Face face, Frame frame) {
+    public void faceFound(Face face, byte[] byteArray) {
         if ((now() - lastFaceFound) < minTimeBetweenFaces) {
             return;
         }
-        int height = frame.getMetadata().getHeight();
-        int width = frame.getMetadata().getWidth();
-        YuvImage yuvimage = new YuvImage(frame.getGrayscaleImageData().array(), ImageFormat.NV21, width, height, null);
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        yuvimage.compressToJpeg(new Rect(0, 0, width, height), 100, byteArrayOutputStream); // Where 100 is the quality of the generated jpeg
-        byte[] jpegArray = byteArrayOutputStream.toByteArray();
-        Bitmap image = rotateBitmap(BitmapFactory.decodeByteArray(jpegArray, 0, jpegArray.length), -90);
+        Bitmap image = ImageUtils.rotateBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length), -90);
         PointF leftEye = null;
         PointF rightEye = null;
         PointF mouth = null;
         if (face == null) return;
         List<Landmark> landmarks = face.getLandmarks();
+
         for (Landmark landmark : landmarks) {
             if (landmark.getType() == Landmark.LEFT_EYE) {
                 leftEye = landmark.getPosition();
@@ -243,11 +235,26 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         lastFaceFound = now();
         JsonArray array = new JsonArray();
         array.add("" + now());
-        float[] weights = tensorFlowInterface.getWeights(bitmapToIntArray(Bitmap.createScaledBitmap(alignFace(image, leftEye, rightEye, mouth), BMP_WIDTH, BMP_HEIGHT, false)));
+        Bitmap scaledOutput = Bitmap.createScaledBitmap(alignFace(image, leftEye, rightEye, mouth), ImageUtils.BMP_WIDTH, ImageUtils.BMP_HEIGHT, false);
+
+        // This part should not be done in pure library, only in POC
+        Send.imageByteArrayIntent(context(), true, ImageUtils.getByteArrayFromImage(scaledOutput));
+
+        float[] weights = tensorFlowInterface.getWeights(bitmapToIntArray(scaledOutput));
         for (float weight : weights) {
             array.add("" + weight);
         }
         sessionValues.add(array);
         Send.messageIntent(context(), Messaging.FACE_FOUND, ""+System.currentTimeMillis());
+    }
+
+    @Override
+    public void imageTaken(byte[] byteArray) {
+        Bitmap image = ImageUtils.getRotatedScaledBitmapFromByteArray(byteArray);
+//        Bitmap image = ImageUtils.rotateBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length), -90);
+//
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        image.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        Send.imageByteArrayIntent(context(), false, stream.toByteArray());
     }
 }

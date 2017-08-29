@@ -154,7 +154,6 @@ public class BluetoothDetector extends AbstractDetector {
                             array.add(""+txPowerLvl);
                             array.add(""+device.getBondState());
                             sessionValues.add(array);
-                            Log.i(tag, "TestAuth: Adding device:"+array);
                         } catch (Exception ignore) {
                         }
                     }

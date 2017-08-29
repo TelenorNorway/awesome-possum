@@ -37,8 +37,6 @@ public class IconWheel extends View implements IPossumTrust, IPossumMessage {
     private static float iconHeight;
     private static float hypotenuse;
 
-    private static final String tag = IconWheel.class.getName();
-
     private Map<Integer, SensorContainer> sensors = new HashMap<>();
 
     @Override
@@ -81,6 +79,21 @@ public class IconWheel extends View implements IPossumTrust, IPossumMessage {
                 }
             }
         }
+    }
+
+    @Override
+    public void possumFaceFound(byte[] dataReceived) {
+
+    }
+
+    @Override
+    public void possumImageSnapped(byte[] dataReceived) {
+
+    }
+
+    @Override
+    public void possumFaceCoordsReceived(int[] xCoords, int[] yCoords) {
+
     }
 
     private enum SensorStatus {

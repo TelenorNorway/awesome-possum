@@ -18,12 +18,11 @@ public class HardwareDetector extends AbstractDetector {
     /**
      * Constructor for the Hardware Detector
      *
-     * @param context        a valid android context
-     * @param eventBus       the event bus used for sending messages to and from
+     * @param context  a valid android context
+     * @param eventBus the event bus used for sending messages to and from
      */
     public HardwareDetector(Context context, @NonNull PossumBus eventBus) {
         super(context, eventBus);
-        findHardwareSpecs();
     }
 
     @Override
@@ -33,7 +32,7 @@ public class HardwareDetector extends AbstractDetector {
 
     @Override
     public String detectorName() {
-        return "Hardware";
+        return "hardware";
     }
 
     private void findHardwareSpecs() {
@@ -41,22 +40,31 @@ public class HardwareDetector extends AbstractDetector {
         if (isAuthenticating()) return;
         JsonArray array = new JsonArray();
         array.add("HARDWARE_INFO START");
-        array.add("Board:"+ Build.BOARD);
-        array.add("Brand:"+Build.BRAND);
-        array.add("Device:"+Build.DEVICE);
-        array.add("Display:"+Build.DISPLAY);
-        array.add("Fingerprint:"+Build.FINGERPRINT);
-        array.add("Hardware:"+Build.HARDWARE);
-        array.add("Host:"+Build.HOST);
-        array.add("Id:"+Build.ID);
-        array.add("Manufacturer:"+Build.MANUFACTURER);
-        array.add("Model:"+Build.MODEL);
-        array.add("Product:"+Build.PRODUCT);
-        array.add("Serial:"+Build.SERIAL);
-        array.add("Version:"+Build.VERSION.SDK_INT+" ("+Build.VERSION.CODENAME+")");
-        array.add("SupportedABIS:"+ Get.supportedABISString());
+        array.add("Board:" + Build.BOARD);
+        array.add("Brand:" + Build.BRAND);
+        array.add("Device:" + Build.DEVICE);
+        array.add("Display:" + Build.DISPLAY);
+        array.add("Fingerprint:" + Build.FINGERPRINT);
+        array.add("Hardware:" + Build.HARDWARE);
+        array.add("Host:" + Build.HOST);
+        array.add("Id:" + Build.ID);
+        array.add("Manufacturer:" + Build.MANUFACTURER);
+        array.add("Model:" + Build.MODEL);
+        array.add("Product:" + Build.PRODUCT);
+        array.add("Serial:" + Build.SERIAL);
+        array.add("Version:" + Build.VERSION.SDK_INT + " (" + Build.VERSION.CODENAME + ")");
+        array.add("SupportedABIS:" + Get.supportedABISString());
         array.add("HARDWARE_INFO STOP");
         sessionValues.add(array);
         storeData();
+    }
+
+    @Override
+    public boolean startListening() {
+        boolean listen = super.startListening();
+        if (listen) {
+            findHardwareSpecs();
+        }
+        return listen;
     }
 }

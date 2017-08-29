@@ -23,7 +23,7 @@ public class HardwareDetectorTest {
     @Before
     public void setUp() throws Exception {
         eventBus = new PossumBus();
-        fakeFile = FileUtil.getFile(RuntimeEnvironment.application, "Hardware");
+        fakeFile = FileUtil.getFile(RuntimeEnvironment.application, "hardware");
         if (fakeFile.exists()) {
             Assert.assertTrue(fakeFile.delete());
         }
@@ -49,7 +49,7 @@ public class HardwareDetectorTest {
         Assert.assertTrue(hardwareDetector.isEnabled());
         Assert.assertTrue(hardwareDetector.isAvailable());
         Assert.assertEquals(DetectorType.Hardware, hardwareDetector.detectorType());
-        Assert.assertEquals("Hardware", hardwareDetector.detectorName());
+        Assert.assertEquals("hardware", hardwareDetector.detectorName());
         Assert.assertTrue(fakeFile.length() > 0);
     }
 

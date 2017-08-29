@@ -27,4 +27,6 @@ public class Messaging {
     public static final String WAITING_FOR_SERVER_RESPONSE = "waitingServerResponse";
     public static final String START_SERVER_DATA_SEND = "sendingToServer";
     public static final String FACE_FOUND = "faceFound";
+    public static final String POSSUM_PREVIEWS = "previewImage";
+    public static final String POSSUM_PREVIEWS_INVALID = "invalidPreviewImage";
 }

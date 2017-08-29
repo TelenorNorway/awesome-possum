@@ -109,7 +109,7 @@ public final class AwesomePossum {
         String message = intent.getStringExtra("message");
         JsonObject object = (JsonObject) parser.parse(message);
         latestTrustScore = new JsonObject();
-        latestTrustScore.add("trustScore", object.get("trustscore").getAsJsonObject());
+        latestTrustScore.add("trustscore", object.get("trustscore").getAsJsonObject());
         JsonObject sensors = object.get("sensors").getAsJsonObject();
         latestTrustScore.add("accelerometer", sensors.get("accelerometer").getAsJsonObject());
         latestTrustScore.add("gyroscope", sensors.get("gyroscope").getAsJsonObject());
@@ -127,7 +127,7 @@ public final class AwesomePossum {
         notifyTrustChange(DetectorType.Image, latestTrustScore("image"), latestStatus("image"));
 
         for (IPossumTrust listener : trustListeners) {
-            listener.changeInCombinedTrust(latestTrustScore("trustScore"), latestStatus("trustScore"));
+            listener.changeInCombinedTrust(latestTrustScore("trustscore"), latestStatus("trustscore"));
         }
         lastAuthenticated = DateTime.now();
     }
@@ -249,6 +249,24 @@ public final class AwesomePossum {
         }
         for (IPossumMessage listener : messageListeners) {
             listener.possumMessageReceived(messageType, intent.getStringExtra(Messaging.POSSUM_MESSAGE));
+        }
+        byte[] arrayReceived = intent.getByteArrayExtra("preview");
+        boolean foundFace = intent.getBooleanExtra("foundFace", false);
+        if (arrayReceived != null) {
+            for (IPossumMessage listener : messageListeners) {
+                if (foundFace) {
+                    listener.possumFaceFound(arrayReceived);
+                } else {
+                    listener.possumImageSnapped(arrayReceived);
+                }
+            }
+        }
+        int[] xCoords = intent.getIntArrayExtra("xFaceFound");
+        int[] yCoords = intent.getIntArrayExtra("yFaceFound");
+        if (xCoords != null && yCoords != null) {
+            for (IPossumMessage listener : messageListeners) {
+                listener.possumFaceCoordsReceived(xCoords, yCoords);
+            }
         }
     }
 
@@ -659,7 +677,7 @@ public final class AwesomePossum {
             JsonObject emptyObject = new JsonObject();
             emptyObject.addProperty("status", "OK");
             emptyObject.addProperty("score", 0);
-            latestTrustScore.add("trustScore", emptyObject);
+            latestTrustScore.add("trustscore", emptyObject);
             latestTrustScore.add("accelerometer", emptyObject);
             latestTrustScore.add("gyroscope", emptyObject);
             latestTrustScore.add("sound", emptyObject);

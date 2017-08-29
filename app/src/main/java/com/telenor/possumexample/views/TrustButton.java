@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
@@ -133,7 +132,6 @@ public class TrustButton extends RelativeLayout {
             trustWheel.setProgress(0);
             authHandler.removeCallbacks(authRunnable);
             authenticating = false;
-            Log.i(tag, "TestAuth: Stop authenticating");
             Send.messageIntent(getContext(), Messaging.AUTH_STOP, null);
         }
     }
