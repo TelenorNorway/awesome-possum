@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         AwesomePossum.terminate(getApplicationContext());
+        Log.i(tag, "Terminating");
     }
 
     private void showFragment(Class<? extends Fragment> fragmentClass) {

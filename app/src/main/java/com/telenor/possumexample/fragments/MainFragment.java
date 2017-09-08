@@ -129,6 +129,12 @@ public class MainFragment extends Fragment implements IPossumTrust, IPossumMessa
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        AwesomePossum.sendDetectorStatus(getContext());
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         AwesomePossum.removeTrustListener(this);

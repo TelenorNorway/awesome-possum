@@ -145,7 +145,6 @@ public class CollectionService extends AbstractBasicService implements IRestList
                 restFunctionality.execute(object);
 //                Send.messageIntent(this, Messaging.WAITING_FOR_SERVER_RESPONSE, "Time spent since auth start to send start:"+(System.currentTimeMillis()-startTime));
                 Send.messageIntent(this, Messaging.WAITING_FOR_SERVER_RESPONSE, ""+System.currentTimeMillis());
-                Log.i(tag, "Auth is performed. Has service been killed?");
             }
         } catch (MalformedURLException e) {
             Log.e(tag, "Failed to post data due to malformed url:", e);

@@ -61,12 +61,29 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
         super(context, eventBus);
 //        findOutIfArchitectureIsInvalid();
 //        if (!supportedArchitecture) return;
-        faceDetector = getGoogleFaceDetector(context);
-        cameraSource = new CameraSource.Builder(context, faceDetector)
-                .setFacing(CameraSource.CAMERA_FACING_FRONT)
-                .setRequestedPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT)
-                .setRequestedFps(30)
-                .build();
+        setupCameraSource();
+    }
+
+    private void setupCameraSource() {
+        if (faceDetector != null && faceDetector.isReleased()) {
+            faceDetector = getGoogleFaceDetector(context());
+            if (cameraSource != null) {
+                cameraSource.release();
+            }
+            cameraSource = null;
+            cameraSource = new CameraSource.Builder(context(), faceDetector)
+                    .setFacing(CameraSource.CAMERA_FACING_FRONT)
+                    .setRequestedPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT)
+                    .setRequestedFps(30)
+                    .build();
+        } else if (cameraSource == null) {
+            faceDetector = getGoogleFaceDetector(context());
+            cameraSource = new CameraSource.Builder(context(), faceDetector)
+                    .setFacing(CameraSource.CAMERA_FACING_FRONT)
+                    .setRequestedPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT)
+                    .setRequestedFps(30)
+                    .build();
+        }
     }
 
     /**
@@ -142,6 +159,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
     @SuppressWarnings("MissingPermission")
     public boolean startListening() {
         requestedListening = true;
+        setupCameraSource();
         boolean listen = isAvailable() && super.startListening();
         if (listen) {
             try {
@@ -204,9 +222,10 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
 
     @Override
     public void faceFound(Face face, byte[] byteArray) {
-        if ((now() - lastFaceFound) < minTimeBetweenFaces) {
+        /*if ((now() - lastFaceFound) < minTimeBetweenFaces) {
+            Log.i(tag, "Too short time between faces");
             return;
-        }
+        }*/
         Bitmap image = ImageUtils.rotateBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length), -90);
         PointF leftEye = null;
         PointF rightEye = null;
@@ -224,7 +243,7 @@ public class ImageDetector extends AbstractDetector implements IFaceFound {
             }
         }
         if (leftEye == null || rightEye == null || mouth == null) {
-            Log.i(tag, "Could not find enough landmarks, skipping face");
+            Log.d(tag, "Could not find enough landmarks, skipping face");
             return;
         }
         // Additional check for landmarks with invalid values

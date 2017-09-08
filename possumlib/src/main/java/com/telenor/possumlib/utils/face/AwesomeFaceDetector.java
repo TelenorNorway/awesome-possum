@@ -1,5 +1,6 @@
 package com.telenor.possumlib.utils.face;
 
+import android.util.Log;
 import android.util.SparseArray;
 
 import com.google.android.gms.vision.Detector;
@@ -14,15 +15,23 @@ import com.telenor.possumlib.utils.ImageUtils;
 public class AwesomeFaceDetector extends Detector<Face> {
     private Detector<Face> mDelegate;
     private IFaceFound listener;
+    private static final String tag = AwesomeFaceDetector.class.getName();
 
     public AwesomeFaceDetector(Detector<Face> delegate, IFaceFound listener) {
         mDelegate = delegate;
         this.listener = listener;
     }
 
+    public boolean isReleased() {
+        return mDelegate == null;
+    }
 
     @Override
     public SparseArray<Face> detect(Frame frame) {
+        if (mDelegate == null) {
+            Log.d(tag, "Delegate is null on detect, crisis!!!");
+            return new SparseArray<>();
+        }
         SparseArray<Face> faces = mDelegate.detect(frame);
         // TODO: This class must be changed in master, it should NOT do the image processing here at all
         // When you need to change it, frame should be sent - not the byte array
@@ -31,7 +40,7 @@ public class AwesomeFaceDetector extends Detector<Face> {
             byte[] byteArray = ImageUtils.getBytesFromFrame(frame);
             listener.imageTaken(byteArray);
             if (faces.size() > 0) {
-                listener.faceFound(faces.get(0), byteArray);
+                listener.faceFound(faces.get(faces.keyAt(0)), byteArray);
             }
         }
         return faces;
@@ -43,6 +52,7 @@ public class AwesomeFaceDetector extends Detector<Face> {
     public void destroy() {
         if (mDelegate != null) {
             mDelegate.release();
+            mDelegate = null;
         }
     }
 
